@@ -53,14 +53,17 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.ui.hub_pull_button.setToolTip(str(Path(data_dir)/'hub/rotations.json'))
 
         def check_update(self, checked=False, *, manual=True):
-            if getattr(self,'_handoff',None):return
+            if getattr(self,'_handoff',None) or getattr(self,'_outer_installing',False):return
             timer=getattr(self,'_client_update_timer',None)
             if timer is not None and timer.isActive():return
             if not manual and not getattr(self,'_automatic_client_enabled',False):return
             self._client_update_manual=manual
             self._client_auto_chain=False
             self._client_update_staged=None
-            from wowbuddy.github_client import check_latest
+            if getattr(self,'_outer_update_target',None):
+                from wowbuddy.github_outer import check_latest
+            else:
+                from wowbuddy.github_client import check_latest
             self._start_client_update_task(check_latest,'正在检查GitHub客户端版本…','check')
 
         def _configure_automatic_client_update(self, enabled, suppress):
@@ -72,16 +75,21 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 if delay is not None:self.update_timer.start(delay)
 
         def download_update(self, checked=False):
+            if getattr(self,'_outer_installing',False):return
             if getattr(self,'_client_update_staged',None):
                 self._begin_update_handoff()
                 return
             if not getattr(self,'_client_update_info',{}).get('has_update'):return
             if self.session.is_active():self.toggle_monitor()
-            from wowbuddy.github_client import download_checked
+            outer=getattr(self,'_outer_update_target',None)
+            if outer:
+                from wowbuddy.github_outer import download_checked
+            else:
+                from wowbuddy.github_client import download_checked
             from queue import SimpleQueue
             progress=SimpleQueue()
             self._client_download_progress=progress
-            workspace=APP_ROOT.parent/'WowBuddyDev-updates'
+            workspace=(outer.parent if outer else APP_ROOT.parent)/'WowBuddyDev-updates'
             self._start_client_update_task(lambda:download_checked(self._client_update_info,workspace,progress=lambda received,total:progress.put((received,total))),
                                            '正在下载并校验客户端更新包…','download')
 
@@ -152,7 +160,8 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                     status='更新包已校验并暂存：'+result['staged']
                     if FROZEN:
                         self.ui.update_apply_button.setText('安装并重启')
-                        self.ui.update_apply_button.setToolTip('退出当前助手后替换整个客户端目录，并保留本地设置')
+                        self.ui.update_apply_button.setToolTip('替换自有外层并重新启动，保留稳定设置目录' if getattr(self,'_outer_update_target',None)
+                                                              else '退出当前助手后替换整个客户端目录，并保留本地设置')
                         self.ui.update_apply_button.setEnabled(True)
                         if getattr(self,'_client_auto_chain',False):QTimer.singleShot(0,self._begin_update_handoff)
                     else:status+='；源码模式请使用打包后的客户端安装更新'
@@ -170,12 +179,46 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.ui.update_check_button.setEnabled(not bool(getattr(self,'_handoff',None)))
 
         def _begin_update_handoff(self):
-            if not FROZEN:return
+            if not FROZEN or getattr(self,'_outer_installing',False):return
             if self.session.is_active():self.toggle_monitor()
             self.watch_timer.stop()
+            if getattr(self,'_outer_update_target',None):
+                self._install_outer_update()
+                return
             from wowbuddy.dev_update_handoff import prepare_handoff
             self._start_client_update_task(lambda:prepare_handoff(self._client_update_staged['staged'],APP_ROOT,sys.argv[1:]),
                                            '正在准备退出后的更新交接…','handoff')
+
+        def _install_outer_update(self):
+            from wowbuddy.dev_outer_update import install_outer
+            self._outer_installing=True
+            self._client_auto_chain=False
+            self.ui.update_check_button.setEnabled(False)
+            self.ui.update_apply_button.setEnabled(False)
+            restarting=False
+            try:
+                staged=getattr(self,'_client_update_staged',None) or {}
+                if staged.get('kind')!='outer':raise ValueError('当前外层不能安装目录版更新包')
+                result=install_outer(staged['staged'],Path(sys.executable),self._outer_update_target,
+                    arguments=sys.argv[1:],quit_callback=self._quit_development_app,
+                    on_status=self.ui.update_status.setText,on_log=self.logger.append)
+                self._outer_update_result=result
+                self.ui.update_status.setText(result.text)
+                restarting=result.restart_started
+                if result.phase in ('restart_started','restart_failed','replacement_complete'):
+                    self._client_update_staged=None
+                    self.ui.update_apply_button.hide()
+                else:
+                    self.ui.update_apply_button.setText('重试安装')
+                    self.ui.update_apply_button.setEnabled(True)
+            except Exception as error:
+                text='外层更新失败：'+str(error)
+                self.ui.update_status.setText(text);self.logger.append(text)
+                self.ui.update_apply_button.setText('重试安装')
+                self.ui.update_apply_button.setEnabled(True)
+            finally:
+                self._outer_installing=restarting
+                self.ui.update_check_button.setEnabled(not restarting)
 
         def _poll_update_handoff(self):
             import time
@@ -511,6 +554,9 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             startup_record=startup_record,startup_log_path=log_path(),
             native_window_identity=NativeWindowIdentity(native_identity_enabled))
         startup_record('独立主窗口构造完成')
+        from wowbuddy.release_identity import validated_outer_target
+        window._outer_update_target=(validated_outer_target(os.environ.get('WOWBUDDY_EXE',''),Path(sys.executable))
+                                     if FROZEN else None)
         from wowbuddy.dev_version import VERSION
         from wowbuddy.github_addon import REPOSITORY
         project_url='https://github.com/'+REPOSITORY
