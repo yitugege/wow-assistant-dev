@@ -17,3 +17,9 @@ test_threshold_key_native.py对照28个动作/字段组合，覆盖普通文本�
 新增原Qt对照和迁移回归先复现7个失败断言；修复后legacy_key与新键共用整数替换实现。示例：字段`health%1`、默认30，旧键是`sw_health30_b%3`；迁移至两个动作的新键时，先为全部缺失新键复制旧值，再移除旧键，已保存的新键值优先，无关设置保留。
 
 原Qt格式化与迁移4项，加核心157项，本轮共161项通过（4.586秒）。这里只在内存映射上验证迁移，不改用户INI；也没有新增“旧独立版错误键”的猜测迁移。最新源码包含此修复，现有local-408afed EXE仍不含。
+
+## 控制器、Qt滑条与INI联测
+
+新增test_threshold_settings_roundtrip.py，用真实DecisionPipeline编译自定义测试规则、FrameController管理阈值、ThresholdPanel创建Qt滑条、SettingsStore写入临时INI。旧键值19迁入新键后，实际QSlider.setValue触发valueChanged并保存24；创建新的SettingsStore和控制器，确认重新读取并显示24，旧键消失，无关值保留。随后同一阈值参与23/24边界的flag判定，设为0后文案变为“关闭”、保存值为0、每帧字段为OFF。
+
+一项联测通过（0.452秒）。控件设置WA_DontShowOnScreen，不操作用户窗口；触发的是Qt信号，不是实际鼠标拖动。使用原资源及自定义规则输入，没有读取用户设置、采集游戏或发送按键。此检查补足持久化与控件接线证据，不代表自动施法验收。
