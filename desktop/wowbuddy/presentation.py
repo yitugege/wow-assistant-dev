@@ -168,12 +168,17 @@ def success_count_text(count: int) -> str:
     return f"发键：累计 {count} 条"
 
 
+def fps_text(frames: int, elapsed_ms: int) -> str:
+    """统计行与徽标共用Qt定点一位舍入。"""
+    return _one_decimal(frames / max(elapsed_ms / 1000, 0.1))
+
+
 def statistics_text(frames: int, changes: int, elapsed_ms: int) -> str:
     """092c90/095410：成功抓屏帧数、字段展示文本变更次数、均值 fps。"""
     seconds = max(elapsed_ms / 1000, 0.1)
     # 状态行的秒数是 f/0 舍入；右侧独立秒数徽标才是 int 截断。
     elapsed = Decimal.from_float(seconds).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
-    return f"{frames} 帧 / {changes} 变更   {_one_decimal(frames / seconds)} fps   {elapsed} 秒"
+    return f"{frames} 帧 / {changes} 变更   {fps_text(frames, elapsed_ms)} fps   {elapsed} 秒"
 
 
 @dataclass(frozen=True)

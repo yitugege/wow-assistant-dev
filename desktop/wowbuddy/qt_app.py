@@ -22,7 +22,7 @@ from .game_windows import WindowMonitor, find_game_window
 from .hub_sync import HubSynchronizer, LocalFileBackend, REFRESH_INTERVAL_MS
 from .expressions import EvaluationContext
 from .presentation import (availability, candidate_text, send_display, frame_status,
-                           DiagnosticThrottle, NoFiducialThrottle, success_count_text, statistics_text)
+                           DiagnosticThrottle, NoFiducialThrottle, success_count_text, statistics_text, fps_text)
 from .qt_network import QtHubClient
 from .runtime import MonitoringLoop
 from .scheduler import Scheduler
@@ -562,10 +562,10 @@ class AssistantWindow(QWidget):
             return result
         self._render_selection()
         self._render_fields(decision.frame)
-        self.ui.sent_label.setText(str(self.dispatcher.state.success_count))
+        self.ui.sent_label.setText(str(result.displayed_success_count))
         elapsed = result.elapsed_ms if result.elapsed_ms is not None else 0
         self.ui.elapsed_label.setText(str(elapsed // 1000))
-        self.ui.fps_label.setText(f"{self.session.state.frame_count / max(elapsed / 1000, .1):.1f}")
+        self.ui.fps_label.setText(fps_text(self.session.state.frame_count, elapsed))
         self.ui.frame_status_label.setText(statistics_text(self.session.state.frame_count,
                                                           self.session.state.frame_auxiliary, elapsed))
         self.ui.send_status_label.setText(success_count_text(self.dispatcher.state.success_count))

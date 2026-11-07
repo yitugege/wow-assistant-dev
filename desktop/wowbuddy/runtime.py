@@ -26,6 +26,7 @@ class PollResult:
     capture: CaptureResult | None = None
     tick: TickResult | None = None
     elapsed_ms: int | None = None
+    displayed_success_count: int | None = None
 
 
 class MonitoringLoop:
@@ -147,6 +148,7 @@ class MonitoringLoop:
         # 092c90/095410统计显示在0a2d70发键之前；保留该时点，不能把
         # 后续按键hold/sleep耗时算入当前帧的fps/运行秒显示。
         elapsed_ms = max(0, self.session.monotonic_ms() - state.elapsed_started_ms) if prepared.frame.ok else None
+        displayed_success_count = self.scheduler.dispatcher.state.success_count if prepared.frame.ok else None
         if original_message is not None:
             for message in deferred_messages:
                 original_message(message)
@@ -156,4 +158,4 @@ class MonitoringLoop:
         tick = self.scheduler.process(prepared, hwnd=state.hwnd,
                                       send_interval_ms=self.send_interval_ms(),
                                       on_event=self._scheduler_event, on_probe=self._probe_event)
-        return PollResult(tick.status, capture, tick, elapsed_ms)
+        return PollResult(tick.status, capture, tick, elapsed_ms, displayed_success_count)

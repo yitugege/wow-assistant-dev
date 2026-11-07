@@ -40,6 +40,7 @@ class MonitorProtocolTests(unittest.TestCase):
                         status='测试后端投递成功',channel='test')
                     window.sender=window.dispatcher.sender=sender
                     window.scheduler.clock_ms=lambda:state['time']
+                    window.session.monotonic_ms=lambda:state['time']
                     window.controller.prepare(state['image'])
                     profile=Profile(-1,1484,'德鲁伊','','协议集成测试','','','','',
                         tuple(parse_rules([
@@ -47,6 +48,7 @@ class MonitorProtocolTests(unittest.TestCase):
                             {'action':'spell_17056','when':['avail',17056]}])))
                     window.controller.selection=replace(window.controller.selection,active_profile=profile)
                     window.toggle_monitor()
+                    state['time']+=800
                     result=window.poll_once()
                     self.assertEqual(result.capture.backend,'printwindow' if fallback else 'dxgi')
                     self.assertIsNotNone(result.tick)
@@ -54,11 +56,16 @@ class MonitorProtocolTests(unittest.TestCase):
                     self.assertEqual([c.action for c in result.tick.decision.candidates],['spell_17056'])
                     self.assertEqual(sent,['SHIFT-F2'])
                     self.assertEqual(window.dispatcher.state.success_count,1)
+                    self.assertEqual(window.ui.sent_label.text(),'0')
+                    self.assertEqual(window.ui.send_status_label.text(),'发键：累计 1 条')
+                    self.assertEqual(window.ui.fps_label.text(),'1.3')
+                    self.assertIn('1.3 fps',window.ui.frame_status_label.text())
                     self.assertEqual(window.session.state.decoded_fields['action_avail'],'16777217')
                     state['time']+=5000
                     state['image']=frame(0)
                     result=window.poll_once()
                     self.assertEqual(result.tick.decision.candidates,())
+                    self.assertEqual(window.ui.sent_label.text(),'1')
                     self.assertEqual(sent,['SHIFT-F2'])
                     state['time']+=5000
                     state['image']=frame(0xffffff,False)
