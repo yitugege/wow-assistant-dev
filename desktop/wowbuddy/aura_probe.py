@@ -34,10 +34,14 @@ class ProbeResult(IntEnum):
 
 
 def _integer(text: str) -> int:
-    text = _trim(text)
+    # 原Qt十进制转换；Unicode trimmed由明确执行该步骤的调用方负责。
+    text = text.split("\0", 1)[0].strip(" \t\n\r\v\f")
     if not re.fullmatch(r"[+-]?[0-9]+", text):
         return -1
-    value = int(text)
+    digits = text.lstrip("+-").lstrip("0") or "0"
+    if len(digits) > 19:
+        return -1
+    value = int(digits) * (-1 if text.startswith("-") else 1)
     return value if -(2**63) <= value < 2**63 else -1
 
 
