@@ -53,7 +53,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.ui.hub_pull_button.setToolTip(str(Path(data_dir)/'hub/rotations.json'))
 
         def check_update(self, checked=False, *, manual=True):
-            if getattr(self,'_handoff',None) or getattr(self,'_outer_installing',False):return
+            if self._closed or getattr(self,'_handoff',None) or getattr(self,'_outer_installing',False):return
             timer=getattr(self,'_client_update_timer',None)
             if timer is not None and timer.isActive():return
             if not manual and not getattr(self,'_automatic_client_enabled',False):return
@@ -75,7 +75,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 if delay is not None:self.update_timer.start(delay)
 
         def download_update(self, checked=False):
-            if getattr(self,'_outer_installing',False):return
+            if self._closed or getattr(self,'_outer_installing',False):return
             if getattr(self,'_client_update_staged',None):
                 self._begin_update_handoff()
                 return
@@ -94,9 +94,11 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                                            '正在下载并校验客户端更新包…','download')
 
         def _start_client_update_task(self, operation, status, phase):
+            if self._closed:return
             if getattr(self,'_client_update_future',None) is not None and not self._client_update_future.done():return
             from concurrent.futures import ThreadPoolExecutor
             self._client_update_phase=phase
+            self._client_update_consumed=False
             self._client_update_executor=ThreadPoolExecutor(max_workers=1)
             self._client_update_future=self._client_update_executor.submit(operation)
             self.ui.update_check_button.setEnabled(False)
@@ -109,6 +111,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self._client_update_timer.start(100)
 
         def _finish_client_update_task(self):
+            if self._closed or getattr(self,'_client_update_consumed',False):return
             if self._client_update_phase=='download':
                 from queue import Empty
                 progress=getattr(self,'_client_download_progress',None)
@@ -129,6 +132,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                         status=f'已下载 {received/1048576:.1f} MiB（总大小未知）'
                     self.ui.update_status.setText(status)
             if not self._client_update_future.done():return
+            self._client_update_consumed=True
             self._client_update_timer.stop()
             self._client_update_executor.shutdown(wait=False)
             self.ui.update_progress.hide()
@@ -181,7 +185,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.ui.update_check_button.setEnabled(not bool(getattr(self,'_handoff',None)))
 
         def _begin_update_handoff(self):
-            if not FROZEN or getattr(self,'_outer_installing',False):return
+            if self._closed or not FROZEN or getattr(self,'_outer_installing',False):return
             if self.session.is_active():self.toggle_monitor()
             self.watch_timer.stop()
             if getattr(self,'_outer_update_target',None):

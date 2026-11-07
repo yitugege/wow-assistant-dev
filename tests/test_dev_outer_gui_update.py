@@ -99,5 +99,30 @@ class OuterGuiUpdateTests(unittest.TestCase):
             self.assertFalse(window._outer_installing)
         self.run_window(exercise)
 
+    def test_queued_install_is_cancelled_when_window_shuts_down(self):
+        from PySide6.QtWidgets import QApplication
+        def exercise(window):
+            with patch('wowbuddy.dev_outer_update.install_outer') as install:
+                window._start_client_update_task(lambda:{'kind':'outer','staged':'D:/fixture/update.exe'},'下载','download')
+                window._client_update_future.result(timeout=5)
+                window._finish_client_update_task()
+                install.assert_not_called()
+                window.shutdown()
+                QApplication.processEvents()
+                install.assert_not_called()
+        self.run_window(exercise)
+
+    def test_completed_download_is_consumed_once_even_if_polled_again(self):
+        from PySide6.QtCore import QTimer
+        def exercise(window):
+            queued=[]
+            with patch.object(QTimer,'singleShot',side_effect=lambda delay,callback:queued.append(callback)):
+                window._start_client_update_task(lambda:{'kind':'outer','staged':'D:/fixture/update.exe'},'下载','download')
+                window._client_update_future.result(timeout=5)
+                window._finish_client_update_task()
+                window._finish_client_update_task()
+                self.assertEqual(len(queued),1)
+        self.run_window(exercise)
+
 
 if __name__=='__main__':unittest.main()
