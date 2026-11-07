@@ -11,9 +11,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--termination', action='store_true', help='导出终止路径三处ABI存疑函数的完整展开范围')
     parser.add_argument('--string-search', action='store_true', help='导出字符集合搜索四个函数的完整展开范围')
+    parser.add_argument('--stream-flush', action='store_true', help='导出流刷新及文件提交四个函数的完整展开范围')
     args = parser.parse_args()
-    if args.termination and args.string_search:
-        parser.error('两个导出模式不能同时指定')
+    if sum((args.termination, args.string_search, args.stream_flush)) > 1:
+        parser.error('导出模式不能同时指定')
     source = EVIDENCE / 'original-27ac1127fc/probe/outer-memory-analysis.exe'
     payload = source.read_bytes()
     digest = hashlib.sha256(payload).hexdigest()
@@ -32,6 +33,9 @@ def main():
     if args.string_search:
         ends = {e.struct.BeginAddress:e.struct.EndAddress for e in pe.DIRECTORY_ENTRY_EXCEPTION}
         spans = [(start, ends[start]) for start in (0x4430, 0x4610, 0x4830, 0x4970)]
+    if args.stream_flush:
+        ends = {e.struct.BeginAddress:e.struct.EndAddress for e in pe.DIRECTORY_ENTRY_EXCEPTION}
+        spans = [(start, ends[start]) for start in (0xf9c8, 0xfa54, 0x10c9c, 0x10d28)]
     for start, end in spans:
         code = pe.get_data(start, end-start)
         rows = []
@@ -58,6 +62,8 @@ def main():
     output = ROOT / ('dist/outer-termination-machine.json' if args.termination else 'dist/outer-initializer-machine.json')
     if args.string_search:
         output = ROOT / 'dist/outer-string-search-machine.json'
+    if args.stream_flush:
+        output = ROOT / 'dist/outer-stream-flush-machine.json'
     output.write_text(json.dumps({'source': str(source), 'source_sha256': digest,
                                  'ranges': ranges, 'limitations': ['仅指定机器码区间；没有执行回调或验证独立版动态等价']},
                                 ensure_ascii=False, indent=2), encoding='utf8')
