@@ -38,3 +38,5 @@
 详细记录为本地 `dist/public-release-025-check.json`。本次没有执行正在运行的旧助手升级交接，也没有安装到用户游戏目录或进行游戏内施法测试。
 
 后续升级验证：隔离的本地0.2.4冻结外层通过原CLI入口从GitHub下载0.2.5，实际替换并重启新版业务，自检及摘要核对通过，稳定数据保留且Job无残留。没有版本覆盖或安装替身。见OUTER-UPDATE.md和 `dist/outer-public-upgrade-check.json`；GUI按钮升级和游戏实测仍未完成。
+
+正常GUI自动更新也已通过：旧版界面计时检查后自动下载、替换并重启新版，实际观察到新缓存的新进程窗口，设置保留、最近检查时间更新、Job无残留。见 `dist/outer-gui-upgrade-check.json`；未进行GUI手动按钮点击或游戏实测。
