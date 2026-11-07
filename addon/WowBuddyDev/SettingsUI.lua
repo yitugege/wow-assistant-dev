@@ -102,6 +102,19 @@ function WowBuddyDev.BringToFront(frameToRaise)
   frameToRaise:SetFrameLevel(topFrameLevel)
 end
 local pendingLoadout = nil
+-- 恢复导入前清理；独立版只识别自身导入名前缀，不清理旧插件配置。
+local function purgeImportedTalentConfigs()
+  local _, _, specID = WowBuddyDev.GetPlayerClassSpec()
+  if not specID then return end
+  local configIDs = C_ClassTalents.GetConfigIDsBySpecID(specID)
+  if not configIDs then return end
+  for _, configID in ipairs(configIDs) do
+    local ok, info = pcall(C_Traits.GetConfigInfo, configID)
+    if ok and info and type(info.name) == "string" and info.name:sub(1, 12) == "WowBuddyDev_" then
+      pcall(C_ClassTalents.DeleteConfig, configID)
+    end
+  end
+end
 -- 功能：把一段天赋导入字符串写进当前专精的活动配置，并暂存起来等玩家点【应用改动】提交。
 -- 入参：importString 天赋字符串；loadoutName 预设名，用来拼配置名「WowBuddyDev_预设名」。
 -- 出参：true 导入成功（已暂存）；false 表示战斗锁定、当前不可编辑天赋、天赋框架加载失败、字符串无效 / 版本不符 / 专精不符 / 天赋树哈希过期，或导入本身报错，具体原因都已 print。
@@ -123,6 +136,7 @@ local function importTalentLoadout(importString, loadoutName)
       return false
     end
   end
+  purgeImportedTalentConfigs()
   local importName = "WowBuddyDev_" .. WowBuddyDev.L(loadoutName)
   local isImportOk, importError = pcall(function()
     local importMixin = ClassTalentImportExportMixin
