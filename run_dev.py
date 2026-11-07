@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT/'desktop'))
 from wowbuddy.dev_startup import record as startup_record
 
 
-def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False):
+def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False, staged=False):
     if selftest and (auto_start or watch):
         raise ValueError('自检不能同时自动开始监控')
     if dump_ui is not None and (selftest or auto_start or watch):
@@ -496,30 +496,49 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
     seed_library(ROOT/'assets', data_dir)
     startup_record('独立循环库种子快照就绪')
     settings = open_ini_settings(str(data_dir/'settings.ini'))
+    def construct_window(assets):
+        window = DevWindow(assets, settings,
+            window_backend=windows, capture=capture, key_backend=keys,
+            application_dir=data_dir, environment={'WOWBUDDY_HOME':str(data_dir),'WOWBUDDY_NO_GAME_SCAN':''},
+            network_enabled=False, automatic=watch, tray_enabled=not selftest and dump_ui is None,
+            startup_record=startup_record,startup_log_path=log_path())
+        startup_record('独立主窗口构造完成')
+        window.setWindowTitle('WowBuddyDev — 独立开发版')
+        window._configure_automatic_client_update(client_online and not selftest and dump_ui is None,no_update)
+        window._configure_addon_refresh(addon_online and not selftest and dump_ui is None)
+        window.ui.update_status.setText('插件更新：在插件页点击“GitHub下载更新”；客户端请下载配套Release。')
+        if not selftest and dump_ui is None:window._restore_update_notice()
+        if hub_online and not selftest and dump_ui is None:
+            from wowbuddy.qt_network import QtHubClient
+            from wowbuddy.dev_hub_online import BackupHubFiles
+            window.hub.files=BackupHubFiles()
+            window.hub_client=QtHubClient(window.hub,window)
+            window.ui.hub_online_button.setVisible(True)
+            window.ui.hub_online_button.setToolTip('从自有GitHub仓库刷新；替换前快照备份在 hub/backups 中。')
+            window.ui.hub_online_button.clicked.connect(window._refresh_online_library)
+            window._refresh_online_library()
+            window.hub_timer.start()
+        return window
+
+    if staged and not selftest and dump_ui is None:
+        from wowbuddy.dev_staged_startup import create_staged_startup
+        startup=create_staged_startup(app,ROOT/'assets',windows,construct_window,startup_record,auto_start=auto_start)
+        try:
+            startup.start()
+            return app.exec()
+        finally:
+            startup.close()
+            if startup.stages.main_window is not None:
+                startup.stages.main_window.shutdown()
+                startup.stages.main_window.close()
+            else:
+                startup.splash.close()
+                startup.splash.deleteLater()
+
     startup_record('准备加载契约和规则资源')
     assets=Assets.load(ROOT/'assets')
     startup_record('契约和规则资源加载完成，准备构造主窗口')
-    window = DevWindow(assets, settings,
-        window_backend=windows, capture=capture, key_backend=keys,
-        application_dir=data_dir, environment={'WOWBUDDY_HOME':str(data_dir),'WOWBUDDY_NO_GAME_SCAN':''},
-        network_enabled=False, automatic=watch, tray_enabled=not selftest and dump_ui is None,
-        startup_record=startup_record,startup_log_path=log_path())
-    startup_record('独立主窗口构造完成')
-    window.setWindowTitle('WowBuddyDev — 独立开发版')
-    window._configure_automatic_client_update(client_online and not selftest and dump_ui is None,no_update)
-    window._configure_addon_refresh(addon_online and not selftest and dump_ui is None)
-    window.ui.update_status.setText('插件更新：在插件页点击“GitHub下载更新”；客户端请下载配套Release。')
-    if not selftest and dump_ui is None:window._restore_update_notice()
-    if hub_online and not selftest and dump_ui is None:
-        from wowbuddy.qt_network import QtHubClient
-        from wowbuddy.dev_hub_online import BackupHubFiles
-        window.hub.files=BackupHubFiles()
-        window.hub_client=QtHubClient(window.hub,window)
-        window.ui.hub_online_button.setVisible(True)
-        window.ui.hub_online_button.setToolTip('从自有GitHub仓库刷新；替换前快照备份在 hub/backups 中。')
-        window.ui.hub_online_button.clicked.connect(window._refresh_online_library)
-        window._refresh_online_library()
-        window.hub_timer.start()
+    window=construct_window(assets)
     window.show()
     startup_record('独立主窗口已显示')
     if dump_ui is not None:
@@ -640,7 +659,7 @@ def main():
         parser.error('专精、天赋及方案诊断参数需要 --dump-ui')
     if (args.auto or args.watch) and (args.desktop_selftest or args.selftest_backends):
         parser.error('--auto / --watch 不能与自检参数同时使用')
-    if not (args.desktop_selftest or args.selftest_backends): return launch(args.data_dir,auto_start=args.auto,watch=not args.no_watch,no_update=args.no_update)
+    if not (args.desktop_selftest or args.selftest_backends): return launch(args.data_dir,auto_start=args.auto,watch=not args.no_watch,no_update=args.no_update,staged=True)
     with TemporaryDirectory(prefix='wowbuddy-dev-selftest-') as temporary:
         report=launch(temporary,selftest=True,real_backends=args.selftest_backends)
     report['temporary_removed']=not Path(temporary).exists()
