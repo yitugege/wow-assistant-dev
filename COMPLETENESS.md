@@ -4,6 +4,8 @@
 
 ## 当前交付与源码身份
 
+最新本机安装已升级到7b0eaa1对应的技能名称兼容修复包，含圣印回显修复；85文件一致、旧85文件备份一致、72个WTF文件保持。安装目录64条TOC及登录/进世界延时初始化离线检查通过，尚未原生游戏施法。详见INSTALLED-SPELL-COMPAT-VALIDATION.md；下述f1b6d86安装描述均为前版历史记录。
+
 最新本地构建7b0eaa1已包含技能名称查询兼容、圣印事件及重建索引修复、两个诊断模块和此前客户端修复，内嵌插件85文件与源码逐字节一致，见BUILD-CURRENT-VALIDATION.md。完整顶层回归356项中355项通过、1项抓屏检查失败；改进测试窗口等待后仍受1082像素色条超过1032像素可用屏幕高度限制。不能称全量回归通过，公开0.2.8附件未覆盖。
 
 目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。最新随机插件包为dist/spell-name-compat/WowBuddyDev-addon.zip，已安装游戏插件仍为f1b6d86，未安装上述两项修复。历史04cd6be EXE不含两个诊断入口及上述修复；旧9fa2008 EXE不含DirectCast子模块；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
@@ -11,7 +13,7 @@
 |对象|当前状态|证据|
 |---|---|---|
 |公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
-|本机游戏插件|f1b6d86源码包已从0.2.5-dev升级到0.2.8-dev，保留WowBuddyDev目录；原生游戏尚未验收|INSTALLED-HOOK-PROBE-VALIDATION.md，85文件校验、70个WTF文件保持不变|
+|本机游戏插件|7b0eaa1技能名称兼容及圣印回显修复包，版本0.2.8-dev，保留WowBuddyDev目录；原生游戏尚未验收|INSTALLED-SPELL-COMPAT-VALIDATION.md，85文件校验、旧85文件备份、72个WTF文件保持不变|
 |最新本地EXE|源码7b0eaa1，版本字段仍为0.2.8；内嵌85文件插件，未覆盖公开附件|dist/local-7b0eaa1/WowBuddyDev-Outer.exe；SHA256 62a2186c82f8486b1c77705c1532f94bb67cfa4b79e36a0d017e84f419dff072|
 |最近源码对照|原路径、目录创建、文件写入、字符搜索机器码对照；目录创建发现并修复四个场景差异|OUTER-MKDIR-NATIVE-PARITY.md、OUTER-MODULE-PATH-NATIVE-PARITY.md、OUTER-WRITE-NATIVE-PARITY.md|
 

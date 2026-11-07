@@ -20,4 +20,6 @@ ForeverCompat仅在旧GetSpellInfo缺失时创建兼容函数，但原函数用`
 
 ## 交付
 
+后续交付状态：修复已包含在本地7b0eaa1 EXE，且现已安装到实际_forever_客户端，85文件及旧包备份、72个WTF文件不变核对通过；见INSTALLED-SPELL-COMPAT-VALIDATION.md。公开附件未更新，真实游戏施法未验收。下段为构建时历史状态。
+
 本地随机包`dist/spell-name-compat/WowBuddyDev-addon.zip`，85文件，目录`w8dc69bde19b5`，SHA256 `6621922b4e04337b1408ee07cdc397d87e23b009365809ef4fd143baeedbaf90`；同时包含此前圣印回显修复。尚未安装、更新EXE或发布GitHub附件。源码审计现为24个原文件逐字节相同、41个仅名称/换行不同、12个有差异、1个原同名文件缺失但已拆模块。

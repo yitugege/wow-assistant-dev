@@ -2,6 +2,8 @@
 
 ## 7b0eaa1 构建与当前回归限制
 
+后续已将匹配修复的随机插件包安装到实际_forever_客户端，游戏当时未运行；85文件及旧版备份、72个WTF文件不变核对通过。原生游戏施法尚未验收，详见INSTALLED-SPELL-COMPAT-VALIDATION.md。下文“未安装”是构建时历史状态。
+
 后续实际冻结插件安装验证扩展至十场景通过，包含目录版随机命名包更新、单文件安装失败结果、真实文件锁触发提交失败后的旧目录恢复及解锁重试；未重新构建产品。见FROZEN-ADDON-INSTALL.md。
 
 已重新构建目录版及单文件，包含 ForeverCompat 技能名称查询修复、PanelV2 圣印事件与重建索引修复、DirectCastProbe 和 HookOrderProbe。内嵌插件 85 个文件与源码及目录版 `_internal/addon/WowBuddyDev` 逐字节一致，报告为 `dist/addon-embedded-7b0eaa1.json`。本节之后的“最新”均为历史记录，以本节为准。
