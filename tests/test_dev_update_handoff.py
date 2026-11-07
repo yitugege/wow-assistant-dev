@@ -39,6 +39,20 @@ class HandoffTests(unittest.TestCase):
         self.assertEqual(run_handoff(self.job,wait=wait,launch=launch),1)
         self.assertEqual((self.current/'WowBuddyDev.exe').read_bytes(),b'MZ old')
 
+    def test_cancel_while_parent_is_exiting_prevents_swap(self):
+        def wait(pid,exe,ready):
+            ready();write_json(self.job.with_suffix('.cancel.json'),{'reason':'timeout'})
+        def launch(*args):raise AssertionError('must not launch')
+        self.assertEqual(run_handoff(self.job,wait=wait,launch=launch),1)
+        self.assertEqual((self.current/'WowBuddyDev.exe').read_bytes(),b'MZ old')
+
+    def test_no_restart_flag_replaces_without_launch(self):
+        job=json.loads(self.job.read_text('utf8'));job['restart']=False;write_json(self.job,job)
+        def launch(*args):raise AssertionError('must not launch')
+        self.assertEqual(run_handoff(self.job,wait=lambda *args:None,launch=launch),0)
+        report=json.loads(self.job.with_suffix('.result.json').read_text('utf8'))
+        self.assertTrue(report['replaced']);self.assertFalse(report['restarted'])
+
     def test_restart_failure_reports_replacement_separately(self):
         def launch(*args):raise OSError('launch failed')
         self.assertEqual(run_handoff(self.job,wait=lambda pid,exe,ready:ready(),launch=launch),1)

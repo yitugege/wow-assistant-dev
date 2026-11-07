@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 from .dev_addon_install import _plain_path
 from .dev_client_update import EXE,digest,validate_staged,replace_stopped_client
 from .update_handoff import restart_arguments
@@ -40,7 +41,7 @@ def launch_program(executable,arguments):
         creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),close_fds=True)
     return process.pid
 
-def prepare_handoff(staged,current,arguments,*,parent_pid=None):
+def prepare_handoff(staged,current,arguments,*,parent_pid=None,restart=True):
     current=Path(current).absolute();staged=Path(staged).absolute()
     for path in (current,staged):_plain_path(path)
     if staged.is_relative_to(current) or current.is_relative_to(staged) or staged.drive.lower()!=current.drive.lower():
@@ -57,10 +58,32 @@ def prepare_handoff(staged,current,arguments,*,parent_pid=None):
     write_json(job,{'format':1,'product':'wowbuddy-update-job','current':str(current),'staged':str(staged),
                    'parent_pid':parent_pid if parent_pid is not None else os.getpid(),
                    'original_sha256':digest(current/EXE),'manifest_sha256':digest(manifest_path),
-                   'arguments':list(restart_arguments(['WowBuddyDev',*arguments]))})
+                   'arguments':list(restart_arguments(['WowBuddyDev',*arguments])),'restart':restart})
     process=subprocess.Popen([str(helper/EXE),'--apply-client-update',str(job)],cwd=helper,
         creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),close_fds=True)
     return {'job':str(job),'pid':process.pid,'process':process}
+
+def cancel_handoff(handoff,reason):
+    try:write_json(Path(handoff['job']).with_suffix('.cancel.json'),{'reason':reason})
+    except OSError:
+        # 仅停止本次创建且仍等待父进程的交接子进程，避免无法落盘时继续安装。
+        if handoff['process'].poll() is None:
+            handoff['process'].terminate()
+            handoff['process'].wait(timeout=10)
+        raise
+
+def wait_until_ready(handoff,timeout=30):
+    job=Path(handoff['job']);deadline=time.monotonic()+timeout
+    while True:
+        if handoff['process'].poll() is not None:
+            result=job.with_suffix('.result.json')
+            detail=json.loads(result.read_text('utf8')).get('error','') if result.is_file() else ''
+            raise RuntimeError('更新交接提前退出：'+detail)
+        if job.with_suffix('.ready.json').is_file():return
+        if time.monotonic()>=deadline:
+            cancel_handoff(handoff,'等待交接就绪超时')
+            raise TimeoutError('等待交接就绪超时，已取消替换')
+        time.sleep(.05)
 
 def run_handoff(job_path,*,wait=wait_for_parent,launch=launch_program):
     job_path=Path(job_path).absolute();_plain_path(job_path)
@@ -75,11 +98,15 @@ def run_handoff(job_path,*,wait=wait_for_parent,launch=launch_program):
         if digest(current/EXE)!=job['original_sha256']:raise ValueError('待更新程序已改变')
         if digest(staged.parent/'manifest.json')!=job['manifest_sha256']:raise ValueError('更新清单已改变')
         validate_staged(staged,json.loads((staged.parent/'manifest.json').read_text('utf8')))
+        if job_path.with_suffix('.cancel.json').exists():raise RuntimeError('更新交接已取消，未替换程序')
         wait(job['parent_pid'],str(current/EXE),lambda:write_json(job_path.with_suffix('.ready.json'),{'ready':True}))
+        if job_path.with_suffix('.cancel.json').exists():raise RuntimeError('更新交接已取消，未替换程序')
         if digest(current/EXE)!=job['original_sha256']:raise ValueError('等待期间目标程序已改变')
         result.update(replace_stopped_client(staged,current));result['replaced']=True
-        result['restart_pid']=launch(current/EXE,job['arguments'])
-        result.update(ok=True,restarted=True)
+        if job.get('restart',True):
+            result['restart_pid']=launch(current/EXE,job['arguments'])
+            result['restarted']=True
+        result['ok']=True
     except Exception as error:result['error']=str(error)
     write_json(job_path.with_suffix('.result.json'),result)
     return 0 if result['ok'] else 1

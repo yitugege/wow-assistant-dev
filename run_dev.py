@@ -135,6 +135,8 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 return
             if self._handoff['process'].poll() is not None or time.monotonic()>self._handoff_deadline:
                 self._handoff_timer.stop()
+                from wowbuddy.dev_update_handoff import cancel_handoff
+                cancel_handoff(self._handoff,'界面等待交接失败')
                 detail='交接进程未就绪，当前助手保持运行；未替换程序。'
                 result=job.with_suffix('.result.json')
                 if result.is_file():detail+=' '+json.loads(result.read_text('utf8')).get('error','')
@@ -427,17 +429,22 @@ def main():
     parser.add_argument('--hub-fetch',action='store_true',help='与 --hub-selftest 合用，从自有GitHub拉取循环库')
     parser.add_argument('--engine-selftest',action='store_true',help='运行原引擎离线自检并记录失败/跳过计数')
     parser.add_argument('--check-update',action='store_true',help='检查自有GitHub客户端版本；有更新返回10')
+    parser.add_argument('--update-now',action='store_true',help='检查、下载并交接安装客户端更新')
     parser.add_argument('--spec',action='append',default=[],help='界面诊断的专精ID，可重复指定')
     parser.add_argument('--talent',default=None,help='界面诊断的天赋字符串')
     parser.add_argument('--rotations',default='',help='界面诊断的循环库JSON路径')
     parser.add_argument('--rotation',default='',help='界面诊断的专精ID|子分类|方案名')
     parser.add_argument('--toggle-showall',action='store_true',help='同时导出显示全部切换诊断')
     args=parser.parse_args()
-    if args.check_update:
+    if args.check_update or args.update_now:
         if (args.selftest or args.selftest_backends or args.install_addon or args.install_addon_dir is not None
                 or args.dump_ui or args.hub_selftest or args.hub_fetch or args.engine_selftest or args.auto or args.watch
-                or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall):
-            parser.error('--check-update 仅与 --data-dir 配合使用')
+                or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall
+                or (args.check_update and args.update_now)):
+            parser.error('--check-update / --update-now 各自仅与 --data-dir 配合使用')
+        if args.update_now:
+            from wowbuddy.dev_cli_update import run_update_now
+            return run_update_now(args.data_dir,APP_ROOT,sys.argv[1:],frozen=FROZEN)
         from wowbuddy.github_client import run_check_command
         return run_check_command(args.data_dir)
     if args.hub_fetch and not args.hub_selftest:
