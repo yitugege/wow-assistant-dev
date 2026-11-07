@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT/'desktop'))
 from wowbuddy.dev_startup import record as startup_record
 
 
-def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False, staged=False, native_dump=None):
+def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False, staged=False, native_dump=None, native_identity_enabled=False):
     if selftest and (auto_start or watch):
         raise ValueError('自检不能同时自动开始监控')
     if dump_ui is not None and (selftest or auto_start or watch):
@@ -501,11 +501,13 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
     startup_record('独立循环库种子快照就绪')
     settings = open_ini_settings(str(data_dir/'settings.ini'))
     def construct_window(assets):
+        from wowbuddy.window_identity import NativeWindowIdentity
         window = DevWindow(assets, settings,
             window_backend=windows, capture=capture, key_backend=keys,
             application_dir=data_dir, environment={'WOWBUDDY_HOME':str(data_dir),'WOWBUDDY_NO_GAME_SCAN':''},
             network_enabled=False, automatic=watch, tray_enabled=not selftest and dump_ui is None,
-            startup_record=startup_record,startup_log_path=log_path())
+            startup_record=startup_record,startup_log_path=log_path(),
+            native_window_identity=NativeWindowIdentity(native_identity_enabled))
         startup_record('独立主窗口构造完成')
         from wowbuddy.dev_version import VERSION
         from wowbuddy.github_addon import REPOSITORY
@@ -623,7 +625,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         window.shutdown()
 
 
-def main(arguments=None):
+def main(arguments=None, *, native_arguments=None):
     arguments=list(sys.argv if arguments is None else arguments)
     if len(arguments)==3 and arguments[1]=='--apply-client-update':
         if not FROZEN:return 2
@@ -653,6 +655,7 @@ def main(arguments=None):
     parser.add_argument('--check-update',action='store_true',help='检查自有GitHub客户端版本；有更新返回10')
     parser.add_argument('--update-now',action='store_true',help='检查、下载并交接安装客户端更新')
     parser.add_argument('--no-update',action='store_true',help='不安排本次启动的EXE自动检查；不关闭循环库联网')
+    parser.add_argument('--no-stealth',action='store_true',help='保留可读的系统窗口标题，不设置原版工具窗样式')
     parser.add_argument('--spec',action='append',default=[],help='界面诊断的专精ID，可重复指定')
     parser.add_argument('--talent',default=None,help='界面诊断的天赋字符串')
     parser.add_argument('--rotations',default='',help='界面诊断的循环库JSON路径')
@@ -662,7 +665,7 @@ def main(arguments=None):
     # 独立构建诊断和帮助仍使用下面的严格解析器。
     from wowbuddy.native_cli import parse_native_cli
     from wowbuddy.dev_native_commands import command_data_dir
-    native=parse_native_cli(arguments)
+    native=parse_native_cli(arguments,native_arguments=native_arguments)
     strict_commands={'--desktop-selftest','--selftest-backends','--engine-selftest','--desktop-dump-ui','--desktop-hub-selftest','--help','-h'}
     if native.command=='gui' and not strict_commands.intersection(arguments[1:]):
         if '--watch' in arguments and '--no-watch' in arguments:
@@ -676,7 +679,8 @@ def main(arguments=None):
             from wowbuddy.cli_dump_ui import DumpUiOptions
             extra['native_dump']=(DumpUiOptions.parse(arguments),command_data_dir(arguments,APP_ROOT))
         return launch(data_dir,auto_start=native.auto_start,watch='--no-watch' not in arguments,
-                      no_update=native.suppress_auto_update,staged=True,**extra)
+                      no_update=native.suppress_auto_update,staged=True,
+                      native_identity_enabled=native.native_title_enabled,**extra)
     args=parser.parse_args(arguments[1:])
     if args.hub_fetch and not (args.hub_selftest or args.desktop_hub_selftest):
         parser.error('--hub-fetch 需要 --hub-selftest')
@@ -720,4 +724,6 @@ def main(arguments=None):
 
 if __name__=='__main__':
     from wowbuddy.dev_startup import run_logged
-    raise SystemExit(run_logged(main,application=APP_ROOT,arguments=sys.argv,qt_runtime=True))
+    raw_arguments=tuple(sys.argv)
+    raise SystemExit(run_logged(lambda arguments: main(arguments,native_arguments=raw_arguments),
+                                application=APP_ROOT,arguments=raw_arguments,qt_runtime=True))
