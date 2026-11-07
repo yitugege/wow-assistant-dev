@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 import traceback
-from .startup_log import open_local_startup_log,QT_READY,STYLE_READY
+from .startup_log import open_local_startup_log,collect_windows_environment,QT_READY,STYLE_READY
 from .dev_native_commands import command_data_dir
 from .dev_version import VERSION
 from .dev_paths import default_data_dir
@@ -15,6 +15,17 @@ def record(message):
 
 
 def log_path():return _active.path if _active is not None else ''
+
+
+def startup_environment(executable, application):
+    """采集原环境字段；日志目录重定向与真实进程环境分开处理。"""
+    fields=[('进程ID',str(os.getpid())),('程序路径',str(executable))]
+    if os.name=='nt':
+        try:fields=collect_windows_environment(executable,os.environ)
+        except (OSError,AttributeError,ValueError) as error:
+            fields.append(('Win32环境读取失败',str(error)))
+    fields.append(('独立程序目录',str(application)))
+    return fields
 
 
 def qt_ready():
@@ -51,10 +62,11 @@ def run_logged(main,*,application,arguments,qt_runtime=False):
         try:
             directory=command_data_dir(arguments,directory)
             directory.mkdir(parents=True,exist_ok=True)
+            executable=str(Path(application)/Path(arguments[0]).name)
             # 仅已验证自有外层可改变默认位置；显式data-dir仍优先。
-            log=open_local_startup_log(VERSION,executable=str(Path(application)/Path(arguments[0]).name),
+            log=open_local_startup_log(VERSION,executable=executable,
                 environment={'WOWBUDDY_HOME':str(directory)},
-                environment_fields=(('进程ID',str(os.getpid())),('独立程序目录',str(application))))
+                environment_fields=lambda:startup_environment(executable,application))
         except (OSError,ValueError):pass
         _active=log
         if log is not None and os.name=='nt':

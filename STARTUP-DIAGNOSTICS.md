@@ -1,4 +1,14 @@
-> 发布状态：v0.2.3包含此前启动诊断改动；后续Qt参数初始化顺序调整尚未发布，见本文末尾。历史段落保留当时状态。
+> 发布状态：当前公开v0.2.6包含此前Qt参数初始化顺序等改动；下节Win32环境字段接入是发布后的源码修复，尚未打包。历史段落保留当时状态。
+
+## Win32启动环境字段接入
+
+重新核对原反编译`0x14001ba50.c:332–572`及留存运行日志`D:/reverse-analysis/wow-assistant/reconstruction/evidence/crash-cli-differential/20261106T171025Z/original-throw-0.log`：原入口在构造Qt前记录进程ID、程序路径、工作目录、WOWBUDDY_HOME、Windows版本、管理员/远程会话、内存、CPU、位数、主屏、区域和界面语言ID。
+
+已有startup_log.collect_windows_environment采集上述字段，但独立run_logged入口用仅含进程ID和独立目录的自定义列表覆盖了它，导致实际启动缺失其余环境。现接回真实Win32采集，保留独立程序目录附加字段；采集使用真实os.environ，日志路径选择仍使用独立data-dir，避免把路径适配值伪装成进程环境变量。采集失败记录具体错误及基本进程信息，继续主命令和正常关闭日志。
+
+验证：新增真实Win32字段顺序、当前进程/目录值、环境变量与日志目录分离测试，修复前因字段缺失失败；修复后8项启动日志测试通过，日志`.local/startup-environment-after.log`。另运行分阶段启动测试及真实源码入口`run_dev.py --desktop-selftest --data-dir D:/wow-assistant-dev/.local/startup-environment-check`，界面自检通过、正常退出；实际日志包含全部12个原环境字段，Windows 10.0 build 26200、28逻辑核心、zh-CN、0x0804，并在Qt记录前出现。环境数值取自本次运行，不应与历史原日志中的内存和屏幕数值强行一致。
+
+尚未验证本改动的冻结发布包或极端原生故障路径；独立目录、程序版本和源码入口程序路径仍按实际独立程序记录。本节补足常规启动环境采集，不代表所有启动与异常行为已完全还原。
 
 # 独立入口启动取证
 

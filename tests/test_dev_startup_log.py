@@ -1,4 +1,4 @@
-import sys,tempfile,unittest
+import os,sys,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
@@ -7,6 +7,36 @@ from wowbuddy.dev_startup import run_logged,record
 from wowbuddy.startup_log import ROTATE_BYTES
 
 class StartupLogTests(unittest.TestCase):
+    @unittest.skipUnless(os.name=='nt','Win32采集失败后备路径')
+    def test_environment_failure_keeps_log_and_command_result(self):
+        with tempfile.TemporaryDirectory() as tmp, patch('wowbuddy.dev_startup.collect_windows_environment',side_effect=OSError('fixture unavailable')):
+            root=Path(tmp)
+            self.assertEqual(run_logged(lambda:17,application=root,arguments=['app','--data-dir',tmp]),17)
+            text=(root/'startup.log').read_text('utf8')
+            self.assertIn('Win32环境读取失败 = fixture unavailable',text)
+            self.assertIn('进程ID = '+str(os.getpid()),text)
+            self.assertIn('正常退出，返回码 17',text)
+            (root/'startup.log').rename(root/'closed.log')
+
+    @unittest.skipUnless(os.name=='nt','读取真实Win32环境')
+    def test_windows_environment_precedes_command_and_preserves_data_directory(self):
+        keys=('进程ID','程序路径','工作目录','WOWBUDDY_HOME','Windows 版本','管理员权限',
+              '内存','CPU','位数','主屏','区域设置','界面语言ID')
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ,{'WOWBUDDY_HOME':'external-fixture-home'}):
+            root=Path(tmp)
+            def main():record('业务入口哨兵');return 0
+            self.assertEqual(run_logged(main,application=root,arguments=['app','--data-dir',tmp]),0)
+            text=(root/'startup.log').read_text('utf8')
+            positions=[text.index('环境 '+key+' = ') for key in keys]
+            self.assertEqual(positions,sorted(positions))
+            self.assertLess(positions[-1],text.index('业务入口哨兵'))
+            self.assertIn('进程ID = '+str(os.getpid()),text)
+            self.assertIn('工作目录 = '+os.getcwd(),text)
+            self.assertIn('WOWBUDDY_HOME = external-fixture-home',text)
+            self.assertRegex(text,r'Windows 版本 = \d+\.\d+ build \d+')
+            self.assertRegex(text,r'CPU = 逻辑核心 [1-9]\d* / 类型 ')
+            self.assertIn('独立程序目录 = '+str(root),text)
+
     def test_native_handlers_restore_python_hook(self):
         with tempfile.TemporaryDirectory() as tmp:
             original=sys.excepthook
