@@ -5,6 +5,7 @@ import traceback
 from .startup_log import open_local_startup_log,QT_READY,STYLE_READY
 from .dev_native_commands import command_data_dir
 from .dev_version import VERSION
+from .dev_paths import default_data_dir
 
 _active=None
 
@@ -45,12 +46,12 @@ def prepare_crash_runtime(arguments):
 def run_logged(main,*,application,arguments,qt_runtime=False):
     global _active
     previous=_active;log=None;diagnostics=None
-    directory=Path(application)/'.local'
+    directory=default_data_dir(application)
     try:
         try:
             directory=command_data_dir(arguments,directory)
             directory.mkdir(parents=True,exist_ok=True)
-            # 不继承旧产品HOME或LOCALAPPDATA位置，避免混写原程序日志。
+            # 仅已验证自有外层可改变默认位置；显式data-dir仍优先。
             log=open_local_startup_log(VERSION,executable=str(Path(application)/Path(arguments[0]).name),
                 environment={'WOWBUDDY_HOME':str(directory)},
                 environment_fields=(('进程ID',str(os.getpid())),('独立程序目录',str(application))))

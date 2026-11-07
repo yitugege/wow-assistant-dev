@@ -12,6 +12,7 @@ APP_ROOT = Path(sys.executable).resolve().parent if FROZEN else ROOT
 PACKAGE_DIR = APP_ROOT/'packages' if FROZEN else ROOT/'dist'
 sys.path.insert(0, str(ROOT/'desktop'))
 from wowbuddy.dev_startup import record as startup_record
+from wowbuddy.dev_paths import default_data_dir
 
 
 def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False, staged=False, native_dump=None, native_identity_enabled=False):
@@ -639,7 +640,7 @@ def main(arguments=None, *, native_arguments=None):
     parser.add_argument('--desktop-selftest',action='store_true',help='独立离屏GUI构建自检')
     parser.add_argument('--selftest-backends', action='store_true',
                         help='验证真实Win32后端构造及GUI关闭，不开始监控或发键')
-    parser.add_argument('--data-dir',type=Path,default=APP_ROOT/'.local')
+    parser.add_argument('--data-dir',type=Path,default=default_data_dir(APP_ROOT,frozen=FROZEN))
     parser.add_argument('--auto',action='store_true',help='界面初始化后尝试一次开始监控')
     watch_options=parser.add_mutually_exclusive_group()
     watch_options.add_argument('--watch',action='store_true',help='显式启用默认的5秒游戏窗口自动监视')
@@ -671,7 +672,7 @@ def main(arguments=None, *, native_arguments=None):
         if '--watch' in arguments and '--no-watch' in arguments:
             parser.error('--watch 与 --no-watch 不能同时使用')
         try:
-            data_dir=command_data_dir(arguments,APP_ROOT/'.local')
+            data_dir=command_data_dir(arguments,default_data_dir(APP_ROOT,frozen=FROZEN))
         except ValueError as error:
             parser.error(str(error))
         extra={}

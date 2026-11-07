@@ -1,6 +1,7 @@
 """原早期命令分支的执行桥；先选命令，再处理独立data-dir扩展。"""
 from pathlib import Path
 from .native_cli import parse_native_cli
+from .dev_paths import default_data_dir
 
 
 def command_data_dir(arguments,default):
@@ -17,7 +18,7 @@ def dispatch_native_command(arguments,*,assets,application,packages,frozen):
     options=parse_native_cli(arguments)
     if options.command not in ('selftest','install_addon','check_update','update_now','hub_selftest'):
         return None
-    default=application if options.command=='selftest' else Path(application)/'.local'
+    default=application if options.command=='selftest' else default_data_dir(application,frozen=frozen)
     data=command_data_dir(arguments,default)
     data.mkdir(parents=True,exist_ok=True)
     if options.command=='selftest':
