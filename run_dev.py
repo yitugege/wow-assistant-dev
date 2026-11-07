@@ -477,14 +477,15 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 self.ui.addon_status.setText('安装失败：' + str(error))
                 self.logger.append('开发插件安装失败：' + str(error))
 
-    startup_record('准备构造 QApplication')
+    startup_record('复用已初始化的 QApplication' if QApplication.instance() is not None else '准备构造 QApplication')
     app = QApplication.instance() or QApplication(['WowBuddyDev'])
     from wowbuddy.dev_startup import qt_ready,log_path,STYLE_READY
-    qt_ready()
+    if not getattr(app,'_wowbuddy_bootstrap_ready',False):
+        qt_ready()
+        app.setStyleSheet(NATIVE_STYLESHEET)
+        startup_record(STYLE_READY)
     app.setApplicationName('WowBuddyDev')
     app.setOrganizationName('WowBuddyDev')
-    app.setStyleSheet(NATIVE_STYLESHEET)
-    startup_record(STYLE_READY)
     if (selftest and not real_backends) or dump_ui is not None:
         from wowbuddy.desktop import NoSystemBackend
         windows = capture = keys = NoSystemBackend()
@@ -622,13 +623,14 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         window.shutdown()
 
 
-def main():
-    if len(sys.argv)==3 and sys.argv[1]=='--apply-client-update':
+def main(arguments=None):
+    arguments=list(sys.argv if arguments is None else arguments)
+    if len(arguments)==3 and arguments[1]=='--apply-client-update':
         if not FROZEN:return 2
         from wowbuddy.dev_update_handoff import run_handoff
-        return run_handoff(sys.argv[2])
+        return run_handoff(arguments[2])
     from wowbuddy.dev_native_commands import dispatch_native_command
-    native_result=dispatch_native_command(sys.argv,assets=ROOT/'assets',application=APP_ROOT,packages=PACKAGE_DIR,frozen=FROZEN)
+    native_result=dispatch_native_command(arguments,assets=ROOT/'assets',application=APP_ROOT,packages=PACKAGE_DIR,frozen=FROZEN)
     if native_result is not None:return native_result
     parser=argparse.ArgumentParser(description='WowBuddyDev源码开发入口',allow_abbrev=False)
     parser.add_argument('--selftest', action='store_true',help='运行原引擎自检并追加_selftest.txt，不启动GUI')
@@ -660,22 +662,22 @@ def main():
     # 独立构建诊断和帮助仍使用下面的严格解析器。
     from wowbuddy.native_cli import parse_native_cli
     from wowbuddy.dev_native_commands import command_data_dir
-    native=parse_native_cli(sys.argv)
+    native=parse_native_cli(arguments)
     strict_commands={'--desktop-selftest','--selftest-backends','--engine-selftest','--desktop-dump-ui','--desktop-hub-selftest','--help','-h'}
-    if native.command=='gui' and not strict_commands.intersection(sys.argv[1:]):
-        if '--watch' in sys.argv and '--no-watch' in sys.argv:
+    if native.command=='gui' and not strict_commands.intersection(arguments[1:]):
+        if '--watch' in arguments and '--no-watch' in arguments:
             parser.error('--watch 与 --no-watch 不能同时使用')
         try:
-            data_dir=command_data_dir(sys.argv,APP_ROOT/'.local')
+            data_dir=command_data_dir(arguments,APP_ROOT/'.local')
         except ValueError as error:
             parser.error(str(error))
         extra={}
         if native.dump_ui is not None:
             from wowbuddy.cli_dump_ui import DumpUiOptions
-            extra['native_dump']=(DumpUiOptions.parse(sys.argv),command_data_dir(sys.argv,APP_ROOT))
-        return launch(data_dir,auto_start=native.auto_start,watch='--no-watch' not in sys.argv,
+            extra['native_dump']=(DumpUiOptions.parse(arguments),command_data_dir(arguments,APP_ROOT))
+        return launch(data_dir,auto_start=native.auto_start,watch='--no-watch' not in arguments,
                       no_update=native.suppress_auto_update,staged=True,**extra)
-    args=parser.parse_args()
+    args=parser.parse_args(arguments[1:])
     if args.hub_fetch and not (args.hub_selftest or args.desktop_hub_selftest):
         parser.error('--hub-fetch 需要 --hub-selftest')
     if args.install_addon_dir is not None:
@@ -718,4 +720,4 @@ def main():
 
 if __name__=='__main__':
     from wowbuddy.dev_startup import run_logged
-    raise SystemExit(run_logged(main,application=APP_ROOT,arguments=sys.argv))
+    raise SystemExit(run_logged(main,application=APP_ROOT,arguments=sys.argv,qt_runtime=True))

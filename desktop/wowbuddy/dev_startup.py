@@ -23,19 +23,26 @@ def qt_ready():
     record(QT_READY)
 
 
-def prepare_crash_runtime(arguments):
-    """原075960在检查崩溃参数之前已构造QApplication并设置全局样式。"""
+def prepare_qt_runtime(arguments):
+    """原075960先构造Qt；使用Qt实际消费后的参数，不手写Qt选项表。"""
     from PySide6.QtWidgets import QApplication
     from .ui_layout import NATIVE_STYLESHEET
     record('main() 进入，准备构造 QApplication')
-    app=QApplication.instance() or QApplication([arguments[0]])
+    if {'--desktop-selftest','--selftest-backends','--desktop-dump-ui'}.intersection(arguments[1:]):
+        os.environ['QT_QPA_PLATFORM']='offscreen'
+    app=QApplication.instance() or QApplication(list(arguments))
     qt_ready()
     app.setStyleSheet(NATIVE_STYLESHEET)
     record(STYLE_READY)
+    app._wowbuddy_bootstrap_ready=True
     return app
 
 
-def run_logged(main,*,application,arguments):
+def prepare_crash_runtime(arguments):
+    return prepare_qt_runtime(arguments)
+
+
+def run_logged(main,*,application,arguments,qt_runtime=False):
     global _active
     previous=_active;log=None;diagnostics=None
     directory=Path(application)/'.local'
@@ -59,15 +66,20 @@ def run_logged(main,*,application,arguments):
         record('main() 进入，准备分派独立入口')
         try:
             from .native_cli import parse_native_cli
-            command=parse_native_cli(arguments).command
+            # 日志单测等嵌入式调用可保持无Qt；真实可执行入口显式启用。
+            # 目录更新辅助进程是独立扩展，不需要Qt窗口环境。
+            use_qt=qt_runtime and not (len(arguments)==3 and arguments[1]=='--apply-client-update')
+            qt_app=prepare_qt_runtime(arguments) if use_qt else None
+            effective=tuple(qt_app.arguments()) if qt_app is not None else tuple(arguments)
+            command=parse_native_cli(effective,native_arguments=arguments).command
             if command in ('crash_null','crash_throw'):
                 from .crash_diagnostics import trigger_null_write,trigger_cpp_runtime_error
-                crash_app=prepare_crash_runtime(arguments)
+                crash_app=qt_app if qt_app is not None else prepare_crash_runtime(arguments)
                 record('--crash-test：即将制造一次空指针解引用' if command=='crash_null'
                        else '--crash-test=throw：即将抛出未捕获异常')
                 (trigger_null_write if command=='crash_null' else trigger_cpp_runtime_error)()
                 raise RuntimeError('崩溃诊断意外返回')
-            code=main()
+            code=main(effective) if qt_runtime else main()
         except SystemExit as exit_status:
             code=exit_status.code if isinstance(exit_status.code,int) else (0 if exit_status.code is None else 1)
         except Exception:

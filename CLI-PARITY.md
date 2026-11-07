@@ -1,4 +1,4 @@
-> 发布状态：下文截至本次接入的改动已包含在公开v0.2.3；历史段落中的“尚未发布”描述保留当时状态。游戏与完整启动链验收仍未完成。
+> 发布状态：v0.2.3包含此前发布记录中的改动；最新“Qt参数处理顺序”节尚未进入下载包。历史段落保留当时状态，游戏与完整启动链验收仍未完成。
 
 # 独立入口与原命令行为核对
 
@@ -75,3 +75,17 @@
 
 
 16项相关回归通过（含早期命令325种组合、增强诊断和普通GUI参数）；测试宿主Qt隔离调整后4项原循环库专项再次通过。冻结EXE构建及自检通过，另实际运行空缓存、报告目录阻塞、增强入口三种子进程，结果符合预期，报告为dist/frozen-native-hub-check.json。本地产物SHA256为0d157a176a62f47429a0c5471cdcd23b5cca32133485843e62ba7b0da01d69f5。本轮未重跑全部回归；公开v0.2.2尚未包含这些修改。
+
+
+## Qt参数处理顺序
+
+原075960:133先构造QApplication（编译版本参数0x060a03），:185及后续分支读取QCoreApplication::arguments。此前独立入口先对原始sys.argv分派，只在GUI或显式崩溃命令中构造Qt；Qt参数既可能不起作用，也可能把其值误当成业务命令。例如-style --selftest --hub-selftest中，--selftest属于Qt样式参数值，消费后应选择hub-selftest。
+
+真实可执行入口现显式启用Qt启动准备，传入完整参数，使用QApplication.arguments()的实际剩余序列执行崩溃选择和main分派；不手写Qt参数词表。main支持显式参数列表，直接测试调用仍可使用sys.argv。Qt环境与全局样式只记录一次，后续主窗口复用已经创建的应用。
+
+独立扩展边界：--desktop-selftest、--selftest-backends和--desktop-dump-ui默认选择离屏环境；目录更新辅助进程--apply-client-update不初始化Qt。启动日志的独立--data-dir目录仍在Qt初始化前提取，原始sys.argv保留供更新重启等调用使用。原窗口身份开关尚未接入，不把本轮解释为所有启动链和Qt场景完全等价。
+
+新增子进程测试核对-platform offscreen和-style Fusion真实生效、Qt参数值不误触发早期业务分支，以及独立离屏诊断复用Qt且日志不重复。所有子进程均未调用真实游戏监控。
+
+
+接入后138项独立回归及冻结EXE构建自检通过。实际冻结EXE也验证Qt样式值中的--selftest不触发引擎分支，而执行剩余hub-selftest，报告见dist/frozen-qt-arguments-check.json；两种显式崩溃命令与历史原程序异常码和阶段日志对照通过，见dist/crash-parity-check.json。本地EXE摘要为92a9e7695a1e8c53ec2809dee55376ab9f83648675559a7cc321547d7c0ed8f6，尚未更新公开下载包。
