@@ -14,6 +14,7 @@ EVIDENCE=Path('D:/reverse-analysis/wow-assistant/reconstruction/evidence/outer-o
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--initializers', action='store_true', help='纳入已取证的初始化表目标')
+    parser.add_argument('--follow-thunks', action='store_true', help='跟进无展开目标的直线跳板（最多8条指令）')
     args=parser.parse_args()
     path=EVIDENCE/'original-27ac1127fc/probe/outer-memory-analysis.exe'
     payload=path.read_bytes()
@@ -47,11 +48,35 @@ def main():
                     roots.append(pointer-base)
         roots=list(dict.fromkeys(roots))
     pending=list(roots);seen=set();functions=[];unmapped=[]
+    examined_unmapped=set();thunks=[]
     while pending:
         address=pending.pop()
         span=containing(address)
         if span is None:
             unmapped.append(address)
+            if args.follow_thunks and address not in examined_unmapped:
+                examined_unmapped.add(address)
+                # 仅跟进直线前缀后的直接jmp；条件分支、call及间接目标保持未知。
+                prefix=[];target=None;reason='instruction_limit'
+                for instruction in decoder.disasm(pe.get_data(address,64),base+address):
+                    prefix.append({'site':hex(instruction.address-base),'bytes':instruction.bytes.hex(),
+                                   'instruction':instruction.mnemonic+' '+instruction.op_str})
+                    if instruction.mnemonic=='jmp':
+                        operand=instruction.operands[0]
+                        if operand.type==capstone.x86.X86_OP_IMM:
+                            candidate=operand.imm-base
+                            if 0<=candidate<pe.OPTIONAL_HEADER.SizeOfImage:
+                                target=candidate;pending.append(target);reason='direct_jump'
+                            else:reason='outside_image'
+                        else:reason='indirect_jump'
+                        break
+                    if (instruction.group(capstone.CS_GRP_JUMP) or
+                            instruction.mnemonic in ('call','ret','retf','int3','ud2')):
+                        reason='stopped_at_'+instruction.mnemonic
+                        break
+                    if len(prefix)>=8:break
+                thunks.append({'entry':hex(address),'prefix':prefix,'reason':reason,
+                               'target':hex(target) if target is not None else None})
             continue
         start,end=span
         if start in seen:continue
@@ -86,7 +111,12 @@ def main():
                            '有正文不代表已实现或验证；无匹配正文不自动等于缺失业务功能']}
     if initializer_evidence is not None:
         report['initializer_evidence_sha256']=hashlib.sha256(evidence_path.read_bytes()).hexdigest()
-    output=ROOT/('dist/outer-reachable-with-initializers.json' if args.initializers else 'dist/outer-reachable-functions.json')
+    if args.follow_thunks:
+        report['unwindless_prefixes']=thunks
+        report['limitations'].append('无展开目标最多读取8条直线指令，只跟进直接jmp；不是完整叶函数CFG')
+    suffix='-with-initializers' if args.initializers else '-functions'
+    if args.follow_thunks:suffix+='-thunks'
+    output=ROOT/f'dist/outer-reachable{suffix}.json'
     output.write_text(json.dumps(report,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps({'report':str(output),'reachable':len(functions),
                       'outside_export_range':sum(f['outside_previous_export_range'] for f in functions),
