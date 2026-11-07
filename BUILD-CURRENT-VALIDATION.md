@@ -2,6 +2,8 @@
 
 ## 7b0eaa1 构建与当前回归限制
 
+后续实际冻结插件安装验证六场景通过，包含目录版随机命名包更新及单文件安装失败结果；未重新构建产品。见FROZEN-ADDON-INSTALL.md。
+
 已重新构建目录版及单文件，包含 ForeverCompat 技能名称查询修复、PanelV2 圣印事件与重建索引修复、DirectCastProbe 和 HookOrderProbe。内嵌插件 85 个文件与源码及目录版 `_internal/addon/WowBuddyDev` 逐字节一致，报告为 `dist/addon-embedded-7b0eaa1.json`。本节之后的“最新”均为历史记录，以本节为准。
 
 - 目录版 SHA256：`c3b9b17c0c16ffd7973fe4489cf3a46ed24686009d59b2572d864c535aa68c28`。
