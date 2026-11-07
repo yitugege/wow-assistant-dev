@@ -3,9 +3,13 @@ import csv
 import argparse
 import hashlib
 import json
+import struct
+import pefile
 from audit_outer_reachable_functions import ROOT, EVIDENCE
 
 REVIEWED = {
+    0xc940: '有界宽字符串复制；count为-1允许截断并返回80，空间不足返回34，无效参数返回22；三段链式展开归属同一入口',
+    0x10340: '通用元素排序；大分区按中间枢轴分割并用显式栈处理，小分区逐项选择交换；两段链式展开归属此入口，比较回调ABI仍需机器码验证',
     0xe304: '校验CRT描述符后读取底层句柄；-2及无效描述符清doserrno并置errno9，后者另调用参数处理器',
     0xf7e8: '逐流加锁后复查打开/缓冲/提交标志，按flush-all模式刷新并累计成功数或记录失败，再解锁',
     0xf884: '全局锁保护遍历流表，过滤打开状态与待刷新标志，交给逐流锁包装处理',
@@ -57,6 +61,42 @@ TERMINATION_REVIEWED = {
 }
 
 
+def unwind_owner(pe, start):
+    """只依据UNW_FLAG_CHAININFO解析归属，不按地址相邻推断函数。"""
+    entries = {entry.struct.BeginAddress: entry.struct for entry in pe.DIRECTORY_ENTRY_EXCEPTION}
+    current = entries[start]
+    seen = set()
+    chain = []
+    while True:
+        if current.BeginAddress in seen:
+            raise ValueError('链式展开循环')
+        seen.add(current.BeginAddress)
+        header = pe.get_data(current.UnwindData, 4)
+        if len(header) != 4 or header[0] & 7 not in (1, 2):
+            raise ValueError('未支持或截断的展开头')
+        flags, count = header[0] >> 3, header[2]
+        row = {'begin': hex(current.BeginAddress), 'end_exclusive': hex(current.EndAddress),
+               'unwind_rva': hex(current.UnwindData), 'header': header.hex(),
+               'version': header[0] & 7, 'flags': flags}
+        chain.append(row)
+        if not flags & 4:
+            return current.BeginAddress, chain
+        if header[0] & 7 != 1:
+            raise ValueError('当前只解析版本1的链式展开目标')
+        if flags & 3:
+            raise ValueError('CHAININFO与handler标志冲突')
+        slot = current.UnwindData + 4 + ((count + 1) & ~1) * 2
+        raw = pe.get_data(slot, 12)
+        if len(raw) != 12:
+            raise ValueError('链式展开目标截断')
+        begin, end, unwind = struct.unpack('<III', raw)
+        row.update(chain_slot=hex(slot), chain_bytes=raw.hex(), chain_target=hex(begin))
+        target = entries.get(begin)
+        if target is None or (target.EndAddress, target.UnwindData) != (end, unwind):
+            raise ValueError('链式展开目标与.pdata条目不一致')
+        current = target
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--terminators', action='store_true', help='记录静态终止表引出的13项差集')
@@ -69,6 +109,10 @@ def main():
     expanded = json.loads((directory / expanded_name).read_text('utf8'))
     if baseline['sha256'] != expanded['sha256']:
         raise ValueError('调用图映像身份不一致')
+    payload = (EVIDENCE / 'original-27ac1127fc/probe/outer-memory-analysis.exe').read_bytes()
+    if hashlib.sha256(payload).hexdigest() != expanded['sha256']:
+        raise ValueError('展开数据映像与调用图不一致')
+    pe = pefile.PE(data=payload)
     old = {r['begin'] for r in baseline['reachable_functions']}
     with (directory / 'outer-ghidra-remaining/functions.tsv').open(encoding='utf8') as stream:
         names = {int(r['rva'], 16): r['name'] for r in csv.DictReader(stream, delimiter='\t')}
@@ -80,13 +124,21 @@ def main():
         folder = EVIDENCE / 'decompiled-memory/functions' if rva < 0x6000 else directory / 'outer-ghidra-remaining'
         path = folder / f'{int(expanded["image_base"], 16) + rva:#x}.c'
         body = path.read_bytes() if path.exists() else None
+        owner, chain = unwind_owner(pe, rva)
+        owner_path = folder / f'{int(expanded["image_base"], 16) + owner:#x}.c'
+        owner_body = owner_path.read_bytes() if owner_path.exists() else None
         if rva in reviewed and not body:
             raise ValueError(f'已审读正文缺失: {rva:#x}')
         rows.append({'rva': hex(rva), 'provider_name': names.get(rva), 'body': str(path),
                      'body_sha256': hashlib.sha256(body).hexdigest() if body else None,
+                     'unwind_owner_rva': hex(owner), 'unwind_chain': chain,
+                     'owner_body': str(owner_path),
+                     'owner_body_sha256': hashlib.sha256(owner_body).hexdigest() if owner_body else None,
+                     'owner_observation': reviewed.get(owner) if owner != rva else None,
                      'observation': reviewed.get(rva),
                      'warning_lines': [line.strip() for line in body.decode('utf8').splitlines()
                                        if 'WARNING:' in line] if body else []})
+    pe.close()
     report = {'source_sha256': expanded['sha256'], 'rows': rows,
               'limitations': ['仅记录两张调用图差集，不代表全部函数',
                               '无精确正文可能是展开分块，不能直接按缺失功能计数',
@@ -95,7 +147,9 @@ def main():
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf8')
     print(json.dumps({'report': str(output), 'new_ranges': len(rows),
                       'reviewed': sum(r['observation'] is not None for r in rows),
-                      'without_exact_body': sum(r['body_sha256'] is None for r in rows)}))
+                      'reviewed_via_owner': sum(r['owner_observation'] is not None for r in rows),
+                      'without_exact_body': sum(r['body_sha256'] is None for r in rows),
+                      'missing_body_resolved_by_chain': sum(r['body_sha256'] is None and r['owner_body_sha256'] is not None for r in rows)}))
 
 
 if __name__ == '__main__':
