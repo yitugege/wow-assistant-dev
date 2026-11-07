@@ -39,3 +39,32 @@
 - 本轮未安装游戏插件或进行真实游戏验收；0.2.6到0.2.7的CLI及GUI自动更新交接通过，手动更新按钮未测。完整还原仍未完成。
 - 源码94493f4另含受限缓冲区排序（1123组原机器码对照）；按键解析43个既有原版报告绑定、后台投递342场景、临时激活768场景已有专项证据。新增受限排序已打入2de8343本地构建，尚未公开发布；机器码差分仍为源码测试，不是冻结程序逐项验证。
 
+
+
+## 2026-11-07 当前交付段落整理前快照
+
+## 当前交付与源码身份
+
+最新交付进一步更新为内附随机插件修复版：`dist/local-random-embedded/WowBuddyDev-Outer.exe`，SHA256 `78f1561ae8feefb19734b8dd0dba820ffff4508a8a412771632a0bf095bb449a`。修复此前客户端内附ZIP未随机命名的问题；源码仍可读，实际冻结安装10场景与缓存3场景通过。见EMBEDDED-RANDOM-ADDON.md。以下local-directcast-context为前一构建；本机游戏安装与公开附件未变。
+
+最新本地EXE已更新为诊断上下文版：`dist/local-directcast-context/WowBuddyDev-Outer.exe`，SHA256 `474314f38dd1f16d284a09900add37509eadfc4b8c7f2fd978ab231d2c3a537e`。内嵌85个插件文件与当前源码一致；目录启动/系统后端自检和单文件三个缓存场景通过，156项核心测试通过。见BUILD-DIRECTCAST-CONTEXT.md。下述local-source-guard与7b0eaa1构建描述为历史基线，公开附件仍未更新。
+
+2026-11-07后续状态更新：本机插件已安装诊断上下文增强包（SHA256 a9cb27a3537f35f0f8ff330670457b15a923047b7dd3db0221e9db5a34069de6），85文件一致、旧85文件完整备份、72个WTF文件未变。实际安装目录加载64条TOC和7个延时初始化检查通过。此前版本实机单发命令已识别spellID=837，但非战斗ADDON_ACTION_FORBIDDEN堆栈定位到CastSpellByID；正常安全宏按键路径仍未通过独立实测。详见INSTALLED-SPELL-COMPAT-VALIDATION.md及evidence/directcast-forbidden-20261107.json。以下7b0eaa1、f1b6d86安装表述属于历史状态；最新本地EXE与公开附件未随此次插件更新。
+
+最近完整顶层回归是b7213a6的372项、371通过1失败，核心153项通过；后续改动仅执行相应专项，不算全量回归。显式3像素readable参数新增18组GDI抓屏和54组带边框/移动窗口验证通过，完整协议行保留；默认4像素仍受屏幕高度限制。见PRINTWINDOW-PITCH-VALIDATION.md。
+
+最新本地构建产物为构建输入检查修复验证版，归档dist/local-source-guard，单文件SHA256为276591c4c0193669bc353267c0556a149d0a810e3da3b7eb5d6336e619cc9624。运行代码与7b0eaa1相同；清单现覆盖210文件（插件85），目录启动/后端及单文件三缓存场景通过，不把前版所有检查算作此次重测。见BUILD-SOURCE-GUARD.md；下述7b0eaa1产物信息为此前完整本地验证基线。
+
+最新本机安装已升级到7b0eaa1对应的技能名称兼容修复包，含圣印回显修复；85文件一致、旧85文件备份一致、72个WTF文件保持。安装目录64条TOC及登录/进世界延时初始化离线检查通过，尚未原生游戏施法。详见INSTALLED-SPELL-COMPAT-VALIDATION.md；下述f1b6d86安装描述均为前版历史记录。
+
+最新本地构建7b0eaa1已包含技能名称查询兼容、圣印事件及重建索引修复、两个诊断模块和此前客户端修复，内嵌插件85文件与源码逐字节一致，见BUILD-CURRENT-VALIDATION.md。完整顶层回归356项中355项通过、1项抓屏检查失败；改进测试窗口等待后仍受1082像素色条超过1032像素可用屏幕高度限制。不能称全量回归通过，公开0.2.8附件未覆盖。
+
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。最新随机插件包为dist/spell-name-compat/WowBuddyDev-addon.zip，已安装游戏插件仍为f1b6d86，未安装上述两项修复。历史04cd6be EXE不含两个诊断入口及上述修复；旧9fa2008 EXE不含DirectCast子模块；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
+
+|对象|当前状态|证据|
+|---|---|---|
+|公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
+|本机游戏插件|诊断上下文增强包，保留技能名称兼容及圣印回显修复、WowBuddyDev目录；已知单发直调被拦截，正常按键仍未验收|INSTALLED-SPELL-COMPAT-VALIDATION.md，85文件校验、旧85文件备份、72个WTF文件保持不变|
+|最新本地EXE|构建输入检查修复验证版，运行代码仍为7b0eaa1；未覆盖公开附件|dist/local-source-guard/WowBuddyDev-Outer.exe；SHA256 276591c4c0193669bc353267c0556a149d0a810e3da3b7eb5d6336e619cc9624|
+|最近源码对照|原路径、目录创建、文件写入、字符搜索机器码对照；目录创建发现并修复四个场景差异|OUTER-MKDIR-NATIVE-PARITY.md、OUTER-MODULE-PATH-NATIVE-PARITY.md、OUTER-WRITE-NATIVE-PARITY.md|
+

@@ -11,8 +11,10 @@ sys.path.insert(0,str(ROOT/'desktop'))
 sys.path.insert(0,str(ROOT/'tests/core'))
 
 
-def check(*, backend='printwindow', move_window=False, decorated=False):
+def check(*, backend='printwindow', move_window=False, decorated=False, readable_pitch=4):
     if backend not in ('printwindow','dxgi'):raise ValueError(backend)
+    if type(readable_pitch) is not int or not 3 <= readable_pitch <= 9:
+        raise ValueError('readable_pitch必须在原生支持的3..9像素范围')
     if os.name!='nt':raise RuntimeError('需要 Windows')
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication,QWidget
@@ -53,11 +55,11 @@ def check(*, backend='printwindow', move_window=False, decorated=False):
             positions=('top_left','center','bottom_right') if move_window else ('top_left',)
             for protocol,position in product(('old','readable'),positions):
                 frame=(render_old(spec,{'master_switch':0x00ff00})[0]
-                       if protocol=='old' else render_readable(spec))
+                       if protocol=='old' else render_readable(spec, pitch=readable_pitch))
                 if protocol=='readable':
                     definition=assets.readable_contract['specs'][str(spec)]
                     last_row=max(definition['classicRows']+[p['row'] for p in definition['presenceFields']])
-                    frame=RGBImage(frame.rows[:2+4*(last_row+1)+8])
+                    frame=RGBImage(frame.rows[:2+readable_pitch*(last_row+1)+8])
                 if decorated:
                     # Windows有标题栏窗口有最小宽度；提供完整客户画布，避免
                     # 将系统自动扩宽后的背景误认为24像素协议图像本身。
@@ -116,6 +118,7 @@ def check(*, backend='printwindow', move_window=False, decorated=False):
                 assert decoded.spec_id==str(spec),(spec,protocol,decoded.spec_id)
                 assert decoded.protocol==protocol,(spec,protocol,decoded.protocol)
                 results.append({'spec':spec,'protocol':protocol,'width':image.width,
+                                'readable_pitch':readable_pitch if protocol=='readable' else None,
                                 'height':image.height,'pixels_exact':True,'decoded':True,'attempts':attempts,
                                 'position':position,'client_origin':origin,
                                 'client_offset':[origin[0]-rect.left,origin[1]-rect.top]})
@@ -133,13 +136,17 @@ if __name__=='__main__':
     parser.add_argument('--backend',choices=('printwindow','dxgi'),default='printwindow')
     parser.add_argument('--move-window',action='store_true',help='在屏幕内三个位置重复真实抓屏')
     parser.add_argument('--decorated',action='store_true',help='使用真实标题栏及边框验证客户区裁剪')
+    parser.add_argument('--readable-pitch',type=int,default=4,choices=range(3,10),
+                        help='显式指定readable合成色块尺寸；不自动缩小或删减协议行')
     args=parser.parse_args()
     try:
-        result=check(backend=args.backend,move_window=args.move_window,decorated=args.decorated)
+        result=check(backend=args.backend,move_window=args.move_window,decorated=args.decorated,
+                     readable_pitch=args.readable_pitch)
     except Exception as error:
         result={'passed':False,'backend':args.backend,'error':str(error),'game_capture_verified':False}
     suffix='movement-check' if args.move_window else 'check'
     if args.decorated:suffix='decorated-'+suffix
+    if args.readable_pitch != 4:suffix+=f'-pitch{args.readable_pitch}'
     output=ROOT/f'dist/win32-{args.backend}-{suffix}.json'
     output.parent.mkdir(exist_ok=True)
     output.write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')

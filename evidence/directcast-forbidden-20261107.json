@@ -1,0 +1,11 @@
+{
+  "scope": "实际单发命令拦截；不代表正常按键宏路径",
+  "event": "ADDON_ACTION_FORBIDDEN",
+  "operation": "UNKNOWN()",
+  "inCombat": false,
+  "stack": "[C]: ?\n[C]: in function 'pcall'\n[Interface/AddOns/WowBuddyDev/f886ed88d33af3bd1.lua]:73: in function 'Cast'\n[Interface/AddOns/WowBuddyDev/f886ed88d33af3bd1.lua]:83: in function '?'\n[Interface/AddOns/Blizzard_ChatFrameBase/Shared/ChatFrameEditBox.lua]:271: in function 'ParseText'\n[Interface/AddOns/Blizzard_ChatFrameBase/Shared/ChatFrameEditBox.lua]:296: in function 'SendText'\n[Interface/AddOns/Blizzard_ChatFrameBase/Shared/ChatFrameEditBox.lua]:426: in function 'SendMessage'\n[Interface/AddOns/Blizzard_ChatFrameBase/Shared/ChatFrameEditBox.lua]:455: in function <...s/Blizzard_ChatFrameBase/Shared/ChatFrameEditBox.lua:451>\n",
+  "installed_lua_sha256": "e9f353b6b9eb0f2e73013cd32d122abe28cb3c2f3c3b2e23ee21a4c306f5231f",
+  "matched_package_member": "w8dc69bde19b5/f886ed88d33af3bd1.lua",
+  "line": 73,
+  "call": "pcall(CastSpellByID, sid, unit)"
+}

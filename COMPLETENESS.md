@@ -4,20 +4,17 @@
 
 ## 当前交付与源码身份
 
-最新本地构建产物为构建输入检查修复验证版，归档dist/local-source-guard，单文件SHA256为276591c4c0193669bc353267c0556a149d0a810e3da3b7eb5d6336e619cc9624。运行代码与7b0eaa1相同；清单现覆盖210文件（插件85），目录启动/后端及单文件三缓存场景通过，不把前版所有检查算作此次重测。见BUILD-SOURCE-GUARD.md；下述7b0eaa1产物信息为此前完整本地验证基线。
-
-最新本机安装已升级到7b0eaa1对应的技能名称兼容修复包，含圣印回显修复；85文件一致、旧85文件备份一致、72个WTF文件保持。安装目录64条TOC及登录/进世界延时初始化离线检查通过，尚未原生游戏施法。详见INSTALLED-SPELL-COMPAT-VALIDATION.md；下述f1b6d86安装描述均为前版历史记录。
-
-最新本地构建7b0eaa1已包含技能名称查询兼容、圣印事件及重建索引修复、两个诊断模块和此前客户端修复，内嵌插件85文件与源码逐字节一致，见BUILD-CURRENT-VALIDATION.md。完整顶层回归356项中355项通过、1项抓屏检查失败；改进测试窗口等待后仍受1082像素色条超过1032像素可用屏幕高度限制。不能称全量回归通过，公开0.2.8附件未覆盖。
-
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。最新随机插件包为dist/spell-name-compat/WowBuddyDev-addon.zip，已安装游戏插件仍为f1b6d86，未安装上述两项修复。历史04cd6be EXE不含两个诊断入口及上述修复；旧9fa2008 EXE不含DirectCast子模块；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
+最新可测试单文件为 `dist/local-random-embedded/WowBuddyDev-Outer.exe`，SHA256 `78f1561ae8feefb19734b8dd0dba820ffff4508a8a412771632a0bf095bb449a`。包含诊断上下文及随机命名内附插件修复；85个插件文件内容核对通过。实际冻结安装10场景、缓存3场景、普通GUI两次启动/退出及设置保留通过，详见EMBEDDED-RANDOM-ADDON.md。此前各构建与安装描述保存在COMPLETENESS-HISTORY.md和对应专项记录，不作为当前版本证明。
 
 |对象|当前状态|证据|
 |---|---|---|
-|公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
-|本机游戏插件|7b0eaa1技能名称兼容及圣印回显修复包，版本0.2.8-dev，保留WowBuddyDev目录；原生游戏尚未验收|INSTALLED-SPELL-COMPAT-VALIDATION.md，85文件校验、旧85文件备份、72个WTF文件保持不变|
-|最新本地EXE|构建输入检查修复验证版，运行代码仍为7b0eaa1；未覆盖公开附件|dist/local-source-guard/WowBuddyDev-Outer.exe；SHA256 276591c4c0193669bc353267c0556a149d0a810e3da3b7eb5d6336e619cc9624|
-|最近源码对照|原路径、目录创建、文件写入、字符搜索机器码对照；目录创建发现并修复四个场景差异|OUTER-MKDIR-NATIVE-PARITY.md、OUTER-MODULE-PATH-NATIVE-PARITY.md、OUTER-WRITE-NATIVE-PARITY.md|
+|公开下载|仍为v0.2.8，提交11b9837；未替换附件|RELEASE-0.2.8.md|
+|本机游戏插件|诊断上下文包SHA256 a9cb27a3537f35f0f8ff330670457b15a923047b7dd3db0221e9db5a34069de6；保留WowBuddyDev身份|INSTALLED-SPELL-COMPAT-VALIDATION.md，85文件核对、备份一致、72个WTF文件未变|
+|目录客户端|dist/desktop/WowBuddyDev/WowBuddyDev.exe，SHA256 f291acf1d4d0e922b00cec9d5c0d21498f2b42ead744ca226f8630d23db99c8a|目录冻结启动及系统后端初始化自检通过|
+|单文件客户端|dist/local-random-embedded/WowBuddyDev-Outer.exe，摘要见上|EMBEDDED-RANDOM-ADDON.md|
+|真实施法|此前单发命令识别spellID=837，但非战斗时CastSpellByID被拦截；正常安全宏按键仍未完成实测|evidence/directcast-forbidden-20261107.json|
+
+最近完整顶层回归为b7213a6的372项，371通过、1项因4像素readable完整图像高于屏幕失败。后续核心156项通过，此后pipeline专项9项通过；不合并计作全量回归。显式3像素下18组GDI与54组带边框/移动窗口检查通过，未删协议行，默认4像素限制仍在，见PRINTWINDOW-PITCH-VALIDATION.md。
 
 ## 明确未完成项
 

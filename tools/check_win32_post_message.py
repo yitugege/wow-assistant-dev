@@ -13,9 +13,10 @@ sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.windows_keys import CtypesWin32Backend,KeySender
 from wowbuddy.dispatch import ActionDispatcher
 from wowbuddy.candidates import Candidate
+from wowbuddy.keybindings import parse_keybinding
 
 
-def check():
+def check(*, all_registered=False):
     if os.name!='nt':
         raise RuntimeError('此检查需要 Windows x64')
     user=C.WinDLL('user32',use_last_error=True)
@@ -69,6 +70,22 @@ def check():
                          allow_activation=False,interval_ms=60000,hold_ms=30)
         cases=[('NUMPAD5',[101]),('ALT-CTRL-SHIFT-NUMPADDIVIDE',[18,17,16,111]),
                ('TAB',[9]),('SHIFT-F2',[16,113]),('CTRL-0',[17,48])]
+        registered=[]
+        invalid=[]
+        if all_registered:
+            for resource in ('rules.json','rules_readable.json'):
+                rules=json.loads((ROOT/'assets'/resource).read_text('utf8'))
+                for spec,definition in rules['specs'].items():
+                    for action in definition['actions']:
+                        binding=parse_keybinding(action['key'])
+                        if not binding.valid:
+                            invalid.append({'resource':resource,'spec':spec,'action':action['name'],
+                                            'key':action['key'],'error':binding.error})
+                            continue
+                        codes=[*binding.modifiers,binding.vk]
+                        registered.append({'resource':resource,'spec':spec,'action':action['name'],
+                                           'key':action['key'],'codes':codes})
+                        cases.append((action['key'],codes))
         expected=[]
         for key,codes in cases:
             assert sender.send(key,bypass_interval=True),(key,sender.status)
@@ -78,12 +95,15 @@ def check():
         assert not sender.send('NUMPAD5')
         assert '限速跳过' in sender.status
         assert not sender.send('F99',bypass_interval=True)
+        for entry in invalid:
+            assert not sender.send(entry['key'],bypass_interval=True),entry
+            assert sender.status==entry['error'],entry
         message=W.MSG()
         while user.PeekMessageW(C.byref(message),hwnd,0,0,1):
             user.DispatchMessageW(C.byref(message))
         assert received==expected,{'received':received,'expected':expected}
         assert sender.success_count==len(cases)
-        assert sender.failure_count==1
+        assert sender.failure_count==1+len(invalid)
         basic_received=list(received)
         dispatch_cases=[]
         class DispatchBackend(Backend):
@@ -131,10 +151,12 @@ def check():
                 'sleep_requests_ms':dispatch_backend.sleeps,'pre_up_to_main_down_ms':wait_gap})
         user.DestroyWindow(hwnd);hwnd=None
         assert not sender.send('TAB',bypass_interval=True)
-        assert sender.failure_count==2
+        assert sender.failure_count==2+len(invalid)
         return {'passed':True,'backend':'CtypesWin32Backend',
                 'receiver':'本进程 HWND_MESSAGE 隐藏窗口',
                 'cases':[key for key,_ in cases],'received':basic_received,'dispatch_cases':dispatch_cases,
+                'registered_actions':registered,
+                'invalid_registered_actions':invalid,
                 'success_count':sender.success_count,'failure_count':sender.failure_count,
                 'channel':sender.channel,'global_input_used':False,
                 'game_acceptance_verified':False}
@@ -144,8 +166,13 @@ def check():
 
 
 if __name__=='__main__':
-    result=check()
-    output=ROOT/'dist/win32-post-message-check.json'
+    import argparse
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--all-registered',action='store_true',help='逐条投递两套资源的全部注册动作键，仅到自有隐藏窗口')
+    args=parser.parse_args()
+    result=check(all_registered=args.all_registered)
+    output=ROOT/('dist/win32-post-message-all-registered.json' if args.all_registered
+                 else 'dist/win32-post-message-check.json')
     output.parent.mkdir(exist_ok=True)
     output.write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps(result,ensure_ascii=True))

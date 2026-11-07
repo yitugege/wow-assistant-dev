@@ -1,5 +1,13 @@
 # 按键解析对照验证
 
+## 原EXE资源来源与实际候选范围补充（2026-11-07）
+
+`tools/audit_invalid_readable_bindings.py` 从摘要已核验的原EXE资源中直接读取WBD1，再取rules.json和rules_readable.json，均与独立assets逐字节一致。读取JSON后的10个无效键确实各含四个U+005C字符，不是日志转义显示造成；证据为 `evidence/invalid-readable-bindings.json`，包含资源摘要、动作名、键码点及基础动作是否存在。
+
+十个动作均不存在于对应基础rules.json动作表。实际pipeline新增逐动作、双协议回放：即使用户方案显式写入该动作和always条件，合法色条解码后也不会产生候选；9项pipeline测试通过（3.638秒）。因此应区分“readable附加资源中的无效绑定”与“当前基础引擎实际注册技能发送失败”。这不证明任何其他入口都不会消费它们，且不等于原生进程动态执行验证。
+
+没有擅自把四反斜杠替换成单反斜杠，也没有新增原基础动作表之外的技能。
+
 本轮把参考工程的按键边界测试迁入独立仓库 `tests/core/test_keybindings.py`，动作资源改为读取本仓库 `assets`，资源缺失直接失败。本轮未修改解析器，也未发送真实按键。
 
 ## 已验证范围

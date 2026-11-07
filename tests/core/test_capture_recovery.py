@@ -94,3 +94,54 @@ class CaptureRecoveryTests(unittest.TestCase):
         self.assertEqual(backend.calls[-2:],[('release_frame',),('release_resource',123)])
         self.assertIsNone(capture.cached_image)
         self.assertEqual(capture.frame_count,0)
+
+    def test_all_native_reset_hresult_encodings_drop_old_frame(self):
+        # 02f4e0: -0x7785ffda，或无符号(hr+0x7785fffb)<3。
+        for error in (0x887a0026,0x887a0005,0x887a0006,0x887a0007):
+            for signed in (False,True):
+                with self.subTest(error=hex(error),signed=signed):
+                    backend=Backend();now=[1000]
+                    capture=DxgiCapture(backend,lambda:now[0])
+                    rect=Rect(10,10,110,20)
+                    backend.results=[(0,1),(error-(1<<32) if signed else error,None),
+                                     (DXGI_ERROR_WAIT_TIMEOUT,None),(0,2)]
+                    old=capture.capture(rect)
+                    self.assertIsNone(capture.capture(rect))
+                    self.assertIsNone(capture.cached_rect)
+                    self.assertIsNone(capture.cached_image)
+                    self.assertIsNone(capture.monitor)
+                    now[0]=2499;before=list(backend.calls)
+                    self.assertIsNone(capture.capture(rect))
+                    self.assertEqual(backend.calls,before)
+                    now[0]=2500
+                    self.assertIsNone(capture.capture(rect))
+                    fresh=capture.capture(rect)
+                    self.assertIsNot(fresh,old)
+                    self.assertEqual(fresh.pixel(0,0),2)
+                    self.assertEqual(capture.frame_count,2)
+                    self.assertEqual(backend.calls.count(('release_frame',)),2)
+                    self.assertEqual([c[1] for c in backend.calls if c[0]=='acquire'],[50,0,50,50])
+
+    def test_monitor_switch_reinitializes_and_translates_negative_desktop_origin(self):
+        backend=Backend();monitor=[1]
+        backend.monitor_from_rect=lambda rect:monitor[0]
+        def initialize(which):
+            backend.calls.append(('initialize',which))
+            return DxgiInitialization('ok',Rect(0,0,1920,1080) if which==1
+                                      else Rect(-1920,-100,0,980))
+        backend.initialize=initialize
+        capture=DxgiCapture(backend,lambda:1000)
+        backend.results=[(0,1),(DXGI_ERROR_WAIT_TIMEOUT,None),(0,2)]
+        first=capture.capture(Rect(10,10,110,20))
+        monitor[0]=2
+        moved=Rect(-1910,-90,-1810,-80)
+        self.assertIsNone(capture.capture(moved))
+        self.assertIsNone(capture.cached_image)
+        fresh=capture.capture(moved)
+        self.assertIsNot(first,fresh)
+        self.assertEqual(capture.cached_rect,Rect(-1910,-90,-1862,-80))
+        self.assertEqual([c for c in backend.calls if c[0]=='read'],
+                         [('read',Rect(10,10,58,20)),('read',Rect(10,10,58,20))])
+        self.assertEqual([c for c in backend.calls if c[0]=='initialize'],
+                         [('initialize',1),('initialize',2)])
+        self.assertEqual([c[1] for c in backend.calls if c[0]=='acquire'],[50,50,50])

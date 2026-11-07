@@ -59,6 +59,7 @@ class DirectCastActionsTests(unittest.TestCase):
         actual=b.globals().WowBuddyDev.DirectCast.Cast(action,unit)
         self.assertEqual(actual,expected)
         self.assertEqual(list(b.globals().calls.values()),list(a.globals().calls.values()))
+        self.assertIsNone(b.globals().WowBuddyDev.DirectCast.activeCall)
         return actual
 
     def test_slot_priority_and_api_error_matrix(self):
@@ -113,6 +114,39 @@ class DirectCastActionsTests(unittest.TestCase):
             ''')
         self.assertEqual(self.assert_cast_trace(a,b), (None,'blocked-aura-present'))
         self.assertEqual(list(b.globals().calls.values()), [])
+
+    def test_forbidden_event_without_lua_error_does_not_prove_cast(self):
+        # 客户端事件与Lua异常是两条通道；替身只验证处理语义，不模拟安全权限。
+        for return_false in (False, True):
+            with self.subTest(return_false=return_false):
+                a,b=self.hosts(slotsMode='full')
+                for lua,identity in ((a,'P07483180'),(b,'WowBuddyDev')):
+                    lua.execute('''
+                        function CreateFrame() return {
+                          RegisterEvent=function() end,
+                          SetScript=function(_,_,fn) securityCallback=fn end} end
+                    ''')
+                    lua.execute((ROOT/'addon/WowBuddyDev/SecurityDiagnostics.lua').read_text('utf8'),identity)
+                    lua.globals().testAddonIdentity=identity
+                    lua.globals().returnFalse=return_false
+                    lua.execute('''
+                        appliedCasts=0
+                        function CastSpellByID(id,unit)
+                          table.insert(calls,'cast:'..id..':'..unit)
+                          securityCallback(nil,'ADDON_ACTION_FORBIDDEN',testAddonIdentity,'UNKNOWN()')
+                          if returnFalse then return false end
+                        end
+                    ''')
+                self.assertEqual(self.assert_cast_trace(a,b),(True,116))
+                for lua in (a,b):
+                    self.assertEqual(lua.globals().appliedCasts,0)
+                    record=lua.globals().WowBuddyDevDiagnostics[1]
+                    self.assertEqual(record.event,'ADDON_ACTION_FORBIDDEN')
+                    self.assertEqual(record.operation,'UNKNOWN()')
+                    self.assertEqual(list(lua.globals().calls.values()),['cast:116:target'])
+                self.assertIsNone(a.globals().WowBuddyDevDiagnostics[1].directCastContext)
+                self.assertEqual(b.globals().WowBuddyDevDiagnostics[1].directCastContext,'CastSpellByID')
+                self.assertIsNone(b.globals().WowBuddyDev.DirectCast.activeCall)
 
 
 if __name__=='__main__': unittest.main()

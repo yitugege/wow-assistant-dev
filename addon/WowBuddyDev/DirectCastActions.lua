@@ -4,6 +4,15 @@ local ADDON = WowBuddyDev
 local DC = ADDON.DirectCast
 local autoSlotCache = {}
 
+-- 仅标记同步调用期间的诊断上下文；保留pcall返回与原有执行顺序。
+local function actionCall(api, fn, ...)
+  local previous = DC.activeCall
+  DC.activeCall = api
+  local ok, result = pcall(fn, ...)
+  DC.activeCall = previous
+  return ok, result
+end
+
 local function macroForAction(actionKey)
   local macro = ADDON.classData and ADDON.classData.DEFAULT_MACROS
       and ADDON.classData.DEFAULT_MACROS[actionKey]
@@ -20,7 +29,7 @@ DC.GetActionMacro = macroForAction
 
 local function findEmptySlot()
   for slot = 1, 144 do
-    local ok, kind = pcall(GetActionInfo, slot)
+    local ok, kind = actionCall("GetActionInfo", GetActionInfo, slot)
     if ok and (kind == nil or kind == "empty") then return slot end
   end
 end
@@ -30,9 +39,9 @@ function DC.EnsureSlotForSpell(spellID)
   local slot = DC.FindSlotForSpell(spellID)
   if slot then autoSlotCache[spellID] = slot; return slot end
   local empty = findEmptySlot()
-  if empty and pcall(PickupSpell, spellID) then
+  if empty and actionCall("PickupSpell", PickupSpell, spellID) then
     -- 保留原有缺陷：PlaceAction 即使抛错仍缓存槽位，不能据此报告放置成功。
-    pcall(PlaceAction, empty)
+    actionCall("PlaceAction", PlaceAction, empty)
     autoSlotCache[spellID] = empty
     return empty
   end
@@ -49,11 +58,11 @@ local function castFallback(actionKey, unitOverride)
   local sid = DC.SpellIDForName(spellName)
   if sid then
     local slot = DC.FindSlotForSpell(sid)
-    if slot and pcall(UseAction, slot, unit) then return true, "slot" .. slot end
+    if slot and actionCall("UseAction", UseAction, slot, unit) then return true, "slot" .. slot end
   end
   local manualSlot = DC.slots[actionKey]
-  if manualSlot and pcall(UseAction, manualSlot, unit) then return true, "slot" .. manualSlot end
-  if sid and pcall(CastSpellByID, sid, unit) then return true, sid end
+  if manualSlot and actionCall("UseAction", UseAction, manualSlot, unit) then return true, "slot" .. manualSlot end
+  if sid and actionCall("CastSpellByID", CastSpellByID, sid, unit) then return true, sid end
   return nil, "no-slot-绑槽位: /dcbind " .. actionKey .. " <动作条槽位号>"
 end
 
@@ -67,10 +76,10 @@ function DC.Cast(actionKey, unitOverride)
   local sid = DC.SpellIDForName(spellName)
   if not sid then return castFallback(actionKey, unitOverride) end
   local slot = DC.FindSlotForSpell(sid) or DC.EnsureSlotForSpell(sid)
-  if slot and pcall(UseAction, slot, unit) then return true, "slot" .. slot end
+  if slot and actionCall("UseAction", UseAction, slot, unit) then return true, "slot" .. slot end
   local manualSlot = DC.slots[actionKey]
-  if manualSlot and pcall(UseAction, manualSlot, unit) then return true, "slot" .. manualSlot end
-  if pcall(CastSpellByID, sid, unit) then return true, sid end
+  if manualSlot and actionCall("UseAction", UseAction, manualSlot, unit) then return true, "slot" .. manualSlot end
+  if actionCall("CastSpellByID", CastSpellByID, sid, unit) then return true, sid end
   return nil, "no-slot-自动占槽失败: /dcbind " .. actionKey .. " <动作条槽位号>"
 end
 

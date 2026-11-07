@@ -15,7 +15,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
     before=snapshot_sources(ROOT)
     package=ROOT/'dist/WowBuddyDev-dev.zip'
-    addon_manifest=build(ROOT/'addon/WowBuddyDev',package)
+    addon_manifest=build(ROOT/'addon/WowBuddyDev',package,random_names=True)
     package.with_suffix('.manifest.json').write_text(json.dumps(addon_manifest,ensure_ascii=False,indent=2),'utf8')
     digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
     args=[sys.executable,'-m','PyInstaller','--noconfirm','--clean','--onedir','--windowed',

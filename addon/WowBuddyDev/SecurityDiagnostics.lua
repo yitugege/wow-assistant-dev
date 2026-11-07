@@ -11,6 +11,9 @@ frame:SetScript("OnEvent", function(_, event, blamedAddon, functionName)
         event = event,
         addon = blamedAddon,
         operation = tostring(functionName or "unknown"),
+        -- 这是事件到达时的调用上下文，不替代客户端报告的operation。
+        directCastContext = WowBuddyDev and WowBuddyDev.DirectCast
+            and WowBuddyDev.DirectCast.activeCall or nil,
         timestamp = type(time) == "function" and time() or 0,
         inCombat = type(InCombatLockdown) == "function" and InCombatLockdown() or false,
         stack = type(debugstack) == "function" and debugstack(2, 12, 8) or "",

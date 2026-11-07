@@ -65,6 +65,8 @@ def check():
         data=home/'data';data.mkdir()
         report=data/'_install_addon_result.txt'
         backup_root=addons.parent.parent/'WowBuddyDev-backups'
+        installed_name,_=read_package(package,with_metadata=True)
+        installed=addons/installed_name
 
         def invoke(destination,expected_exit):
             report.unlink(missing_ok=True)
@@ -85,16 +87,16 @@ def check():
             from hashlib import sha256
             package_name,payload=read_package(package,with_metadata=True)
             record=json.loads((addons.parent.parent/'.wowbuddy-install.json').read_text('utf8'))
-            assert record=={'product':'wowbuddy-dev','addon_directory':'WowBuddyDev'}
-            payload[Path('WowBuddyDev.toc')]=payload.pop(Path(package_name+'.toc'))
+            assert record=={'product':'wowbuddy-dev','addon_directory':installed_name}
+            payload[Path(installed_name+'.toc')]=payload.pop(Path(package_name+'.toc'))
             expected={str(p).replace('\\','/'):sha256(content).hexdigest() for p,content in payload.items()}
-            assert snapshot(addons/'WowBuddyDev')==expected
+            assert snapshot(installed)==expected
             return len(expected)
 
         outcome=invoke(addons,0)
         count=verify_payload(package)
         assert not backup_root.exists()
-        before=snapshot(addons/'WowBuddyDev')
+        before=snapshot(installed)
         cases.append({'mode':mode,'scenario':'first_install','files':count,'passed':True,**outcome})
 
         # 只在隔离目录版加入真实随机命名发布包，验证优先选包及已安装身份保留。
@@ -114,8 +116,8 @@ def check():
 
         # 在目录交换之后、身份记录提交处触发真实共享冲突。
         # 旧目录加入包中没有的文件，避免“重装成功”被误判为“旧目录已恢复”。
-        (addons/'WowBuddyDev/local-change.lua').write_bytes(b'-- preserve rollback sentinel')
-        rollback_before=snapshot(addons/'WowBuddyDev')
+        (installed/'local-change.lua').write_bytes(b'-- preserve rollback sentinel')
+        rollback_before=snapshot(installed)
         backup_before=snapshot(backup_root)
         record=addons.parent.parent/'.wowbuddy-install.json'
         record_before=record.read_bytes()
@@ -123,7 +125,7 @@ def check():
             outcome=invoke(addons,1)
             failure=report.read_text('utf8')
             assert 'install-record.json' in failure and '.wowbuddy-install.json' in failure,failure
-            assert snapshot(addons/'WowBuddyDev')==rollback_before
+            assert snapshot(installed)==rollback_before
             assert record.read_bytes()==record_before
             assert snapshot(backup_root)==backup_before
             assert not list(addons.glob('.wowbuddy-install-*'))

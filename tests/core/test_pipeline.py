@@ -12,7 +12,7 @@ READABLE = json.loads((ROOT / "assets/contract_readable.json").read_bytes())
 READABLE_RULES = json.loads((ROOT / "assets/rules_readable.json").read_bytes())
 
 
-def render_readable(spec_id=1482, overrides=None):
+def render_readable(spec_id=1482, overrides=None, *, pitch=4):
     spec = READABLE["specs"][str(spec_id)]
     values = {"spec_id": spec_id, "master_switch": 0x00FF00,
               "player_health_pct": 100, "target_health_pct": 100,
@@ -20,7 +20,8 @@ def render_readable(spec_id=1482, overrides=None):
     colors = {row: values.get(key, 0) for key, row in zip(spec["classicKeys"], spec["classicRows"]) if row >= 0}
     colors.update({entry["row"]: values.get(entry["key"], 0x333333)
                    for entry in spec["presenceFields"] if entry["row"] >= 0})
-    return image_with_rows(colors, x=30, height=1500)
+    return image_with_rows(colors, x=30, pitch=pitch,
+                           height=max(1500, 2 + pitch * (max(colors) + 1)))
 
 
 def combined(old_image, readable_image):
@@ -41,6 +42,17 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result.frame.protocol, "old")
         self.assertIsNone(result.old_attempt)
         self.assertEqual(result.candidates[0].key, "NUMPAD5")
+
+    def test_readable_fixture_preserves_all_fields_at_supported_pitches(self):
+        for spec in READABLE['specs']:
+            baseline=self.pipeline.evaluate(render_readable(int(spec))).frame
+            self.assertTrue(baseline.ok)
+            for pitch in range(3,10):
+                with self.subTest(spec=spec,pitch=pitch):
+                    frame=self.pipeline.evaluate(render_readable(int(spec),pitch=pitch)).frame
+                    self.assertTrue(frame.ok)
+                    self.assertEqual(frame.values,baseline.values)
+                    self.assertEqual(frame.spec_id,baseline.spec_id)
 
     def test_old_bad_header_falls_back_and_readable_only_replaces_key(self):
         old, _ = render_old(1482, {"addon_version_code": 12345})
@@ -92,6 +104,24 @@ class PipelineTests(unittest.TestCase):
         pipeline = DecisionPipeline(CONTRACT, READABLE, RULES, rules)
         profile = {"specId": 1482, "rules": [{"action": "invented", "when": ["always"]}]}
         self.assertEqual(pipeline.evaluate(render_readable(), selected_profile=profile).candidates, ())
+
+    def test_shipped_invalid_readable_bindings_do_not_create_base_actions(self):
+        from wowbuddy.keybindings import parse_keybinding
+        checked=0
+        for spec,definition in READABLE_RULES['specs'].items():
+            base={a['name'] for a in RULES['specs'][spec]['actions']}
+            for action in definition['actions']:
+                if parse_keybinding(action['key']).valid:continue
+                with self.subTest(spec=spec,action=action['name']):
+                    self.assertNotIn(action['name'],base)
+                    profile={'specId':int(spec),'rules':[{'action':action['name'],'when':['always']}]}
+                    for image in (render_readable(int(spec)),
+                                  render_old(int(spec),{'master_switch':0x00ff00})[0]):
+                        result=self.pipeline.evaluate(image,selected_profile=profile)
+                        self.assertTrue(result.frame.ok)
+                        self.assertEqual(result.candidates,())
+                    checked+=1
+        self.assertEqual(checked,10)
 
     def test_readable_loader_preserves_literal_keys_and_last_valid_value(self):
         entries = [{"name": "x", "key": "F1"}, {"name": "x", "key": ""}, {"name": "y", "key": 1},

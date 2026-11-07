@@ -1,0 +1,196 @@
+{
+  "original_sha256": "9694f988f740acd88402c6f0ddaaf6f9173525f8c8137941a553d2c74d97bf14",
+  "resources": {
+    "rules.json": {
+      "sha256": "b55632e8e797094baa8332a3a6c207c15574cfcc9f18e5e4f3c2afe612986c8b",
+      "source_equal": true
+    },
+    "rules_readable.json": {
+      "sha256": "7315c3c90795a354d027627ab4cfddc74259cdd42e90d582803c07e8646af76a",
+      "source_equal": true
+    }
+  },
+  "invalid": [
+    {
+      "spec": "1484",
+      "action": "spell_8998",
+      "key": "CTRL-\\\\\\\\",
+      "key_codepoints": [
+        67,
+        84,
+        82,
+        76,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1485",
+      "action": "spell_26064",
+      "key": "ALT-\\\\\\\\",
+      "key_codepoints": [
+        65,
+        76,
+        84,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1482",
+      "action": "spell_543",
+      "key": "CTRL-\\\\\\\\",
+      "key_codepoints": [
+        67,
+        84,
+        82,
+        76,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1486",
+      "action": "spell_412019",
+      "key": "CTRL-\\\\\\\\",
+      "key_codepoints": [
+        67,
+        84,
+        82,
+        76,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1487",
+      "action": "spell_402789",
+      "key": "CTRL-\\\\\\\\",
+      "key_codepoints": [
+        67,
+        84,
+        82,
+        76,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1488",
+      "action": "spell_1725",
+      "key": "CTRL-\\\\\\\\",
+      "key_codepoints": [
+        67,
+        84,
+        82,
+        76,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1489",
+      "action": "spell_66842",
+      "key": "CTRL-\\\\\\\\",
+      "key_codepoints": [
+        67,
+        84,
+        82,
+        76,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1490",
+      "action": "spell_712",
+      "key": "CTRL-\\\\\\\\",
+      "key_codepoints": [
+        67,
+        84,
+        82,
+        76,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1490",
+      "action": "spell_4511",
+      "key": "ALT-\\\\\\\\",
+      "key_codepoints": [
+        65,
+        76,
+        84,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    },
+    {
+      "spec": "1491",
+      "action": "spell_440488",
+      "key": "CTRL-\\\\\\\\",
+      "key_codepoints": [
+        67,
+        84,
+        82,
+        76,
+        45,
+        92,
+        92,
+        92,
+        92
+      ],
+      "base_action_present": false,
+      "base_key": null
+    }
+  ],
+  "invalid_count": 10,
+  "native_execution": false,
+  "scope": "原容器资源字节来源；非法判定使用独立解析器，原解析规则另见KEYBINDING-PARITY"
+}
