@@ -49,6 +49,19 @@ function GetTime() return now end
 function UnitDistanceSquared() return 100,true end
 function UnitCastingInfo() return nil end
 function UnitChannelInfo() return nil end
+powerValue=75; powerUnavailable=false
+function UnitPower(unit,powerType)
+  if powerUnavailable then error('fixture resource unavailable') end
+  return powerType==0 and powerValue or 0
+end
+function UnitPowerMax() return 100 end
+function UnitHealth() return 100 end
+function UnitHealthMax() return 100 end
+function GetUnitSpeed() return 0 end
+function IsStealthed() return false end
+function GetShapeshiftFormID() return 0 end
+function UnitIsUnit(a,b) return a==b end
+function GetTotemInfo() return false,nil,0,0 end
 function UnitAffectingCombat() return combat end
 function InCombatLockdown() return combat end
 function UnitExists(unit) return unit=='player' or unit=='target' end

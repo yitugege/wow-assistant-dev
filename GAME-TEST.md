@@ -2,6 +2,10 @@
 
 ## 自动选怪离线联测补充
 
+职业采集后续补验：法师场景现执行完整ForeverTalentData.lua和ForeverClassSupport.lua，使用真实FillForeverExtraValues替代上一轮职业值替身。显式游戏API提供资源和单位状态，逐帧核对战斗状态、目标/玩家有效性及法力75→25→不可读取→75经真实采集、纹理、旧协议解码的结果；天赋读取仍显式提供10/0/0，已学技能查询仍固定false。公共与法师两项测试通过（0.669秒），日志`.local/pixelbar-real-class-support.log`。
+
+资源API异常时插件写入白色整数16777215，桌面number字段保留文本“16777215”；本次记录现有语义，没有把它改成缺失符号，也不能推断所有资源条件遇到未知值均安全。未覆盖真实游戏API、全部技能、光环、GPU或游戏施法。以下FillForeverExtraValues为替身的描述保留为上一轮历史，本轮已在法师测试中替换。
+
 纹理到解码的后续衔接：完整模块测试现从纹理替身的实际SetPoint、SetSize、SetColorTexture和可见性记录生成24×1200背景图，再交给当前Assets.pipeline解码；没有按桌面契约重新排列或重写像素值。公共字段及法师注册布局两种场景均通过，9帧状态序列包含整体隐藏后的识别失败和重新显示后的恢复。每个可见帧核对old协议、1482身份、DEV_VERSION、ttd整数及总开关值。日志`.local/pixelbar-decoder-bridge.log`，2项测试通过。
 
 法师场景执行整个classes/Mage/class_forever.lua注册实际pixelData/testSpells/actionAvailSpellIDs，核对全部pixelData字段ID顺序与桌面旧契约一致，每格有真实重建产生的4×4纹理；并验证测试提供的目标有效性、玩家有效性和75%法力最终解码值。FillForeverExtraValues仍为显式替身，技能已学API固定false；没有执行真实职业状态采集、光环容器、字体排版和GPU叠层。背景图中未由模块写入的后续位置只是背景，不把那些字段解码成功当成插件已绘制。此证据不能扩大为全部法师技能或其他职业验收。

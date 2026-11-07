@@ -29,14 +29,14 @@ class PixelBarModuleTests(unittest.TestCase):
         if include_mage:
             lua.execute('''
             function WowBuddyDev.RegisterPixelStripV2() end
-            function WowBuddyDev.RegisterClass(id,data) registeredClass=data end
+            WowBuddyDev.classes={}
+            function WowBuddyDev.RegisterClass(id,data) registeredClass=data;WowBuddyDev.classes[id]=data end
             function IsSpellKnown() return false end
             WowBuddyDev.forceAvailableState={}
-            function WowBuddyDev.FillForeverExtraValues(values)
-              values.target_valid=targetAlive;values.player_valid=true
-              values.player_in_combat=combat;values.mana_pct=75
-            end
+            function WowBuddyDev.GetForeverTalentState() return {packet=655360} end
             ''')
+            for name in ('ForeverTalentData.lua','ForeverClassSupport.lua'):
+                lua.execute((ROOT/'addon/WowBuddyDev'/name).read_text('utf8'))
             lua.execute((ROOT/'addon/WowBuddyDev/classes/Mage/class_forever.lua').read_text('utf8'))
             lua.execute('''WowBuddyDev.classData=registeredClass
             WowBuddyDev.pixelData=registeredClass.pixelData
@@ -89,13 +89,24 @@ class PixelBarModuleTests(unittest.TestCase):
                 if include_mage:
                     self.assertEqual(frame.values['target_valid'],'ON' if g.targetAlive else 'OFF')
                     self.assertEqual(frame.values['player_valid'],'ON')
-                    self.assertEqual(frame.values['mana_pct'],'75')
+                    self.assertEqual(frame.values['player_in_combat'],'ON' if g.combat else 'OFF')
+                    # 原number字段保留白色整数；只有特定类型/字段映射无值提示。
+                    self.assertEqual(frame.values['mana_pct'],'16777215' if g.powerUnavailable else str(g.powerValue))
+                    self.assertEqual(frame.values['mage_talents'],'10/0/0')
             else:
                 self.assertFalse(frame.ok)
             return parse_auto_target(value)
         self.assertEqual(tick().state,0)
         lua.execute('combat=true')
         self.assertEqual(tick().state,2)
+        if include_mage:
+            lua.execute('powerValue=25')
+            tick()
+            lua.execute('powerUnavailable=true')
+            tick()
+            self.assertEqual(g.PermesValues.mana_pct,16777215)
+            lua.execute('powerUnavailable=false; powerValue=75')
+            tick()
         lua.execute('targetAlive=false')
         dead=tick()
         self.assertEqual(dead.state,1)
