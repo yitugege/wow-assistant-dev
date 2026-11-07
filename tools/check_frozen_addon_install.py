@@ -157,6 +157,10 @@ def check():
         manual_name=manual_manifest['addon_directory']
         with zipfile.ZipFile(manual_package) as archive:archive.extractall(manual_addons)
         manual_target=manual_addons/manual_name
+        foreign=manual_addons/'w111111111111';foreign.mkdir()
+        foreign_toc=foreign/(foreign.name+'.toc')
+        foreign_bytes='## Title: 其他插件\n'.encode('gbk')
+        foreign_toc.write_bytes(foreign_bytes)
         (manual_target/'custom.lua').write_bytes(b'original manual installation')
         manual_before=snapshot(manual_target)
         saved=manual_root/'WTF/SavedVariables'/f'{manual_name}.lua'
@@ -173,8 +177,10 @@ def check():
         manual_backups=list((manual_root/'WowBuddyDev-backups').iterdir())
         assert len(manual_backups)==1 and snapshot(manual_backups[0])==manual_before
         assert saved.read_bytes()==b'identity must survive'
+        assert foreign_toc.read_bytes()==foreign_bytes
         cases.append({'mode':mode,'scenario':'manual_random_without_record','passed':True,
-                      'identity_preserved':True,'backup_exact':True,'saved_variables_unchanged':True,**outcome})
+                      'identity_preserved':True,'backup_exact':True,'saved_variables_unchanged':True,
+                      'foreign_gbk_toc_unchanged':True,**outcome})
     return {'passed':True,'test_root':str(root),'cases':cases,
             'business_sha256':directory_build['executable_sha256'],'outer_sha256':outer_build['sha256'],
             'game_installation_modified':False,'game_verified':False,

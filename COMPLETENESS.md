@@ -4,9 +4,9 @@
 
 ## 当前交付与源码身份
 
-源码新增随机身份扫描的编码兼容修复：无法按UTF-8读取的其他插件TOC不再中断本产品安装。已先复现失败再修复，相关22项检查通过；下列现有EXE未包含此最新改动，需重新构建后才能用于该场景。
+最新可测试单文件为 `dist/local-408afed/WowBuddyDev-Outer.exe`，SHA256 `757a380f85502048a087632ee71c63c70d8e317ab76b8ec23fc85c9e8df487aa`。已包含随机身份扫描编码修复，目录/单文件安装12场景和缓存3场景通过；详见BUILD-408AFED-VALIDATION.md。未更新公开Release或真实游戏插件。
 
-最新本地构建更新为手动随机插件身份修复版：`dist/local-manual-identity/WowBuddyDev-Outer.exe`，SHA256 `70f5d0ac0bdde1921674a1abec62e2c2e4e9fa65fbd055b216d763f456ea0358`；实际冻结安装12场景、缓存3场景通过。见MANUAL-RANDOM-INSTALL-IDENTITY.md。下列local-random-embedded为前一构建及其验证范围；公开附件与本机游戏安装未改变。
+前一轮本地构建为手动随机插件身份修复版：`dist/local-manual-identity/WowBuddyDev-Outer.exe`，SHA256 `70f5d0ac0bdde1921674a1abec62e2c2e4e9fa65fbd055b216d763f456ea0358`；实际冻结安装12场景、缓存3场景通过。见MANUAL-RANDOM-INSTALL-IDENTITY.md。下列local-random-embedded为前一构建及其验证范围；公开附件与本机游戏安装未改变。
 
 前一轮可测试单文件为 `dist/local-random-embedded/WowBuddyDev-Outer.exe`，SHA256 `78f1561ae8feefb19734b8dd0dba820ffff4508a8a412771632a0bf095bb449a`。包含诊断上下文及随机命名内附插件修复；85个插件文件内容核对通过。实际冻结安装10场景、缓存3场景、普通GUI两次启动/退出及设置保留通过，详见EMBEDDED-RANDOM-ADDON.md。此前各构建与安装描述保存在COMPLETENESS-HISTORY.md和对应专项记录，不作为当前版本证明。
 
@@ -14,8 +14,8 @@
 |---|---|---|
 |公开下载|仍为v0.2.8，提交11b9837；未替换附件|RELEASE-0.2.8.md|
 |本机游戏插件|诊断上下文包SHA256 a9cb27a3537f35f0f8ff330670457b15a923047b7dd3db0221e9db5a34069de6；保留WowBuddyDev身份|INSTALLED-SPELL-COMPAT-VALIDATION.md，85文件核对、备份一致、72个WTF文件未变|
-|目录客户端|dist/desktop/WowBuddyDev/WowBuddyDev.exe，SHA256 1ccba374324ceb5353a1c08cca17dcb09d4e3f4939734ab89aa7f5adbd9b818b|手动随机身份修复版；摘要已重新核对|
-|单文件客户端|dist/local-manual-identity/WowBuddyDev-Outer.exe，摘要见上|MANUAL-RANDOM-INSTALL-IDENTITY.md；本轮重新核对磁盘SHA256|
+|目录客户端|dist/desktop/WowBuddyDev/WowBuddyDev.exe，SHA256 dc62aac2b3b9665d33e3bf1b22be939bd9466524aeb3665bde8d5decd9081f0c|408afed安装编码修复版；构建及安装验证通过|
+|单文件客户端|dist/local-408afed/WowBuddyDev-Outer.exe，摘要见上|BUILD-408AFED-VALIDATION.md|
 |真实施法|此前单发命令识别spellID=837，但非战斗时CastSpellByID被拦截；正常安全宏按键仍未完成实测|evidence/directcast-forbidden-20261107.json|
 
 最近完整顶层回归为b7213a6的372项，371通过、1项因4像素readable完整图像高于屏幕失败。后续核心156项通过，此后pipeline专项9项通过；不合并计作全量回归。显式3像素下18组GDI与54组带边框/移动窗口检查通过，未删协议行，默认4像素限制仍在，见PRINTWINDOW-PITCH-VALIDATION.md。
