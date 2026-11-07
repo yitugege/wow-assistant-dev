@@ -312,13 +312,18 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 self.addon_startup_timer.start()
                 self.hub_timer.start()
 
-        def _refresh_addon_release(self):
-            if not getattr(self,'_addon_online',False):return
+        def _addon_download_busy(self):
             for name in ('_download_timer','_addon_refresh_timer'):
                 timer=getattr(self,name,None)
-                if timer is not None and timer.isActive():return
+                if timer is not None and timer.isActive():return True
+            return False
+
+        def _refresh_addon_release(self):
+            if self._closed or not getattr(self,'_addon_online',False):return
+            if self._addon_download_busy():return
             from concurrent.futures import ThreadPoolExecutor
             from wowbuddy.dev_addon_update import refresh_package
+            self._addon_refresh_consumed=False
             self._addon_refresh_executor=ThreadPoolExecutor(max_workers=1)
             self._addon_refresh_future=self._addon_refresh_executor.submit(refresh_package,data_dir)
             for button in (self.ui.addon_detect_button,self.ui.addon_install_button,self.ui.addon_browse_button,self.ui.addon_clean_button):button.setEnabled(False)
@@ -339,7 +344,9 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                          installed_name(path/'Interface/AddOns')) for path in paths)
 
         def _finish_addon_refresh(self):
+            if self._closed or getattr(self,'_addon_refresh_consumed',False):return
             if not self._addon_refresh_future.done():return
+            self._addon_refresh_consumed=True
             self._addon_refresh_timer.stop()
             self._addon_refresh_executor.shutdown(wait=False)
             try:
@@ -465,11 +472,13 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             menu.exec(self.ui.addon_clean_button.mapToGlobal(position))
 
         def _download_github_addon(self):
+            if self._closed or self._addon_download_busy():return
             if self.session.is_active() or not self.ui.addon_path.text():
                 self.ui.addon_status.setText('请先停止监控、退出游戏并选择客户端目录。')
                 return
             from concurrent.futures import ThreadPoolExecutor
             from wowbuddy.github_addon import download_latest
+            self._download_consumed=False
             self._download_client = self.ui.addon_path.text()
             self._download_executor = ThreadPoolExecutor(max_workers=1)
             self._download_future = self._download_executor.submit(download_latest, data_dir)
@@ -481,8 +490,10 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self._download_timer.start(150)
 
         def _finish_github_download(self):
+            if self._closed or getattr(self,'_download_consumed',False):return
             if not self._download_future.done():
                 return
+            self._download_consumed=True
             self._download_timer.stop()
             self._download_executor.shutdown(wait=False)
             try:
