@@ -10,6 +10,8 @@ sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.launcher import BUSINESS_EXE
 from wowbuddy.packages import Member,write_bundle,read_bundle
 from wowbuddy.release_identity import ReleaseIdentity,file_sha256,read_release_identity
+from wowbuddy.dev_version import VERSION
+from wowbuddy.github_outer import MANIFEST_NAME,verify_outer
 
 
 def main():
@@ -55,6 +57,11 @@ def main():
         'members':{m.name:m.sha256 for m in members},'source_files':after,
         'frozen_outer_execution_verified':False,'online_update_verified':False,'original_sdk_included':False}
     (ROOT/'dist/outer/build-manifest.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),'utf8')
+    release={'product':'wowbuddy-outer','format':1,'version':VERSION,'artifact':outer.name,
+             'size':outer.stat().st_size,'sha256':report['sha256'],
+             'payload_sha256':identity.payload_sha256,'business_sha256':identity.business_sha256}
+    verify_outer(outer,release)
+    (outer.parent/MANIFEST_NAME).write_text(json.dumps(release,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps({'built':True,'artifact':str(outer),'sha256':report['sha256'],'members':len(members)}))
 
 
