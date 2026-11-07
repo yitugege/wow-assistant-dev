@@ -14,6 +14,9 @@ function methods:CreateTexture() local obj=object('Texture',self);textures[#text
 function methods:CreateFontString() return object('FontString',self) end
 function methods:SetScript(event,fn) self.scripts[event]=fn end
 function methods:HookScript(event,fn) self.scripts[event]=fn end
+function methods:RegisterUnitEvent(event,...)
+  self.unitEvents=self.unitEvents or {};self.unitEvents[event]={...}
+end
 function methods:SetSize(w,h) self.width=w;self.height=h end
 function methods:GetWidth() return self.width end
 function methods:GetHeight() return self.height end
