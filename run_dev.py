@@ -545,6 +545,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         qt_ready()
         app.setStyleSheet(NATIVE_STYLESHEET)
         startup_record(STYLE_READY)
+        app._wowbuddy_bootstrap_ready=True
     app.setApplicationName('WowBuddyDev')
     app.setOrganizationName('WowBuddyDev')
     if (selftest and not real_backends) or dump_ui is not None:

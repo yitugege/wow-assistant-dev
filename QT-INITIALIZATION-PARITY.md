@@ -1,0 +1,9 @@
+# 复用Qt应用时的初始化修复
+
+原075960:167在入口应用样式。独立prepare_qt_runtime应用样式后已设置_wowbuddy_bootstrap_ready；直接run_dev.launch检测同一标记，但自己初始化后没有设置它，导致同进程复用QApplication的下一次launch重复qt_ready和setStyleSheet。
+
+补齐成功设置样式后的标记赋值。此修复对齐独立入口两条初始化路径，未改原样式内容、窗口布局或普通单次启动顺序；不把原程序具有同进程重复launch功能作为前提。
+
+新增真实Qt测试：共享QApplication，两个独立临时数据目录分别执行桌面自检窗口，记录实际setStyleSheet调用并核对窗口正常关闭。修复前调用2次，修复后1次；五项分阶段启动测试通过，日志.local/qt-style-once-before.log和.local/qt-style-once-after.log。
+
+测试初版复用同一数据目录，被自检故意写入的无效JSON影响；改为每轮独立临时目录后才观察到上述真实重复样式问题。这是测试夹具调整，不算产品JSON故障。没有再次运行全套耗时测量，不宣称已证明全局性能提升。当前EXE尚未包含此修复。

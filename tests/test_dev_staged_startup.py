@@ -26,6 +26,27 @@ class StagedStartupTests(unittest.TestCase):
         # 模拟的exec不消费DeferredDelete，显式完成本轮窗口销毁。
         QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete)
 
+    def test_direct_launch_initializes_shared_qt_style_once(self):
+        previous=getattr(self.app,'_wowbuddy_bootstrap_ready',False)
+        self.app._wowbuddy_bootstrap_ready=False
+        original=QApplication.setStyleSheet
+        calls=[]
+        def apply(app,style):
+            calls.append(style)
+            return original(app,style)
+        try:
+            with patch.object(QApplication,'setStyleSheet',apply):
+                for _ in range(2):
+                    with TemporaryDirectory() as directory:
+                        result=run_dev.launch(directory,selftest=True,hub_online=False,
+                                              client_online=False,addon_online=False)
+                    self.assertTrue(result['passed'])
+                    self.assertTrue(result['window_closed'])
+                self.assertEqual(len(calls),1)
+                self.assertTrue(self.app._wowbuddy_bootstrap_ready)
+        finally:
+            self.app._wowbuddy_bootstrap_ready=previous
+
     def test_success_uses_loaded_documents_and_schedules_auto(self):
         backend=Windows();backend.handle=123
         received=[];records=[]
