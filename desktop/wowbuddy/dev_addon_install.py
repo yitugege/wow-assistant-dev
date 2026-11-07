@@ -64,11 +64,26 @@ def read_package(package, *, with_metadata=False):
 
 
 def install_package(package, selected):
-    addon_name,payload = read_package(package,with_metadata=True)
     client = client_directory(selected)
     addons = client/'Interface'/'AddOns'
     backup_root = client/'WowBuddyDev-backups'
     record_path=client/'.wowbuddy-install.json'
+    return _install_package(package,addons,backup_root,record_path)
+
+
+def install_addons_directory(package, selected):
+    """原CLI直接目录语义：不把传入目录归一化为游戏根目录。"""
+    addons=Path(selected).absolute()
+    # 标准AddOns路径与GUI共享身份记录；其他显式目录把状态留在本目录中。
+    if addons.name.lower()=='addons' and addons.parent.name.lower()=='interface':
+        state=addons.parent.parent
+    else:
+        state=addons
+    return _install_package(package,addons,state/'WowBuddyDev-backups',state/'.wowbuddy-install.json')
+
+
+def _install_package(package, addons, backup_root, record_path):
+    addon_name,payload = read_package(package,with_metadata=True)
     previous=addons/NAME
     if record_path.exists():
         record=json.loads(record_path.read_text('utf8'))

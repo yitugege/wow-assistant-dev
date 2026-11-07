@@ -261,6 +261,8 @@ def main():
     parser.add_argument('--data-dir',type=Path,default=APP_ROOT/'.local')
     parser.add_argument('--auto',action='store_true',help='界面初始化后尝试一次开始监控')
     parser.add_argument('--watch',action='store_true',help='立即检查并每5秒自动连接游戏窗口；窗口关闭后停止监控')
+    parser.add_argument('--install-addon',action='store_true',help='无主窗安装自有插件包并退出')
+    parser.add_argument('--install-addon-dir',default=None,help='直接安装目标目录，原版格式为 --install-addon-dir=路径')
     parser.add_argument('--dump-ui',action='store_true',help='离屏导出界面诊断到data-dir后退出，不抓屏或发键')
     parser.add_argument('--hub-selftest',action='store_true',help='检查本地循环库并报告缺失动作，不联网')
     parser.add_argument('--engine-selftest',action='store_true',help='运行原引擎离线自检并记录失败/跳过计数')
@@ -270,6 +272,20 @@ def main():
     parser.add_argument('--rotation',default='',help='界面诊断的专精ID|子分类|方案名')
     parser.add_argument('--toggle-showall',action='store_true',help='同时导出显示全部切换诊断')
     args=parser.parse_args()
+    if args.install_addon:
+        if (args.selftest or args.selftest_backends or args.dump_ui or args.auto or args.watch
+                or args.hub_selftest or args.engine_selftest or args.spec or args.talent is not None
+                or args.rotations or args.rotation or args.toggle_showall):
+            parser.error('--install-addon 仅与 --install-addon-dir 和 --data-dir 配合使用')
+        from wowbuddy.dev_cli_install import run_development_install
+        package=PACKAGE_DIR/'WowBuddyDev-addon.zip'
+        if not package.exists():package=PACKAGE_DIR/'WowBuddyDev-dev.zip'
+        arguments=['WowBuddyDev','--install-addon']
+        if args.install_addon_dir is not None:
+            arguments.append('--install-addon-dir='+args.install_addon_dir)
+        return run_development_install(arguments,package,args.data_dir)
+    if args.install_addon_dir is not None:
+        parser.error('--install-addon-dir 需要 --install-addon')
     if args.hub_selftest or args.engine_selftest:
         if (args.dump_ui or args.selftest or args.selftest_backends or args.auto or args.watch
                 or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall

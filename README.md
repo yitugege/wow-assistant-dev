@@ -39,6 +39,8 @@
 
 ## 独立桌面源码入口
 
+无界面安装使用 `python run_dev.py --install-addon --install-addon-dir="D:/游戏/_forever_/Interface/AddOns" --data-dir="D:/安装报告"`。直接目录语义、返回码及原版差异见 [CLI-INSTALL.md](CLI-INSTALL.md)。此命令新增于 v0.2.0 发布之后的源码。
+
 使用具备PySide6的Windows Python运行 `python run_dev.py`。资源只读本工程assets，设置和日志默认写入本工程.local目录；也可用 `--data-dir` 指定独立数据目录。默认不自动开始监控。
 
 显式传入 `--auto` 可在界面初始化后尝试一次开始监控，例如 `WowBuddyDev.exe --auto`。使用已迁入的原单次回调：未找到游戏时记录提示，有匹配下拉框项则选择它，已经监控时不重复切换。持续监视使用 `--watch`：初始化时立即检查，之后每5秒检查；游戏窗口关闭时停止监控，后续检查可自动重连。此模式下手动停止后，下次检查仍可能重新开始；需要保持停止时应退出助手，再不带--watch启动。自检参数不能与--auto或--watch同时使用，参数不接受缩写。
