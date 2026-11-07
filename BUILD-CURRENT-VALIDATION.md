@@ -1,6 +1,6 @@
 # 当前源码本地构建验收
 
-随后新增手动HookOrderProbe诊断按钮，最新本地插件包为dist/hook-order-probe/WowBuddyDev-addon.zip；04cd6be EXE也不含此诊断工具。未安装或公开发布。
+随后新增手动HookOrderProbe诊断按钮，最新本地插件包为dist/hook-order-probe/WowBuddyDev-addon.zip；04cd6be EXE也不含此诊断工具。插件包现已安装到本机_forever_测试客户端并验证备份/保存文件不变，未公开发布；见INSTALLED-HOOK-PROBE-VALIDATION.md。
 
 构建后新增差异：DirectCastProbe.lua恢复EnvCloakCast入口，最新随机插件包位于dist/directcast-probe；下述04cd6be EXE尚不含此文件，未再次重建。仅插件源码与包有此增量，未安装或公开发布。
 

@@ -11,6 +11,7 @@
 |对象|当前状态|证据|
 |---|---|---|
 |公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
+|本机游戏插件|f1b6d86源码包已从0.2.5-dev升级到0.2.8-dev，保留WowBuddyDev目录；原生游戏尚未验收|INSTALLED-HOOK-PROBE-VALIDATION.md，85文件校验、70个WTF文件保持不变|
 |最新本地EXE|源码04cd6be，版本字段仍为0.2.8；含近期DirectCast子模块，未覆盖公开附件|dist/local-04cd6be/WowBuddyDev-Outer.exe；SHA256 91d3fe6976c4a607dbe8854106c49c5a2efe7b5b8d16c88b6cc829434eff9ef6|
 |最近源码对照|原路径、目录创建、文件写入、字符搜索机器码对照；目录创建发现并修复四个场景差异|OUTER-MKDIR-NATIVE-PARITY.md、OUTER-MODULE-PATH-NATIVE-PARITY.md、OUTER-WRITE-NATIVE-PARITY.md|
 
@@ -29,6 +30,8 @@
 原按钮hookButton新增4项隔离测试：在明确的“默认处理先于挂钩”模型下，原OnClick回调无法撤销已经发生的默认处理；战斗属性写入失败发生在直调尝试之后。用户定制客户端的实际顺序仍未取证，不能把模型当作实机结论；见DIRECT-CAST-HOOK-VALIDATION.md。产品挂钩仍未接入。
 
 已提供手动`/wbdhookprobe`现场诊断按钮，只委托点击本插件记录按钮，不施法或修改按键；当前尚未取得用户客户端的现场记录。记录器在两种相反宿主顺序下如实记录的测试通过，不代表实机顺序已验证。
+
+该诊断测试包已安装到实际_forever_客户端，旧插件备份及WTF不变校验通过；安装后的64个TOC条目和登录/进世界延时初始化离线验证通过。尚未原生运行或取得现场点击记录，见INSTALLED-HOOK-PROBE-VALIDATION.md。
 
 新增源码与随机命名包完整 TOC 顶层加载检查：各 57 个条目在 Lua 5.1 显式 API 宿主中通过，九职业注册及随机插件名安全诊断通过。未执行登录和周期回调，不能作为游戏加载或施法验收；见 ADDON-LOAD-VALIDATION.md。
 

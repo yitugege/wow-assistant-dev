@@ -38,3 +38,5 @@
 3项记录器测试使用两种相反的显式宿主顺序，确认均如实记录而非固定预期；还覆盖默认动作缺失、记录上限、重复打开和战斗门控。与完整TOC及打包测试合计11项通过（4.475秒）。这些不是原生安全执行或实机点击证明；原模板源码也不能代替用户当前客户端的记录。
 
 本地随机包`dist/hook-order-probe/WowBuddyDev-addon.zip`，目录`wbc204a3dc89e`，SHA256 `53b1cd4012ce71e344f0e47f0788fee50f645b981b5c9add38e7e276ac12d031`。尚未安装、公开发布或重新构建EXE。
+
+后续安装状态：该包已通过独立安装器安装到本机_forever_客户端，保留已有目录名WowBuddyDev，旧版已备份，WTF文件保持不变；详见INSTALLED-HOOK-PROBE-VALIDATION.md。尚未取得原生点击记录，公开发布与EXE重建状态不变。
