@@ -55,7 +55,7 @@
 
 当前入口不创建程序更新、插件更新或循环库网络客户端，不调用旧插件随机安装/清理入口；离线安装按钮使用本工程的本地插件包，“GitHub下载更新”按钮下载本仓库最新配套发布包。首次启动将内置离线循环库复制到数据目录的hub/rotations.json，已有文件不覆盖。当前快照可解析为41套方案，来自此前本地测试目录，保留原方案内容和作者信息；数量不代表各方案均经过游戏验证。自有远程循环库来源尚未配置。
 
-`python run_dev.py --selftest` 使用禁止抓屏和发键的后端进行离屏GUI构造/关闭检查，输出dist/desktop-selftest.json。请以此入口启动开发工程，不直接运行迁入的legacy desktop模块，以免混入旧默认配置。
+`python run_dev.py --desktop-selftest` 使用禁止抓屏和发键的后端进行离屏GUI构造/关闭检查，输出dist/desktop-selftest.json。`--selftest` 在当前源码中恢复为原引擎自检，默认追加程序目录的_selftest.txt；`--data-dir` 可指定报告目录。该原命令保留报告失败仍返回0的行为，严格检查请用 `--engine-selftest`。公开v0.2.2的--selftest仍是旧GUI诊断，尚未包含本次命令修正。
 
 修改本地数据目录中的hub/rotations.json后，可点击“重载本地方案”，无需重新打包。源码默认目录为项目.local；EXE默认目录为程序旁.local，按钮悬停显示完整文件位置。重载只读取该本地文件，不联网；读取或JSON校验失败会记录日志并保留当前内存方案。磁盘上的错误文件不会被自动修复，重启前仍应自行改正。有效的空方案快照允许清空循环库。
 
@@ -69,7 +69,7 @@ EXE自动更新开关现已恢复：开启且距上次成功检查超过6小时�
 
 安装requirements-dev.txt后运行 `python tools/build_desktop.py`。构建产物为 `dist/desktop/WowBuddyDev/WowBuddyDev.exe`，是目录版：需要保留旁边的_internal和packages目录，不能只复制EXE。
 
-该构建直接打包run_dev.py与desktop/wowbuddy源码，附带本工程assets和插件源码，不引用原EXE。插件ZIP放在packages目录，设置默认保存在EXE旁的.local目录。构建结束自动运行冻结入口的--selftest，记录build-manifest.json和desktop-selftest.json。
+该构建直接打包run_dev.py与desktop/wowbuddy源码，附带本工程assets和插件源码，不引用原EXE。插件ZIP放在packages目录，设置默认保存在EXE旁的.local目录。构建结束自动运行冻结入口的--desktop-selftest，记录build-manifest.json和desktop-selftest.json。
 
 自测使用无系统操作的后端，不抓屏、不发键、不进入游戏；通过只代表冻结GUI能正常加载资源并关闭，不代表插件弹窗或游戏循环已经验证。
 

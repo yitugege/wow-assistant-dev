@@ -580,7 +580,8 @@ def main():
         from wowbuddy.dev_update_handoff import run_handoff
         return run_handoff(sys.argv[2])
     parser=argparse.ArgumentParser(description='WowBuddyDev源码开发入口',allow_abbrev=False)
-    parser.add_argument('--selftest', action='store_true')
+    parser.add_argument('--selftest', action='store_true',help='运行原引擎自检并追加_selftest.txt，不启动GUI')
+    parser.add_argument('--desktop-selftest',action='store_true',help='独立离屏GUI构建自检')
     parser.add_argument('--selftest-backends', action='store_true',
                         help='验证真实Win32后端构造及GUI关闭，不开始监控或发键')
     parser.add_argument('--data-dir',type=Path,default=APP_ROOT/'.local')
@@ -603,8 +604,14 @@ def main():
     parser.add_argument('--rotation',default='',help='界面诊断的专精ID|子分类|方案名')
     parser.add_argument('--toggle-showall',action='store_true',help='同时导出显示全部切换诊断')
     args=parser.parse_args()
+    if args.selftest:
+        from wowbuddy.dev_native_selftest import run_native_selftest
+        explicit_data=any(a=='--data-dir' or a.startswith('--data-dir=') for a in sys.argv[1:])
+        output=args.data_dir if explicit_data else APP_ROOT
+        output.mkdir(parents=True,exist_ok=True)
+        return run_native_selftest(ROOT/'assets',output,sys.argv)
     if args.check_update or args.update_now:
-        if (args.selftest or args.selftest_backends or args.install_addon or args.install_addon_dir is not None
+        if (args.desktop_selftest or args.selftest_backends or args.install_addon or args.install_addon_dir is not None
                 or args.dump_ui or args.hub_selftest or args.hub_fetch or args.engine_selftest or args.auto or args.watch
                 or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall
                 or (args.check_update and args.update_now)):
@@ -617,7 +624,7 @@ def main():
     if args.hub_fetch and not args.hub_selftest:
         parser.error('--hub-fetch 需要 --hub-selftest')
     if args.install_addon:
-        if (args.selftest or args.selftest_backends or args.dump_ui or args.auto or args.watch
+        if (args.desktop_selftest or args.selftest_backends or args.dump_ui or args.auto or args.watch
                 or args.hub_selftest or args.engine_selftest or args.spec or args.talent is not None
                 or args.rotations or args.rotation or args.toggle_showall):
             parser.error('--install-addon 仅与 --install-addon-dir 和 --data-dir 配合使用')
@@ -631,7 +638,7 @@ def main():
     if args.install_addon_dir is not None:
         parser.error('--install-addon-dir 需要 --install-addon')
     if args.hub_selftest or args.engine_selftest:
-        if (args.dump_ui or args.selftest or args.selftest_backends or args.auto or args.watch
+        if (args.dump_ui or args.desktop_selftest or args.selftest_backends or args.auto or args.watch
                 or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall
                 or (args.hub_selftest and args.engine_selftest)):
             parser.error('--hub-selftest / --engine-selftest 各自仅与 --data-dir 配合使用')
@@ -641,16 +648,16 @@ def main():
         from wowbuddy.dev_hub_diagnostics import run_hub_diagnostics
         return run_hub_diagnostics(ROOT/'assets',args.data_dir,fetch_online=args.hub_fetch)
     if args.dump_ui:
-        if args.selftest or args.selftest_backends or args.auto or args.watch:
+        if args.desktop_selftest or args.selftest_backends or args.auto or args.watch:
             parser.error('--dump-ui 不能与自检或自动监控参数同时使用')
         from wowbuddy.cli_dump_ui import DumpUiOptions
         options=DumpUiOptions(args.rotations,args.rotation,tuple(args.spec),args.talent or '10/0/0',args.toggle_showall)
         return launch(args.data_dir,dump_ui=options)
     if args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall:
         parser.error('专精、天赋及方案诊断参数需要 --dump-ui')
-    if (args.auto or args.watch) and (args.selftest or args.selftest_backends):
+    if (args.auto or args.watch) and (args.desktop_selftest or args.selftest_backends):
         parser.error('--auto / --watch 不能与自检参数同时使用')
-    if not (args.selftest or args.selftest_backends): return launch(args.data_dir,auto_start=args.auto,watch=not args.no_watch,no_update=args.no_update)
+    if not (args.desktop_selftest or args.selftest_backends): return launch(args.data_dir,auto_start=args.auto,watch=not args.no_watch,no_update=args.no_update)
     with TemporaryDirectory(prefix='wowbuddy-dev-selftest-') as temporary:
         report=launch(temporary,selftest=True,real_backends=args.selftest_backends)
     report['temporary_removed']=not Path(temporary).exists()

@@ -27,7 +27,7 @@ class DumpUiTests(unittest.TestCase):
             self.assertIn('--toggle-showall off',showall)
 
     def test_diagnostic_parameter_conflicts_rejected_before_launch(self):
-        for args in (['--spec=1482'],['--dump-ui','--watch'],['--dump-ui','--selftest']):
+        for args in (['--spec=1482'],['--dump-ui','--watch'],['--dump-ui','--desktop-selftest']):
             with self.subTest(args=args):
                 result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),*args],
                     cwd=ROOT,capture_output=True,timeout=10)

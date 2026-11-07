@@ -12,3 +12,4 @@ dist/
 .env.*
 !.env.example
 assets/addon.bin
+/_selftest.txt

@@ -39,7 +39,7 @@ def main():
     executable=target/'WowBuddyDev.exe'
     report_path=target/'desktop-selftest.json'
     report_path.unlink(missing_ok=True)
-    result=subprocess.run([str(executable),'--selftest'],cwd=target,timeout=60)
+    result=subprocess.run([str(executable),'--desktop-selftest'],cwd=target,timeout=60)
     report=json.loads(report_path.read_text('utf8'))
     backend_path=target/'backend-selftest.json'
     backend_path.unlink(missing_ok=True)
