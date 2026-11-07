@@ -14,7 +14,7 @@ class HubDiagnosticTests(unittest.TestCase):
         environment=os.environ.copy()
         environment['WOWBUDDY_HOME']=str(Path(directory)/'must-not-use')
         environment['WOWBUDDY_HUB_URL']='http://127.0.0.1:1/not-used'
-        result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--hub-selftest',
+        result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--desktop-hub-selftest',
             '--data-dir',str(directory)],cwd=ROOT,capture_output=True,env=environment,timeout=15)
         self.assertFalse((Path(directory)/'must-not-use').exists())
         return result,json.loads((Path(directory)/'hub-selftest.json').read_text('utf8'))
@@ -58,6 +58,6 @@ class HubDiagnosticTests(unittest.TestCase):
             with TemporaryDirectory() as directory:
                 result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--hub-selftest',extra,'--data-dir',directory],
                     cwd=ROOT,capture_output=True,timeout=10)
-                self.assertEqual(result.returncode,0,result.stderr)
-                report=json.loads((Path(directory)/'hub-selftest.json').read_text('utf8'))
-                self.assertFalse(report['network_used'])
+                self.assertEqual(result.returncode,1,result.stderr)
+                self.assertIn('FAIL',(Path(directory)/'_hub.txt').read_text('utf8'))
+                self.assertFalse((Path(directory)/'hub-selftest.json').exists())

@@ -153,9 +153,9 @@ EXE自动更新开关现已恢复：开启且距上次成功检查超过6小时�
 
 ## 循环库离线诊断
 
-`WowBuddyDev.exe --hub-selftest --data-dir D:/wowbuddy-hub-diagnostics` 检查该目录hub/rotations.json，首次缺少缓存时与独立GUI一样初始化内置快照，已有文件不覆盖。生成原格式_hub.txt和补充hub-selftest.json。命令不创建窗口、游戏后端或网络客户端，显式隔离旧WOWBUDDY_HOME和服务器环境变量；--hub-fetch未接入，传入会报参数错误。
+`WowBuddyDev.exe --hub-selftest --data-dir D:/wowbuddy-hub-diagnostics` 检查现有hub/rotations.json，不填充初始库，只生成原格式_hub.txt。无方案返回1，有方案返回0；报告写入失败不改变这个返回码。默认报告写程序目录、缓存位于独立.local目录；显式--data-dir使两者位于所选目录。默认不联网，--hub-fetch才从自有GitHub拉取，旧WOWBUDDY_HOME和服务器环境变量继续隔离。原早期命令优先级及忽略无关GUI参数的行为保持不变。
 
-原文本中的PASS仅表示存在方案；补充JSON将cache_check_passed与profiles_with_missing_actions分开。当前41套方案能加载，18套有缺失动作；二者可以同时成立，不代表全部方案可用。缓存损坏、空库或原文本报告写入失败返回非零码，已有缓存保留不修复。当前源码按原早期命令优先级处理--hub-selftest，并忽略无关GUI参数；首次种子快照、额外JSON和报告失败返回码仍是明确的独立入口差异。
+`--desktop-hub-selftest` 保留增强诊断：缺缓存时初始化内置快照，生成_hub.txt和hub-selftest.json，报告失败返回非零。可配合--data-dir和--hub-fetch。JSON将缓存可用性与动作缺口分开；当前内置41套方案中18套引用原资源缺失动作，不能把缓存PASS当作游戏可用。已有损坏或空缓存不会被内置库覆盖。
 
 ## 引擎离线自检
 

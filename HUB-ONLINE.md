@@ -4,7 +4,7 @@
 
 来源固定为本仓库 `main/assets/rotations.json`，不继承旧服务器环境变量或 URL 文件。GUI 的“GitHub刷新”联网，“重载本地方案”仍只读本地。自检及离屏界面导出不联网。
 
-命令行 `python run_dev.py --hub-selftest --hub-fetch --data-dir="D:/循环库测试"` 执行一次实际拉取；不带 `--hub-fetch` 仍为离线诊断。沿用原20秒局部等待，`_hub.txt` 报告本地/在线来源和状态；失败但已有方案时原命令仍可能返回成功，不能仅凭退出码认定网络成功。JSON 单独记录 `network_used`（启用拉取）及 `fetch_timed_out`。
+命令行 `python run_dev.py --hub-selftest --hub-fetch --data-dir="D:/循环库测试"` 执行一次实际拉取；不带 `--hub-fetch` 仍为离线诊断。沿用原20秒局部等待，`_hub.txt` 报告本地/在线来源和状态；失败但已有方案时原命令仍可能返回成功，不能仅凭退出码认定网络成功。原命令仅输出_hub.txt；需要JSON的 `network_used`（启用拉取）和 `fetch_timed_out` 时，使用独立增强入口 `--desktop-hub-selftest --hub-fetch`。
 
 ## 缓存和备份
 

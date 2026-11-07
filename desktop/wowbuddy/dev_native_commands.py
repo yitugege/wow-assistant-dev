@@ -34,5 +34,5 @@ def dispatch_native_command(arguments,*,assets,application,packages,frozen):
     if options.command=='update_now':
         from .dev_cli_update import run_update_now
         return run_update_now(data,application,arguments[1:],frozen=frozen)
-    from .dev_hub_diagnostics import run_hub_diagnostics
-    return run_hub_diagnostics(assets,data,fetch_online=options.hub_fetch)
+    from .dev_native_hub import run_native_hub
+    return run_native_hub(data,command_data_dir(arguments,application),fetch_online=options.hub_fetch)

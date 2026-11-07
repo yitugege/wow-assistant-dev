@@ -636,7 +636,8 @@ def main():
     parser.add_argument('--install-addon-dir',default=None,help='直接安装目标目录，原版格式为 --install-addon-dir=路径')
     parser.add_argument('--dump-ui',action='store_true',help='普通GUI启动后延迟写原界面报告，保持运行')
     parser.add_argument('--desktop-dump-ui',dest='dump_ui',action='store_true',help='独立离屏导出界面诊断并退出')
-    parser.add_argument('--hub-selftest',action='store_true',help='检查本地循环库并报告缺失动作，不联网')
+    parser.add_argument('--hub-selftest',action='store_true',help='按原语义检查现有循环库并写_hub.txt，默认不联网')
+    parser.add_argument('--desktop-hub-selftest',action='store_true',help='独立循环库增强诊断：填充初始库、检查动作并输出JSON')
     parser.add_argument('--hub-fetch',action='store_true',help='与 --hub-selftest 合用，从自有GitHub拉取循环库')
     parser.add_argument('--engine-selftest',action='store_true',help='运行原引擎离线自检并记录失败/跳过计数')
     parser.add_argument('--check-update',action='store_true',help='检查自有GitHub客户端版本；有更新返回10')
@@ -652,7 +653,7 @@ def main():
     from wowbuddy.native_cli import parse_native_cli
     from wowbuddy.dev_native_commands import command_data_dir
     native=parse_native_cli(sys.argv)
-    strict_commands={'--desktop-selftest','--selftest-backends','--engine-selftest','--desktop-dump-ui','--help','-h'}
+    strict_commands={'--desktop-selftest','--selftest-backends','--engine-selftest','--desktop-dump-ui','--desktop-hub-selftest','--help','-h'}
     if native.command=='gui' and not strict_commands.intersection(sys.argv[1:]):
         if '--watch' in sys.argv and '--no-watch' in sys.argv:
             parser.error('--watch 与 --no-watch 不能同时使用')
@@ -667,10 +668,17 @@ def main():
         return launch(data_dir,auto_start=native.auto_start,watch='--no-watch' not in sys.argv,
                       no_update=native.suppress_auto_update,staged=True,**extra)
     args=parser.parse_args()
-    if args.hub_fetch and not args.hub_selftest:
+    if args.hub_fetch and not (args.hub_selftest or args.desktop_hub_selftest):
         parser.error('--hub-fetch 需要 --hub-selftest')
     if args.install_addon_dir is not None:
         parser.error('--install-addon-dir 需要 --install-addon')
+    if args.desktop_hub_selftest:
+        if (args.dump_ui or args.desktop_selftest or args.selftest_backends or args.engine_selftest
+                or args.auto or args.watch or args.spec or args.talent is not None
+                or args.rotations or args.rotation or args.toggle_showall):
+            parser.error('--desktop-hub-selftest 仅与 --data-dir / --hub-fetch 配合使用')
+        from wowbuddy.dev_hub_diagnostics import run_hub_diagnostics
+        return run_hub_diagnostics(ROOT/'assets',args.data_dir,fetch_online=args.hub_fetch)
     if args.engine_selftest:
         if (args.dump_ui or args.desktop_selftest or args.selftest_backends or args.auto or args.watch
                 or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall

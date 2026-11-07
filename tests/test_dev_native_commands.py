@@ -11,7 +11,7 @@ class NativeCommandTests(unittest.TestCase):
     def test_all_supported_command_combinations_use_native_priority(self):
         flags=['--selftest','--install-addon','--check-update','--update-now','--hub-selftest']
         functions=['dev_native_selftest.run_native_selftest','dev_cli_install.run_development_install',
-                   'github_client.run_check_command','dev_cli_update.run_update_now','dev_hub_diagnostics.run_hub_diagnostics']
+                   'github_client.run_check_command','dev_cli_update.run_update_now','dev_native_hub.run_native_hub']
         with tempfile.TemporaryDirectory() as tmp,ExitStack() as stack:
             calls=[stack.enter_context(patch('wowbuddy.'+name,return_value=10+i)) for i,name in enumerate(functions)]
             for size in range(1,6):
@@ -31,7 +31,7 @@ class NativeCommandTests(unittest.TestCase):
             with patch('wowbuddy.dev_cli_install.run_development_install',return_value=0) as install:
                 self.assertEqual(dispatch_native_command(args,**options),0)
                 self.assertEqual(install.call_args.args[0],args)
-            with patch('wowbuddy.dev_hub_diagnostics.run_hub_diagnostics',return_value=0) as hub:
+            with patch('wowbuddy.dev_native_hub.run_native_hub',return_value=0) as hub:
                 self.assertEqual(dispatch_native_command(['app','--hub-selftest','--hub-fetch'],**options),0)
                 self.assertTrue(hub.call_args.kwargs['fetch_online'])
 
