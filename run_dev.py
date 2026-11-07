@@ -22,7 +22,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         os.environ['QT_QPA_PLATFORM'] = 'offscreen'
     from PySide6.QtCore import QUrl, QTimer, Qt
     from PySide6.QtGui import QDesktopServices
-    from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QFileDialog, QMenu
+    from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QFileDialog, QMenu, QPushButton
     from wowbuddy.assets import Assets
     from wowbuddy.settings import open_ini_settings
     from wowbuddy.qt_app import AssistantWindow
@@ -320,6 +320,35 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.ui.addon_browse_button.clicked.connect(self._browse_development_client)
             self.ui.addon_install_button.setText('安装/更新开发插件')
             self.ui.addon_install_button.clicked.connect(self._install_development_addon)
+            self._addon_cleanup_button=QPushButton('清理旧插件')
+            self._addon_cleanup_button.setObjectName('Dim')
+            self._addon_cleanup_button.setMinimumHeight(30)
+            self._addon_cleanup_button.setToolTip('清理所选客户端内含原插件特征文件的目录，保留当前独立插件')
+            self.ui.addon_install_button.parentWidget().layout().addWidget(self._addon_cleanup_button)
+            self._addon_cleanup_button.clicked.connect(self._cleanup_development_addons)
+
+        def _cleanup_development_addons(self):
+            if self.session.is_active():
+                self.ui.addon_status.setText('请先停止监控并退出游戏，再清理旧插件。')
+                return
+            for name in ('_download_timer','_addon_refresh_timer'):
+                timer=getattr(self,name,None)
+                if timer is not None and timer.isActive():
+                    self.ui.addon_status.setText('插件更新进行中，请完成后再清理。')
+                    return
+            try:
+                from wowbuddy.dev_addon_cleanup import cleanup_old_addons
+                from wowbuddy.addon_games import selected_executable
+                from wowbuddy.dev_addon_install import client_directory
+                selected=client_directory(self.ui.addon_path.text())
+                running=selected_executable(self._addon_windows)
+                if running and str(Path(running).absolute().parent).casefold()==str(selected).casefold():
+                    raise ValueError('所选游戏正在运行，请退出游戏后再清理')
+                result=cleanup_old_addons(selected)
+                status=f'清理完成：删除 {result.deleted} 个旧插件目录。\n{result.notes}'
+            except (OSError,ValueError) as error:status='插件清理失败：'+str(error)
+            self.ui.addon_status.setText(status)
+            self.logger.append(status)
 
         def _select_development_client(self, selected):
             from wowbuddy.dev_game_paths import normalize_client
