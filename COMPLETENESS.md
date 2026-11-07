@@ -4,6 +4,8 @@
 
 ## 当前交付与源码身份
 
+最新本地构建产物为构建输入检查修复验证版，归档dist/local-source-guard，单文件SHA256为276591c4c0193669bc353267c0556a149d0a810e3da3b7eb5d6336e619cc9624。运行代码与7b0eaa1相同；清单现覆盖210文件（插件85），目录启动/后端及单文件三缓存场景通过，不把前版所有检查算作此次重测。见BUILD-SOURCE-GUARD.md；下述7b0eaa1产物信息为此前完整本地验证基线。
+
 最新本机安装已升级到7b0eaa1对应的技能名称兼容修复包，含圣印回显修复；85文件一致、旧85文件备份一致、72个WTF文件保持。安装目录64条TOC及登录/进世界延时初始化离线检查通过，尚未原生游戏施法。详见INSTALLED-SPELL-COMPAT-VALIDATION.md；下述f1b6d86安装描述均为前版历史记录。
 
 最新本地构建7b0eaa1已包含技能名称查询兼容、圣印事件及重建索引修复、两个诊断模块和此前客户端修复，内嵌插件85文件与源码逐字节一致，见BUILD-CURRENT-VALIDATION.md。完整顶层回归356项中355项通过、1项抓屏检查失败；改进测试窗口等待后仍受1082像素色条超过1032像素可用屏幕高度限制。不能称全量回归通过，公开0.2.8附件未覆盖。
@@ -14,7 +16,7 @@
 |---|---|---|
 |公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
 |本机游戏插件|7b0eaa1技能名称兼容及圣印回显修复包，版本0.2.8-dev，保留WowBuddyDev目录；原生游戏尚未验收|INSTALLED-SPELL-COMPAT-VALIDATION.md，85文件校验、旧85文件备份、72个WTF文件保持不变|
-|最新本地EXE|源码7b0eaa1，版本字段仍为0.2.8；内嵌85文件插件，未覆盖公开附件|dist/local-7b0eaa1/WowBuddyDev-Outer.exe；SHA256 62a2186c82f8486b1c77705c1532f94bb67cfa4b79e36a0d017e84f419dff072|
+|最新本地EXE|构建输入检查修复验证版，运行代码仍为7b0eaa1；未覆盖公开附件|dist/local-source-guard/WowBuddyDev-Outer.exe；SHA256 276591c4c0193669bc353267c0556a149d0a810e3da3b7eb5d6336e619cc9624|
 |最近源码对照|原路径、目录创建、文件写入、字符搜索机器码对照；目录创建发现并修复四个场景差异|OUTER-MKDIR-NATIVE-PARITY.md、OUTER-MODULE-PATH-NATIVE-PARITY.md、OUTER-WRITE-NATIVE-PARITY.md|
 
 ## 明确未完成项

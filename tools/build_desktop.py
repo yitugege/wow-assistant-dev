@@ -7,18 +7,17 @@ import shutil
 import subprocess
 import sys
 from build_addon import build
+from build_source_guard import snapshot_sources
 
 ROOT=Path(__file__).resolve().parents[1]
 
 
 def main():
+    before=snapshot_sources(ROOT)
     package=ROOT/'dist/WowBuddyDev-dev.zip'
     addon_manifest=build(ROOT/'addon/WowBuddyDev',package)
     package.with_suffix('.manifest.json').write_text(json.dumps(addon_manifest,ensure_ascii=False,indent=2),'utf8')
-    inputs=[ROOT/'run_dev.py',*sorted((ROOT/'desktop/wowbuddy').rglob('*.py')),
-            *sorted((ROOT/'assets').glob('*.json'))]
     digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
-    before={p.relative_to(ROOT).as_posix():digest(p) for p in inputs}
     args=[sys.executable,'-m','PyInstaller','--noconfirm','--clean','--onedir','--windowed',
           '--name','WowBuddyDev','--paths',str(ROOT/'desktop'),
           '--distpath',str(ROOT/'dist/desktop'),'--workpath',str(ROOT/'build/desktop'),
@@ -45,7 +44,7 @@ def main():
     backend_path.unlink(missing_ok=True)
     backend_result=subprocess.run([str(executable),'--selftest-backends'],cwd=target,timeout=60)
     backend_report=json.loads(backend_path.read_text('utf8'))
-    after={p.relative_to(ROOT).as_posix():digest(p) for p in inputs}
+    after=snapshot_sources(ROOT)
     passed=(result.returncode==0 and report['passed'] and report['frozen']
             and report['plugin_package_present'] and report['window_closed']
             and report['temporary_removed'] and before==after

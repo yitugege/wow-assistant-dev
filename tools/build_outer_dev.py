@@ -15,12 +15,12 @@ from wowbuddy.github_outer import MANIFEST_NAME,verify_outer
 
 
 def main():
+    from build_source_guard import require_matching_sources
     source=ROOT/'dist/desktop/WowBuddyDev'
     manifest=json.loads((source/'build-manifest.json').read_text('utf8'))
     if not manifest['passed'] or file_sha256(source/'WowBuddyDev.exe')!=manifest['executable_sha256']:
         raise ValueError('业务构建未验证')
-    for name,digest in manifest['source_files'].items():
-        if file_sha256(ROOT/name)!=digest:raise ValueError('业务源码已变化，先重建：'+name)
+    business_sources=require_matching_sources(ROOT,manifest['source_files'])
     members=[]
     for path in sorted(source.rglob('*')):
         relative=path.relative_to(source)
@@ -53,6 +53,7 @@ def main():
     finally:pe.close()
     after={p.relative_to(ROOT).as_posix():file_sha256(p) for p in inputs}
     if before!=after:raise ValueError('构建时源码发生变化')
+    require_matching_sources(ROOT,business_sources)
     report={'built':True,'artifact':str(outer),'sha256':file_sha256(outer),'identity':json.loads(identity.encode()),
         'members':{m.name:m.sha256 for m in members},'source_files':after,
         'frozen_outer_execution_verified':False,'online_update_verified':False,'original_sdk_included':False}
