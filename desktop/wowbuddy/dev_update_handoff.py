@@ -102,6 +102,8 @@ def run_handoff(job_path,*,wait=wait_for_parent,launch=launch_program):
         wait(job['parent_pid'],str(current/EXE),lambda:write_json(job_path.with_suffix('.ready.json'),{'ready':True}))
         if job_path.with_suffix('.cancel.json').exists():raise RuntimeError('更新交接已取消，未替换程序')
         if digest(current/EXE)!=job['original_sha256']:raise ValueError('等待期间目标程序已改变')
+        if digest(staged.parent/'manifest.json')!=job['manifest_sha256']:
+            raise ValueError('等待期间更新清单已改变，未替换程序')
         result.update(replace_stopped_client(staged,current));result['replaced']=True
         if job.get('restart',True):
             result['restart_pid']=launch(current/EXE,job['arguments'])

@@ -1,5 +1,6 @@
 """两个实际构建间的冻结交接测试；隔离目录、自有Job，不替换用户客户端。"""
 import ctypes as C
+import argparse
 from ctypes import wintypes as W
 import json
 import os
@@ -22,7 +23,8 @@ from wowbuddy.dev_update_handoff import prepare_handoff
 from wowbuddy.game_windows import CtypesWindowBackend
 
 
-def check():
+def check(scenario='success'):
+    if scenario not in ('success','cancel','staged-changed'):raise ValueError('未知交接场景')
     from PySide6.QtCore import QSettings
     previous=ROOT/'dist/local-6bb86ed/WowBuddyDev-Outer.exe'
     source=ROOT/'dist/desktop/WowBuddyDev'
@@ -78,6 +80,13 @@ def check():
                     raise C.WinError(C.get_last_error())
             finally:k.CloseHandle(handle)
         if Path(handoff['job']).with_suffix('.ready.json').is_file():
+            if scenario=='cancel':
+                Path(handoff['job']).with_suffix('.cancel.json').write_text('{"reason":"isolated test"}','utf8')
+            elif scenario=='staged-changed':
+                # 仅改写本次隔离暂存副本，发生在交接就绪之后、父进程退出之前。
+                changed=staged/'_internal/assets/rules.json'
+                assert changed.resolve().is_relative_to(root)
+                changed.write_bytes(changed.read_bytes()+b'\n ')
             closed.extend(close_owned_main(job))
             assert closed==[parent_pid]
     env=dict(os.environ,WOWBUDDY_NO_GAME_SCAN='1',PYINSTALLER_RESET_ENVIRONMENT='1',
@@ -88,6 +97,19 @@ def check():
                     on_running=observe,timeout_seconds=180)
     assert handoff and closed
     result=json.loads(Path(handoff['job']).with_suffix('.result.json').read_text('utf8'))
+    if scenario!='success':
+        assert not result['ok'] and not result['replaced'] and not result['restarted'],result
+        assert handoff['process'].wait(timeout=5)==1
+        assert file_sha256(current/EXE)==old.business_sha256
+        assert not list(root.glob('client.backup-*'))
+        assert (current/'.local/sentinel.txt').read_text('utf8')=='目录更新保留此数据'
+        assert ('已取消' if scenario=='cancel' else '暂存客户端已改变') in result['error']
+        assert outcome['processes_observed']==2 and outcome['job_active_at_end']==0
+        return {'passed':True,'scenario':scenario,'root':str(root),'parent_pid':parent_pid,
+                'handoff_job':handoff['job'],'handoff_result':result,'job':outcome,
+                'original_business_preserved':True,'no_backup_or_restart':True,
+                'scope':'6bb86ed冻结交接程序，在ready之后、父进程退出之前注入取消或暂存内容变化',
+                'latest_source_manifest_fix_verified':False,'game_verified':False}
     assert result['ok'] and result['replaced'] and result['restarted'],result
     assert handoff['process'].wait(timeout=5)==0
     assert file_sha256(current/EXE)==build['executable_sha256']
@@ -116,6 +138,9 @@ def check():
 
 
 if __name__=='__main__':
-    result=check()
-    (ROOT/'dist/frozen-directory-handoff.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--scenario',choices=('success','cancel','staged-changed'),default='success')
+    args=parser.parse_args();result=check(args.scenario)
+    suffix='' if args.scenario=='success' else '-'+args.scenario
+    (ROOT/f'dist/frozen-directory-handoff{suffix}.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps(result,ensure_ascii=True))

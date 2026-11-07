@@ -39,6 +39,21 @@ class HandoffTests(unittest.TestCase):
         self.assertEqual(run_handoff(self.job,wait=wait,launch=launch),1)
         self.assertEqual((self.current/'WowBuddyDev.exe').read_bytes(),b'MZ old')
 
+    def test_manifest_changed_while_waiting_cannot_replace_client(self):
+        def wait(pid,exe,ready):
+            ready()
+            path=self.stage.parent/'manifest.json'
+            manifest=json.loads(path.read_text('utf8'))
+            manifest['version']='99.0.0'
+            write_json(path,manifest)
+        def launch(*args):raise AssertionError('changed manifest must not launch')
+        self.assertEqual(run_handoff(self.job,wait=wait,launch=launch),1)
+        report=json.loads(self.job.with_suffix('.result.json').read_text('utf8'))
+        self.assertFalse(report['replaced'])
+        self.assertFalse(report['restarted'])
+        self.assertEqual((self.current/'WowBuddyDev.exe').read_bytes(),b'MZ old')
+        self.assertIn('清单',report['error'])
+
     def test_cancel_while_parent_is_exiting_prevents_swap(self):
         def wait(pid,exe,ready):
             ready();write_json(self.job.with_suffix('.cancel.json'),{'reason':'timeout'})

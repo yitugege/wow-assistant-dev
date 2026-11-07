@@ -40,3 +40,17 @@ run_dev.py现为handoff失败分支显示“重试安装”，仅在暂存包存
 已核对旧EXE备份摘要、更新后258个未被自检改写的发布成员摘要、独立数据文件和INI哨兵值及关闭自动更新设置。第259项desktop-selftest.json由新进程重写：其assets路径必须指向本次隔离目录，修改时间晚于交接ready，且报告frozen/passed/window_closed均为true，避免将安装包附带的旧报告误当新运行成功。
 
 边界：这是目录版真实安装链；宿主程序触发prepare_handoff，随后实际冻结旧程序、交接程序和新程序执行。未点击冻结GUI的手动按钮，未经过GitHub下载或版本检查，也未执行失败回滚注入。现有发布端严格限制GitHub地址，本测试没有为本地服务器放宽该校验。原先按钮源码测试与本轮真实交接测试各有范围，不能合并宣称冻结手动更新完整验收。无游戏目录安装和施法测试，公开下载附件未变。
+
+## 等待期间清单变化的缺陷与修复
+
+`run_handoff`原先仅在等待父进程退出之前核对manifest_sha256；父进程退出后只复核旧EXE，replace_stopped_client重新读取清单。若等待期间清单版本改变但成员摘要不变，仍会替换客户端。新增源码测试在ready回调后将本地测试清单版本改为99.0.0，修复前失败于`replaced`已经为true，见`.local/handoff-manifest-before.log`。测试EXE均是假数据，启动函数为拒绝执行的记录替身。
+
+修复在父进程退出后、替换之前再次比较清单摘要与交接任务固定值；不一致则报告“等待期间更新清单已改变，未替换程序”。旧目录和暂存包保留，不重启。相关更新源码测试48项通过（8.456秒），`.local/handoff-manifest-after.log`。这是自有更新实现缺陷修复，不是原EXE新增行为取证，也不是并发文件改写的原子性证明。当前c29fe27及公开EXE尚不包含本修复。
+
+## 已有冻结程序的取消与暂存内容变化
+
+`tools/check_frozen_directory_handoff.py`新增`--scenario cancel`和`--scenario staged-changed`。均在真实交接程序生成ready、父进程仍存活时注入，然后关闭所属测试Job的旧主窗。取消场景写入本任务cancel记录；内容变化场景仅向本次暂存副本的rules.json追加空白，摘要因而改变。
+
+两场景通过：均报告ok/replaced/restarted为false，交接退出码1，旧业务EXE摘要和本地数据文件保持，未产生备份目录或重启进程，每次2个测试进程最终全部退出。取消测试父PID39176，根目录`.local/frozen-directory-handoff-fo51e7zr`；暂存变化父PID736，根目录`.local/frozen-directory-handoff-tkh54hw9`。报告为`dist/frozen-directory-handoff-cancel.json`及`dist/frozen-directory-handoff-staged-changed.json`，同名日志在`.local`目录。
+
+这些执行的是6bb86ed内已有的取消/暂存校验分支，不证明本轮新加的清单复核已打入EXE，也不覆盖目录交换失败后的回滚或冻结按钮全流程。原成功场景报告保留，失败场景独立输出。

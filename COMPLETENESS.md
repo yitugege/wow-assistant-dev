@@ -6,7 +6,7 @@
 
 最新本地构建c29fe27已包含目录创建前缀UTF16计数修复及此前取消更新记录写入失败后的界面恢复修复，保存于dist/local-c29fe27/WowBuddyDev-Outer.exe。源码439项回归及本轮冻结启动检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
 
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md；当前产品源码与c29fe27构建清单摘要一致。历史6bb86ed与公开0.2.8不包含该修复。
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。后续源码新增交接等待后再次核对更新清单摘要，尚未打入EXE，当前产品源码不再与c29fe27构建完全一致。历史6bb86ed与公开0.2.8也不包含目录创建修复。
 
 |对象|当前状态|证据|
 |---|---|---|
@@ -26,7 +26,7 @@
 
 ## 最近新增证据及其范围
 
-当前源码c29fe27完整回归：286项顶层与153项核心测试通过，共439项。产品源码摘要与最新本地c29fe27构建一致，见BUILD-CURRENT-VALIDATION.md。测试数量不能代替本表未完成要求的验收。
+构建基线c29fe27完整回归：286项顶层与153项核心测试通过，共439项。后续交接清单复核修改的48项相关源码测试通过，尚未重建；已有冻结取消/暂存内容变化两场景通过，见BUILD-CURRENT-VALIDATION.md及MANUAL-UPDATE-VALIDATION.md。测试数量不能代替本表未完成要求的验收。
 
 - 九职业182个技能可用位，共236帧真实Lua纹理→客户端解码→规则读取；游戏API为替身，见CLASS-ACTION-PIXEL-VALIDATION.md。
 - 原addon.bin与独立Lua就绪判定3822组、逐等级学习19022组一致；包含680组基础ID不可用而等级别名可用。九职业注册表未配置通用宠物分类，不能推断整个游戏没有宠物功能。见ORIGINAL-CLASS-READY-PARITY.md。
