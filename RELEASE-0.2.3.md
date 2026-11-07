@@ -18,3 +18,10 @@
 客户端EXE SHA256：a5e454bfad52955a0037cd7a13796adeb6b294eafb37953c5279057f9abecdc5。
 
 仍未完成全部功能一比一还原或游戏内验收：受保护操作弹窗、真实按键接收、完整职业行为、连续换怪、真实窗口视觉及部分原启动链差异仍需核对。原程序本身也不完整识别多开；独立版运行状态匹配差异见ADDON-UPDATE.md。上述离线验证不能代替这些实测。
+
+
+## 公开附件和升级验证补充
+
+已发布：https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.3 。客户端ZIP及插件ZIP和各自清单均已上传；从公开地址重新下载，两份摘要与本地产物一致，解压后的客户端自检通过，插件随机目录为wd38882e9addc，Lua随机文件名及TOC版本核对通过。证据为dist/public-release-023-check.json。
+
+复制先前已下载并验证的公开v0.2.2客户端，核对原EXE摘要8bf8d6c2773693892af1a90b4bdec60c204afcb398716aea16eb3836a1807557，再直接运行该旧EXE的--update-now。旧代码实际下载新包并交接替换，换入EXE摘要匹配v0.2.3，测试设置标记保留，新EXE--desktop-selftest通过。证据为dist/public-upgrade-022-023.json及其job.result.json。本次显式禁用自动重启，不把这项结果描述为新版本自动重启或游戏监控验证；未替换用户正在使用的助手。
