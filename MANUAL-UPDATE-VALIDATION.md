@@ -54,3 +54,11 @@ run_dev.py现为handoff失败分支显示“重试安装”，仅在暂存包存
 两场景通过：均报告ok/replaced/restarted为false，交接退出码1，旧业务EXE摘要和本地数据文件保持，未产生备份目录或重启进程，每次2个测试进程最终全部退出。取消测试父PID39176，根目录`.local/frozen-directory-handoff-fo51e7zr`；暂存变化父PID736，根目录`.local/frozen-directory-handoff-tkh54hw9`。报告为`dist/frozen-directory-handoff-cancel.json`及`dist/frozen-directory-handoff-staged-changed.json`，同名日志在`.local`目录。
 
 这些执行的是6bb86ed内已有的取消/暂存校验分支，不证明本轮新加的清单复核已打入EXE，也不覆盖目录交换失败后的回滚或冻结按钮全流程。原成功场景报告保留，失败场景独立输出。
+
+## 清单变化修复已完成冻结验证
+
+后续9fa2008构建已包含清单复核。工具新增`--scenario manifest-changed --current-build`，将本次真实目录版复制为旧进程和交接程序；收到ready后、关闭旧主窗前仅将本次暂存清单版本改为99.0.0。该测试不经过线上版本比较，也不修改公开清单。
+
+实际结果：父PID10784正常退出，交接程序返回1，报告“等待期间更新清单已改变，未替换程序”；ok/replaced/restarted均为false。旧EXE摘要`19b11229866d087490d34281a770a2fef922f5429e3e5a3762c789a2a1aefa5f`保持，数据文件保留，没有备份或重启进程，Job内两个进程全部退出。
+
+证据根目录`.local/frozen-directory-handoff-deb0dj3z`，报告`dist/frozen-directory-handoff-manifest-changed-current.json`，日志`.local/check-9fa2008-manifest.log`。工具区分历史6bb86ed与当前构建，报告明确保存被测业务摘要；旧取消/暂存测试报告未覆盖。这解决指定修复的冻结验证，不代表冻结手动按钮、网络下载或所有目录替换失败分支已验收。

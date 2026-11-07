@@ -1,10 +1,17 @@
 # 当前源码本地构建验收
 
-## 最新源码尚未构建的改动
+## 最新本地构建：9fa2008，未公开发布
 
-`desktop/wowbuddy/dev_update_handoff.py`新增父进程退出后的清单摘要复核，修复等待期间清单改变仍替换目录的问题。48项相关源码测试通过，见MANUAL-UPDATE-VALIDATION.md。以下c29fe27本地及公开0.2.8不含此修复，当前源码不再与这些构建完全一致；需要后续重建并验证新分支。6bb86ed冻结取消/暂存变化场景另已通过，但不能替代本修复的冻结验证。
+已将父进程退出后再次核对清单摘要的修复打入目录版和单文件；公开0.2.8未覆盖，版本字段仍为0.2.8。产品源码摘要与两份构建清单一致。此前48项相关源码回归通过，本轮执行实际打包程序检查，没有重跑全部源码回归。
 
-## 最新本地构建与回归：c29fe27，未公开发布
+- 单文件`dist/local-9fa2008/WowBuddyDev-Outer.exe`，SHA256 `8808d010d9f1c37ac2c2c6b4d159cb6badeb64f147fb735612a9afcfc688e6a6`。
+- 目录版`dist/desktop/WowBuddyDev/WowBuddyDev.exe`，SHA256 `19b11229866d087490d34281a770a2fef922f5429e3e5a3762c789a2a1aefa5f`，须保留相邻依赖。
+- 构建GUI/系统后端初始化、6种规则输入、259个外层成员及身份资源、首次解包/缓存复用/缺失ready三场景、两次诊断窗口启动和设置保留全部通过。测试进程最终全部退出。
+- 新版冻结交接程序在ready后、父进程退出前接收清单变化，明确拒绝替换；旧EXE保持，未生成备份或重启。此场景实际执行新修复，见MANUAL-UPDATE-VALIDATION.md。
+
+报告`dist/frozen-selftest-9fa2008.json`、`dist/frozen-outer-9fa2008.json`、`dist/outer-gui-9fa2008.json`及`dist/frozen-directory-handoff-manifest-changed-current.json`；日志`.local/build-9fa2008-{desktop,outer}.log`、`.local/check-9fa2008-{selftest,outer,gui,manifest}.log`。未覆盖公开附件、未安装游戏插件、未验证真实施法或冻结按钮下载全流程。
+
+## 历史本地构建与回归：c29fe27，未公开发布
 
 目录创建前缀的UTF16计数修复已打入本地目录版和单文件，见OUTER-MKDIR-NATIVE-PARITY.md。源码基线为c29fe27，版本字段仍为0.2.8；公开附件未覆盖。
 

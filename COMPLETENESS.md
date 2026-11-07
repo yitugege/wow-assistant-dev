@@ -4,14 +4,14 @@
 
 ## 当前交付与源码身份
 
-最新本地构建c29fe27已包含目录创建前缀UTF16计数修复及此前取消更新记录写入失败后的界面恢复修复，保存于dist/local-c29fe27/WowBuddyDev-Outer.exe。源码439项回归及本轮冻结启动检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
+最新本地构建9fa2008已包含交接等待后清单复核及此前目录创建前缀UTF16等修复，保存于dist/local-9fa2008/WowBuddyDev-Outer.exe。48项相关源码回归及本轮冻结清单变化、启动、缓存检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
 
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。后续源码新增交接等待后再次核对更新清单摘要，尚未打入EXE，当前产品源码不再与c29fe27构建完全一致。历史6bb86ed与公开0.2.8也不包含目录创建修复。
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前产品源码摘要与9fa2008构建清单一致；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
 
 |对象|当前状态|证据|
 |---|---|---|
 |公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
-|最新本地EXE|源码c29fe27，版本字段仍为0.2.8；包含UTF16目录前缀修复，未覆盖公开附件|dist/local-c29fe27/WowBuddyDev-Outer.exe；SHA256 69820bf5423781a0d7dd1349136c0bdae8adb441e5baf24ce1c4bb35346817a1|
+|最新本地EXE|源码9fa2008，版本字段仍为0.2.8；包含交接等待后清单复核，未覆盖公开附件|dist/local-9fa2008/WowBuddyDev-Outer.exe；SHA256 8808d010d9f1c37ac2c2c6b4d159cb6badeb64f147fb735612a9afcfc688e6a6|
 |最近源码对照|原路径、目录创建、文件写入、字符搜索机器码对照；目录创建发现并修复四个场景差异|OUTER-MKDIR-NATIVE-PARITY.md、OUTER-MODULE-PATH-NATIVE-PARITY.md、OUTER-WRITE-NATIVE-PARITY.md|
 
 ## 明确未完成项
@@ -26,7 +26,7 @@
 
 ## 最近新增证据及其范围
 
-构建基线c29fe27完整回归：286项顶层与153项核心测试通过，共439项。后续交接清单复核修改的48项相关源码测试通过，尚未重建；已有冻结取消/暂存内容变化两场景通过，见BUILD-CURRENT-VALIDATION.md及MANUAL-UPDATE-VALIDATION.md。测试数量不能代替本表未完成要求的验收。
+历史基线c29fe27完整回归：286项顶层与153项核心测试通过，共439项。后续交接清单复核修改的48项相关源码测试通过，已构建9fa2008并完成指定失败场景的冻结验证；此前冻结取消/暂存内容变化两场景也通过。见BUILD-CURRENT-VALIDATION.md及MANUAL-UPDATE-VALIDATION.md。测试数量不能代替本表未完成要求的验收。
 
 - 九职业182个技能可用位，共236帧真实Lua纹理→客户端解码→规则读取；游戏API为替身，见CLASS-ACTION-PIXEL-VALIDATION.md。
 - 原addon.bin与独立Lua就绪判定3822组、逐等级学习19022组一致；包含680组基础ID不可用而等级别名可用。九职业注册表未配置通用宠物分类，不能推断整个游戏没有宠物功能。见ORIGINAL-CLASS-READY-PARITY.md。

@@ -4,6 +4,7 @@ import argparse
 from ctypes import wintypes as W
 import json
 import os
+import shutil
 from pathlib import Path
 import sys
 import tempfile
@@ -23,22 +24,27 @@ from wowbuddy.dev_update_handoff import prepare_handoff
 from wowbuddy.game_windows import CtypesWindowBackend
 
 
-def check(scenario='success'):
-    if scenario not in ('success','cancel','staged-changed'):raise ValueError('未知交接场景')
+def check(scenario='success',current_build=False):
+    if scenario not in ('success','cancel','staged-changed','manifest-changed'):raise ValueError('未知交接场景')
     from PySide6.QtCore import QSettings
     previous=ROOT/'dist/local-6bb86ed/WowBuddyDev-Outer.exe'
     source=ROOT/'dist/desktop/WowBuddyDev'
     old=read_release_identity(previous)
     build=json.loads((source/'build-manifest.json').read_text('utf8'))
     assert build['passed'] and file_sha256(source/EXE)==build['executable_sha256']
-    assert old.business_sha256!=build['executable_sha256']
+    old_sha=build['executable_sha256'] if current_build else old.business_sha256
+    if not current_build:assert old_sha!=build['executable_sha256']
     root=Path(tempfile.mkdtemp(prefix='frozen-directory-handoff-',dir=ROOT/'.local')).resolve()
-    current=root/'client';current.mkdir()
-    for member in read_bundle(read_payload(previous)):
-        path=current/(EXE if member.name==BUSINESS_EXE else member.name)
-        assert path.resolve().is_relative_to(root)
-        path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(member.data)
-    assert file_sha256(current/EXE)==old.business_sha256
+    current=root/'client'
+    if current_build:
+        shutil.copytree(source,current,ignore=shutil.ignore_patterns('.local'))
+    else:
+        current.mkdir()
+        for member in read_bundle(read_payload(previous)):
+            path=current/(EXE if member.name==BUSINESS_EXE else member.name)
+            assert path.resolve().is_relative_to(root)
+            path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(member.data)
+    assert file_sha256(current/EXE)==old_sha
     stable=current/'.local';stable.mkdir(exist_ok=True)
     (stable/'sentinel.txt').write_text('目录更新保留此数据','utf8')
     settings=QSettings(str(stable/'settings.ini'),QSettings.IniFormat)
@@ -87,6 +93,10 @@ def check(scenario='success'):
                 changed=staged/'_internal/assets/rules.json'
                 assert changed.resolve().is_relative_to(root)
                 changed.write_bytes(changed.read_bytes()+b'\n ')
+            elif scenario=='manifest-changed':
+                changed=staged.parent/'manifest.json'
+                data=json.loads(changed.read_text('utf8'));data['version']='99.0.0'
+                changed.write_text(json.dumps(data,ensure_ascii=False),'utf8')
             closed.extend(close_owned_main(job))
             assert closed==[parent_pid]
     env=dict(os.environ,WOWBUDDY_NO_GAME_SCAN='1',PYINSTALLER_RESET_ENVIRONMENT='1',
@@ -100,21 +110,24 @@ def check(scenario='success'):
     if scenario!='success':
         assert not result['ok'] and not result['replaced'] and not result['restarted'],result
         assert handoff['process'].wait(timeout=5)==1
-        assert file_sha256(current/EXE)==old.business_sha256
+        assert file_sha256(current/EXE)==old_sha
         assert not list(root.glob('client.backup-*'))
         assert (current/'.local/sentinel.txt').read_text('utf8')=='目录更新保留此数据'
-        assert ('已取消' if scenario=='cancel' else '暂存客户端已改变') in result['error']
+        expected={'cancel':'已取消','staged-changed':'暂存客户端已改变',
+                  'manifest-changed':'等待期间更新清单已改变'}[scenario]
+        assert expected in result['error']
         assert outcome['processes_observed']==2 and outcome['job_active_at_end']==0
         return {'passed':True,'scenario':scenario,'root':str(root),'parent_pid':parent_pid,
                 'handoff_job':handoff['job'],'handoff_result':result,'job':outcome,
                 'original_business_preserved':True,'no_backup_or_restart':True,
-                'scope':'6bb86ed冻结交接程序，在ready之后、父进程退出之前注入取消或暂存内容变化',
-                'latest_source_manifest_fix_verified':False,'game_verified':False}
+                'tested_business_sha256':old_sha,'current_build_used':current_build,
+                'scope':'真实冻结交接程序，在ready之后、父进程退出之前注入指定变化',
+                'latest_source_manifest_fix_verified':current_build and scenario=='manifest-changed','game_verified':False}
     assert result['ok'] and result['replaced'] and result['restarted'],result
     assert handoff['process'].wait(timeout=5)==0
     assert file_sha256(current/EXE)==build['executable_sha256']
     backup=Path(result['backup']);assert backup.is_relative_to(root)
-    assert file_sha256(backup/EXE)==old.business_sha256
+    assert file_sha256(backup/EXE)==old_sha
     assert (current/'.local/sentinel.txt').read_text('utf8')=='目录更新保留此数据'
     settings=QSettings(str(current/'.local/settings.ini'),QSettings.IniFormat)
     assert settings.value('audit/sentinel')=='frozen-handoff-preserved'
@@ -129,7 +142,7 @@ def check(scenario='success'):
         if relative.as_posix()=='desktop-selftest.json':continue
         assert file_sha256(current/relative)==digest,name
     assert outcome['processes_observed']>=3 and outcome['job_active_at_end']==0
-    return {'passed':True,'root':str(root),'previous_business_sha256':old.business_sha256,
+    return {'passed':True,'root':str(root),'previous_business_sha256':old_sha,
             'new_business_sha256':build['executable_sha256'],'parent_pid':parent_pid,
             'handoff_result':result,'handoff_job':handoff['job'],'job':outcome,'settings_data_preserved':True,
             'new_report_origin_verified':True,'installed_members_verified':len(manifest['members'])-1,
@@ -139,8 +152,10 @@ def check(scenario='success'):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--scenario',choices=('success','cancel','staged-changed'),default='success')
-    args=parser.parse_args();result=check(args.scenario)
+    parser.add_argument('--scenario',choices=('success','cancel','staged-changed','manifest-changed'),default='success')
+    parser.add_argument('--current-build',action='store_true',help='用当前目录版作为旧进程及交接程序，验证新修复')
+    args=parser.parse_args();result=check(args.scenario,args.current_build)
     suffix='' if args.scenario=='success' else '-'+args.scenario
+    if args.current_build:suffix+='-current'
     (ROOT/f'dist/frozen-directory-handoff{suffix}.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps(result,ensure_ascii=True))
