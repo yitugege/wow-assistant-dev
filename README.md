@@ -29,11 +29,11 @@
 
 截图只证明客户端阻止了插件操作，尚未给出具体函数或调用栈。发现DirectCast模块依赖解锁环境，并在普通点击/定时器中调用施法和修改安全按钮属性；该模块还将CreateSecureButton返回的布尔值当作按钮对象。
 
-独立开发插件尚未接入原DirectCast.lua的完整施法逻辑。现已用DirectCastSlots.lua恢复`/dcbind`的内存槽位登记与已有动作条槽位只读索引；这些登记尚未接入施法消费者，不代表绑定后就会施法。SecurityDiagnostics.lua监听ADDON_ACTION_BLOCKED和ADDON_ACTION_FORBIDDEN，仅记录本插件的事件、函数名、战斗状态和诊断栈，最多保留50条到WowBuddyDevDiagnostics。记录器的栈不保证等于最初污染源，需要结合事件函数名继续排查。
+独立开发插件尚未接入原DirectCast.lua的完整逻辑。DirectCastSlots.lua提供`/dcbind`内存槽位登记；DirectCastActions.lua已消费登记并恢复显式`/dc test <动作键>`、自动占槽和API回退。它们仍受游戏权限限制，返回true只沿用原模块“调用未抛错”的语义，不证明技能释放。尚无自动按钮挂钩、移动补发或自Buff续挂。SecurityDiagnostics.lua监听ADDON_ACTION_BLOCKED和ADDON_ACTION_FORBIDDEN，仅记录本插件的事件、函数名、战斗状态和诊断栈，最多保留50条到WowBuddyDevDiagnostics。记录器的栈不保证等于最初污染源，需要结合事件函数名继续排查。
 
 尚未在游戏中验证弹窗已消失，不宣称已修复所有受保护操作。独立入口已停用旧更新来源和原安装流程；自有插件更新使用本仓库 GitHub Releases。
 
-DirectCastGuards.lua另已恢复原宏文本解析与光环防重复判断。它尚无施法消费者，且保留原解析器不能完整解释条件宏的限制；具体对照与未完成范围见DIRECT-CAST-ORIGINAL-FINDINGS.md。
+DirectCastGuards.lua提供原宏文本解析与光环防重复判断，已由Actions使用。保留原解析器不能完整解释条件宏的限制；`/dc off`仍不禁止显式test命令，与原行为一致。具体对照与未完成范围见DIRECT-CAST-ORIGINAL-FINDINGS.md。
 
 ## 独立插件打包
 

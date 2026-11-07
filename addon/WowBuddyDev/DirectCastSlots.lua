@@ -1,5 +1,5 @@
 -- 恢复原 DirectCast 的槽位登记与只读索引部分。
--- 不执行施法/自动占槽；其余 DirectCast 分支仍待接入，见完整性清单。
+-- 本文件不执行施法/占槽，由 Actions 消费；其余分支见完整性清单。
 local ADDON = WowBuddyDev
 local DC = ADDON.DirectCast or {}
 ADDON.DirectCast = DC

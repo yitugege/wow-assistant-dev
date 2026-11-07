@@ -1,4 +1,4 @@
--- 原 DirectCast 的宏解析与只读光环判断；尚未接入施法执行。
+-- 原 DirectCast 的宏解析与只读光环判断，供 Actions 等模块使用。
 local ADDON = WowBuddyDev
 local DC = ADDON.DirectCast
 local spellCache = {}

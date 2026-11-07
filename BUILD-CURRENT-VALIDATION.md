@@ -1,6 +1,6 @@
 # 当前源码本地构建验收
 
-当前差异：c943f73之后源码新增DirectCastSlots.lua、DirectCastGuards.lua及TOC入口，现有9fa2008 EXE和公开0.2.8均不包含这些子模块。下述源码摘要一致结论只适用于对应构建当时的源码，当前插件改动尚未重新构建EXE。
+当前差异：c943f73之后源码新增DirectCastSlots.lua、DirectCastGuards.lua、DirectCastActions.lua及TOC入口，现有9fa2008 EXE和公开0.2.8均不包含这些子模块。下述源码摘要一致结论只适用于对应构建当时的源码，当前插件改动尚未重新构建EXE。本地随机插件包dist/directcast-actions/WowBuddyDev-addon.zip已生成，未安装或公开发布，身份见DIRECT-CAST-ORIGINAL-FINDINGS.md。
 
 ## 最新本地构建：9fa2008，未公开发布
 

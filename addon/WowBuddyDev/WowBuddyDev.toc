@@ -65,4 +65,5 @@ classes/Druid/Druid-Bindings.lua
 BuildCompat.lua
 DirectCastSlots.lua
 DirectCastGuards.lua
+DirectCastActions.lua
 DecisionBridge.lua

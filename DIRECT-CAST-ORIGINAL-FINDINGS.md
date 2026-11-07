@@ -54,3 +54,15 @@ c943f73后将原模块的`/dcbind`命令及已有槽位查找迁入`addon/WowBud
 必须保留的原行为局限：`/use [@player] 13`也被解析成法术文本13；`[@focus]`仍返回target；多行`/cast Frostbolt`后接`/startattack`会得到`Frostbolt /startattack`；分号宏取最后匹配文本，并不根据实际目标选择条件分支。本轮不将这些文本解析结果作为正确施法目标或法术的证明。
 
 GuardBlocked只在确认找到光环时返回true；KeeperAuraPresent在扫描报错、无名字API、40项扫描未结束等未知情况也返回true。首次建立空guardInfo后不重新建表，保留原已知缓存缺陷。续挂调度、施法与移动意图仍未接入，两个子模块也尚未进入EXE/公开发布包。
+
+## 后续迁入：显式施法核心与自动占槽
+
+b7bc7e3后加入DirectCastActions.lua，在Guards之后加载。恢复EnsureSlotForSpell、增强版Cast及无技能ID时回到原始Cast的分支，连接Slots/Guards；提供`/dc test <动作键>`、`/dc on|off`。显式Cast在off时仍可调用，遵循原行为。开关帮助文案改为说明尚未接入的自动分支，并明确返回值不是实际施法成功；不复述原文件“已解锁/永放行”的未经验证声明。
+
+原API调用顺序对照：54组已有/空/满动作条、UseAction与CastSpellByID正常/抛错/返回false、手工槽位有无组合，每组重复调用验证缓存；9组PickupSpell/PlaceAction结果组合重复查询；另覆盖无宏、无法解析、无技能ID、宏登记表回退、off后的显式测试、已有自Buff拦截。32项相关测试通过，耗时5.352秒。所有API均为内存记录替身，未执行实际游戏输入。
+
+原已知缺陷继续保留并显式标注：PlaceAction抛错仍缓存槽位；返回false但不抛错会被当作pcall成功；非空槽索引不刷新。新增模块没有写游戏内存、重写污染状态、安装解锁器，也未挂接自动施法计时器；实际权限由游戏处理。正常客户端拒绝调用时不能声称功能可用，必须实机验收。
+
+仍缺自动按钮挂钩、移动补发、自Buff续挂调度、EnvCloakCast等原入口；原Core的宏注册表并非公开字段，class_*动作键能否通过当前宏查询得到文本也尚需整体验证，不能用孤立fixture证明全套按键可调用。
+
+已生成本地随机插件包`dist/directcast-actions/WowBuddyDev-addon.zip`：目录`w2e6c1e425e03`，81成员，SHA256 `50c57e910515efa4467236a6d8cc2620667fd1cd5cb795c289169ceff8a757bb`。相邻manifest记录成员摘要。打包完整性验证通过，未安装到游戏、未覆盖公开Release，也未重建内嵌插件的EXE。
