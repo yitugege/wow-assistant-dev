@@ -490,9 +490,10 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         windows = capture = keys = NoSystemBackend()
     else:
         from wowbuddy.game_windows import CtypesWindowBackend
+        from wowbuddy.dev_game_windows import AssistantWindowFilter
         from wowbuddy.capture import make_win32_capture
         from wowbuddy.windows_keys import CtypesWin32Backend
-        windows, capture, keys = CtypesWindowBackend(), make_win32_capture(), CtypesWin32Backend()
+        windows, capture, keys = AssistantWindowFilter(CtypesWindowBackend()), make_win32_capture(), CtypesWin32Backend()
     data_dir = Path(data_dir).resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
     seed_library(ROOT/'assets', data_dir)
