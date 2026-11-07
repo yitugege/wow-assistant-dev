@@ -1,6 +1,14 @@
 # 当前源码本地构建验收
 
-## 最新本地构建：0.2.8，源码03a6169
+## 最新本地构建：源码64ec113，未公开发布
+
+已包含ea60f7f排序临时缓冲区回退、57dca3a交接准备重试、8ff0fe3交接超时及错误报告恢复。版本字段仍为0.2.8；本地后续构建未覆盖公开Release附件。单文件另存于 `dist/local-64ec113/WowBuddyDev-Outer.exe`，SHA256 `46131bbd861aff6e42162cb014e667a0f218cc9f04312647257318376a42c134`；目录业务EXE位于 `dist/desktop/WowBuddyDev/WowBuddyDev.exe`，SHA256 `41d1ca0560406d191e2289c47aa7f0c9120c774ef35934c69a04cd4d66aafd1f`。
+
+构建前后源码摘要一致，完成后再次逐项核对源文件与保存副本摘要一致。冻结界面/系统后端自检通过，六种规则输入自检通过，单文件259个成员及身份资源校验通过。三种缓存场景均通过；两次GUI启动退出的设置保留、旧缓存清理通过，只关闭所属测试Job窗口（PID10732、33572），每次三个进程最终归零。
+
+报告为 `dist/frozen-selftest-64ec113.json`、`dist/frozen-outer-64ec113.json`、`dist/outer-gui-64ec113.json`，日志为 `.local/build-64ec113-{desktop,outer}.log` 与 `.local/check-64ec113-{selftest,outer,gui}.log`。未安装到游戏目录，未重复公开下载/升级交接，未完成游戏施法验收。冻结常规运行通过不等于已在冻结EXE中注入分配失败或交接错误；这两个故障分支仍使用各自源码专项证据。
+
+## 历史公开构建：0.2.8，源码03a6169
 
 0.2.8已于提交11b9837公开发布，六个附件齐全。通过客户端实际下载模块回读公开目录包、随机插件包和单文件EXE：清单与本地一致，随机名称检查通过，目录版和单文件版下载后冻结自检通过，外层测试Job三个进程最终归零。报告 `dist/public-release-028-check.json`，日志 `.local/check-public-028.log`。本次未重新验证旧版本自动更新交接，未进行游戏实测。
 
