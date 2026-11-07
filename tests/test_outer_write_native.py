@@ -4,11 +4,12 @@ import hashlib
 import os
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.launcher import _write_native
+from wowbuddy.launcher import _write_native, WindowsLauncherFiles
 
 
 class OuterWriteNativeTests(unittest.TestCase):
@@ -108,6 +109,59 @@ class OuterWriteNativeTests(unittest.TestCase):
                     self.assertEqual(parameters[0],(0x40000000,0,None,2,0x80,None))
                     self.assertTrue(all(value==('overlapped',None) for value in parameters[1:]))
                     self.assertEqual(actual,not(create_fail or 0 in plan or 'error' in plan))
+
+    def test_real_windows_files_and_failure_preservation(self):
+        with tempfile.TemporaryDirectory(prefix='wow-write-中文-') as temporary:
+            root=Path(temporary).resolve(strict=True)
+            fs=WindowsLauncherFiles(root)
+            for slot,name in [(0x14030,'CreateFileW'),(0x14040,'WriteFile'),(0x14050,'CloseHandle')]:
+                C.c_uint64.from_address(self.address+slot).value=C.cast(getattr(fs.k,name),C.c_void_p).value
+            def native_write(path,data):
+                resolved=path.resolve()
+                self.assertIn(root,resolved.parents)
+                encoded=str(resolved).encode('utf-16le');units=len(encoded)//2
+                text=C.create_string_buffer(encoded+b'\0\0')
+                obj=(C.c_uint64*4)(C.addressof(text),0,units,units|7)
+                buffer=C.create_string_buffer(data)
+                return bool(self.native(obj,buffer,len(data)))
+            for size in (0,1,0xfffff,0x100000,0x100001,0x200011):
+                data=(bytes(range(256))*(size//256+1))[:size]
+                native_path=root/'原函数 文件.bin';python_path=root/'独立版 文件.bin'
+                # 大于新数据的旧文件，验证CREATE_ALWAYS实际截断。
+                for path in (native_path,python_path):path.write_bytes(b'old'*(size//3+10))
+                self.assertTrue(native_write(native_path,data))
+                self.assertTrue(_write_native(fs,str(python_path),data))
+                self.assertEqual(native_path.read_bytes(),data)
+                self.assertEqual(python_path.read_bytes(),data)
+                # 能重命名回来表明没有留下阻止删除/重命名的独占句柄。
+                for path in (native_path,python_path):
+                    renamed=path.with_suffix('.moved')
+                    path.rename(renamed);renamed.rename(path)
+            for parent in ('missing','parent-file'):
+                if parent=='parent-file':(root/parent).write_bytes(b'parent remains')
+                target=root/parent/'child.bin'
+                self.assertFalse(native_write(target,b'new'))
+                self.assertFalse(_write_native(fs,str(target),b'new'))
+                self.assertFalse(target.exists())
+                if parent=='parent-file':self.assertEqual((root/parent).read_bytes(),b'parent remains')
+            locked=root/'独占.bin';locked.write_bytes(b'keep locked contents')
+            handle=fs.k.CreateFileW(str(locked),0x80000000,0,None,3,0x80,None)
+            self.assertNotEqual(handle,C.c_void_p(-1).value)
+            try:
+                self.assertFalse(native_write(locked,b'new'))
+                self.assertFalse(_write_native(fs,str(locked),b'new'))
+            finally:fs.k.CloseHandle(handle)
+            self.assertEqual(locked.read_bytes(),b'keep locked contents')
+            readonly=root/'只读.bin';readonly.write_bytes(b'keep readonly contents')
+            fs.k.SetFileAttributesW.argtypes=[C.c_wchar_p,C.c_uint32]
+            fs.k.SetFileAttributesW.restype=C.c_int
+            self.assertTrue(fs.k.SetFileAttributesW(str(readonly),1))
+            try:
+                self.assertFalse(native_write(readonly,b'new'))
+                self.assertFalse(_write_native(fs,str(readonly),b'new'))
+                self.assertEqual(readonly.read_bytes(),b'keep readonly contents')
+            finally:
+                self.assertTrue(fs.k.SetFileAttributesW(str(readonly),0x80))
 
 
 if __name__=='__main__':unittest.main()
