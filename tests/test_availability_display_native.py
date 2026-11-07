@@ -8,6 +8,7 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.presentation import availability
+from wowbuddy.expressions import EvaluationContext
 
 
 class QString(C.Structure):
@@ -39,6 +40,15 @@ class AvailabilityDisplayNativeTests(unittest.TestCase):
                 result=availability({'actionAvailSpellIDs':[116]}, {'action_avail':text})
                 self.assertEqual(result.valid,ok.value)
                 self.assertEqual(result.ready_count,((number>>1)&1) if ok.value else 0)
+                for slot in (0,1,62,63,64):
+                    for fields,fallback in (({'ready_116':'ON'},1),
+                                            ({'ready_116':'OFF'},0),
+                                            ({'spell_116_ready':'ON'},1),({},-1)):
+                        with self.subTest(slot=slot,fallback_fields=fields):
+                            context=EvaluationContext(dict(fields,action_avail=text),
+                                tuple([0]*slot+[116]),allow_unknown_availability=False)
+                            expected=((number>>((slot+1)&63))&1) if ok.value else fallback
+                            self.assertEqual(context.availability(116),expected)
 
 
 if __name__=='__main__':unittest.main()

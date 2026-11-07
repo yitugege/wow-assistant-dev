@@ -117,7 +117,9 @@ class EvaluationContext:
         except ValueError:
             index = -1
         if value is not None and index >= 0:
-            token = _trim(_trim(value).split(" ", 1)[0])
+            # 03b800只在section之前Unicode trimmed；原Qt转换在NUL
+            # 终止且只裁剪ASCII空白。失败后才进入ready字段回退。
+            token = _trim(value).split(" ", 1)[0].split("\0", 1)[0].strip(" \t\n\r\v\f")
             if _INTEGER.fullmatch(token):
                 # Qt允许任意前导零；先约束有效十进制长度，避免Python长整数限制异常。
                 negative = token.startswith("-")
