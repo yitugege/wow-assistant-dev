@@ -14,6 +14,8 @@
 
 ## 历史本地构建与回归：6bb86ed，未公开发布
 
+后续目录版实际升级证据：使用6bb86ed隔离旧目录及c29fe27本地包，冻结交接程序完成父进程退出等待、目录交换、备份保留和新EXE自检；258个安装成员摘要及新报告来源、INI和数据保留通过，三个Job进程全部退出。见MANUAL-UPDATE-VALIDATION.md和`dist/frozen-directory-handoff.json`。不含冻结GUI手动按钮、GitHub下载、版本比较或失败回滚，未更新公开附件。
+
 已包含更新取消记录无法落盘后的界面恢复修复。版本字段仍为0.2.8，公开附件未变。保存的单文件为`dist/local-6bb86ed/WowBuddyDev-Outer.exe`，SHA256 `e59ec68588439764b820d13831e12e4246bbca7e13cb8ebacfaac54d62c15aca`；目录版`dist/desktop/WowBuddyDev/WowBuddyDev.exe`摘要为`12b0ad2619cc29af53db4c3785f2c5e59c8b6299021ef574ea208812197f6fd6`。构建前后及验证后产品源码摘要一致，外层259成员和身份资源校验通过。
 
 完整源码回归261项通过（163.888秒），核心153项通过（1.462秒），共414项，无跳过。日志`.local/regression-6bb86ed.log`及`.local/regression-core-6bb86ed.log`。冻结GUI/系统后端构造自检、六种规则输入、首次解包/缓存复用/缺失ready三场景均通过。两次诊断参数下的GUI启动、设置保留与旧缓存清理通过，仅关闭自有Job窗口PID40812、65800，各次3个进程全部退出。
