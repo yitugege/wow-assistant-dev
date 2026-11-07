@@ -6,7 +6,7 @@
 
 最新本地构建9fa2008已包含交接等待后清单复核及此前目录创建前缀UTF16等修复，保存于dist/local-9fa2008/WowBuddyDev-Outer.exe。48项相关源码回归及本轮冻结清单变化、启动、缓存检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
 
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码新增DirectCastSlots.lua、DirectCastGuards.lua和DirectCastActions.lua，与9fa2008构建内嵌插件已不同，尚未重新构建EXE；本地插件包见dist/directcast-actions。历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码新增DirectCastSlots.lua、DirectCastGuards.lua和DirectCastActions.lua，并修复读取Core真实职业宏登记的缺口，与9fa2008构建内嵌插件已不同，尚未重新构建EXE；最新本地插件包见dist/directcast-integration。历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
 
 |对象|当前状态|证据|
 |---|---|---|

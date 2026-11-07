@@ -2385,6 +2385,17 @@ function WowBuddyDev.GetSecureButton(actionKey)
   end
   return _G["WBD_BTN_" .. actionKey]
 end
+-- 只读返回成功登记的宏文本，不暴露可变登记表或读取受保护按钮属性。
+-- /dc 命令会转为小写；class_* 的按键后缀用同一绑定规范化规则查询。
+function WowBuddyDev.GetBoundMacro(actionKey)
+  if type(actionKey) ~= "string" or actionKey == "" then return nil end
+  local entry = macroBindingRegistry[actionKey]
+  if not entry then
+    local key = actionKey:match("^class_(.+)$")
+    if key then entry = macroBindingRegistry["class_" .. normalizeBindingKey(key)] end
+  end
+  return entry and entry.macroText or nil
+end
 -- 功能：建（或复用）一个安全按钮，用于把焦点设到指定单位。
 -- 入参：actionKey 动作键；bindingKey 绑定的按键；unit 目标单位。
 -- 出参：true 成功；false 表示战斗中延后处理。

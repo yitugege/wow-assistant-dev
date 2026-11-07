@@ -66,3 +66,13 @@ b7bc7e3后加入DirectCastActions.lua，在Guards之后加载。恢复EnsureSlot
 仍缺自动按钮挂钩、移动补发、自Buff续挂调度、EnvCloakCast等原入口；原Core的宏注册表并非公开字段，class_*动作键能否通过当前宏查询得到文本也尚需整体验证，不能用孤立fixture证明全套按键可调用。
 
 已生成本地随机插件包`dist/directcast-actions/WowBuddyDev-addon.zip`：目录`w2e6c1e425e03`，81成员，SHA256 `50c57e910515efa4467236a6d8cc2620667fd1cd5cb795c289169ceff8a757bb`。相邻manifest记录成员摘要。打包完整性验证通过，未安装到游戏、未覆盖公开Release，也未重建内嵌插件的EXE。
+
+## 后续接入修复：实际职业宏登记
+
+在f3c5acd完整TOC登录宿主中复现：法师class_NUMPAD1至class_NUMPAD4的实际按钮存在宏文本，而DirectCast.Cast均返回`nil, no-macro`；class_NUMPAD5也作为回归覆盖。原因是Core的macroBindingRegistry为local，原DirectCast尝试读取的ADDON.macroBindingRegistry不存在；DEFAULT_MACROS不按class_*键存储。此前孤立宏表fixture无法揭示这个接入缺口。
+
+修复增加Core.GetBoundMacro，只返回成功登记的宏文本字符串，不公开可变表，不直接读取按钮受保护属性。DirectCast在原DEFAULT_MACROS/公开登记表两路均无结果时才调用此接口。class_*后缀按Core已有规则规范化，兼容原`/dc`命令将输入转成小写的行为。这是明确修复，原实现对这些输入返回no-macro的行为不再保留；已有原路径的对照仍通过。
+
+新测试执行完整插件并登录：九职业逐个非空宏键与实际按钮文本一致；法师class_NUMPAD5及小写命令进入UseAction替身；成功重绑后使用新宏及新目标，失败重绑后返回no-macro而不使用已清除登记；战斗中延迟重绑仍读取当前已登记宏。36项DirectCast/加载/打包测试通过（6.782秒），17项既有绑定/宏注册/控制设置/职业重载回归通过（0.158秒）。仍无真实游戏施法证据。
+
+当前本地插件包更新为`dist/directcast-integration/WowBuddyDev-addon.zip`，目录`w89b13f7af55f`，SHA256 `5254ff4535dd499024e0d098cfe1b888d33bea236b9d876dc49a0d27bac2ff27`。旧directcast-actions包保留且不含本次修复；两个本地包都未公开发布或安装，现有EXE也不含本轮改动。

@@ -11,6 +11,9 @@ local function macroForAction(actionKey)
     local entry = ADDON.macroBindingRegistry[actionKey]
     if entry then macro = entry.macroText end
   end
+  if not macro and type(ADDON.GetBoundMacro) == "function" then
+    macro = ADDON.GetBoundMacro(actionKey)
+  end
   return macro
 end
 
