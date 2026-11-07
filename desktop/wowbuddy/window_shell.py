@@ -96,6 +96,7 @@ class WindowShell:
         self._filter = None
         self.tray_available = True
         self.notice_title = WINDOW_TITLE
+        self.website_url = WEBSITE_URL
 
     def configure_window(self):
         """Explicit setup, before showing; layout remains caller-owned."""
@@ -136,8 +137,8 @@ class WindowShell:
     def open_website(self):
         if self.on_open_url is None:
             raise RuntimeError("on_open_url callback is required")
-        self.on_open_url(WEBSITE_URL)
-        self._log(f"打开官网 {WEBSITE_URL}")
+        self.on_open_url(self.website_url)
+        self._log(f"打开官网 {self.website_url}")
 
     def _notice(self, text):
         from PySide6.QtWidgets import QSystemTrayIcon

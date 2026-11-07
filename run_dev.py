@@ -505,10 +505,17 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             network_enabled=False, automatic=watch, tray_enabled=not selftest and dump_ui is None,
             startup_record=startup_record,startup_log_path=log_path())
         startup_record('独立主窗口构造完成')
+        from wowbuddy.dev_version import VERSION
+        from wowbuddy.github_addon import REPOSITORY
+        project_url='https://github.com/'+REPOSITORY
         window.setWindowTitle('WowBuddyDev — 独立开发版')
+        window.ui.title_label.setText('WowBuddyDev')
+        window.ui.website_button.setText('GitHub 项目')
+        window.ui.website_button.setToolTip('打开 '+project_url)
+        window.shell.website_url=project_url
         window._configure_automatic_client_update(client_online and not selftest and dump_ui is None,no_update)
         window._configure_addon_refresh(addon_online and not selftest and dump_ui is None)
-        window.ui.update_status.setText('插件更新：在插件页点击“GitHub下载更新”；客户端请下载配套Release。')
+        window.ui.update_status.setText(f'当前 v{VERSION} · GitHub 客户端更新')
         if not selftest and dump_ui is None:window._restore_update_notice()
         if hub_online and not selftest and dump_ui is None:
             from wowbuddy.qt_network import QtHubClient

@@ -27,6 +27,23 @@ class Tray(QObject):
     def showMessage(self,*args):self.notices.append(args)
 
 class TrayTests(unittest.TestCase):
+    def test_project_link_and_version_use_independent_identity(self):
+        from wowbuddy.dev_version import VERSION
+        from wowbuddy.github_addon import REPOSITORY
+        def exercise(window):
+            expected='https://github.com/'+REPOSITORY
+            self.assertEqual(window.ui.title_label.text(),'WowBuddyDev')
+            self.assertIn(VERSION,window.ui.update_status.text())
+            self.assertEqual(window.ui.website_button.text(),'GitHub 项目')
+            self.assertIn(expected,window.ui.website_button.toolTip())
+            with patch('PySide6.QtGui.QDesktopServices.openUrl',return_value=True) as open_url:
+                window.ui.website_button.click()
+                open_url.assert_called_once()
+                self.assertEqual(open_url.call_args.args[0].toString(),expected)
+            self.assertIn(expected,window.ui.log_view.toPlainText())
+            self.assertNotIn('wowbuddy.cn',window.ui.log_view.toPlainText())
+        self.run_window(False,exercise)
+
     def test_browse_and_install_button_use_own_package(self):
         import json
         from tools.build_addon import build
