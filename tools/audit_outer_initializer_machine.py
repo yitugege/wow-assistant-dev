@@ -12,8 +12,9 @@ def main():
     parser.add_argument('--termination', action='store_true', help='导出终止路径三处ABI存疑函数的完整展开范围')
     parser.add_argument('--string-search', action='store_true', help='导出字符集合搜索四个函数的完整展开范围')
     parser.add_argument('--stream-flush', action='store_true', help='导出流刷新及文件提交四个函数的完整展开范围')
+    parser.add_argument('--console-output', action='store_true', help='导出控制台恢复和UTF8文件写入的完整展开范围')
     args = parser.parse_args()
-    if sum((args.termination, args.string_search, args.stream_flush)) > 1:
+    if sum((args.termination, args.string_search, args.stream_flush, args.console_output)) > 1:
         parser.error('导出模式不能同时指定')
     source = EVIDENCE / 'original-27ac1127fc/probe/outer-memory-analysis.exe'
     payload = source.read_bytes()
@@ -36,6 +37,9 @@ def main():
     if args.stream_flush:
         ends = {e.struct.BeginAddress:e.struct.EndAddress for e in pe.DIRECTORY_ENTRY_EXCEPTION}
         spans = [(start, ends[start]) for start in (0xf9c8, 0xfa54, 0x10c9c, 0x10d28)]
+    if args.console_output:
+        ends = {e.struct.BeginAddress:e.struct.EndAddress for e in pe.DIRECTORY_ENTRY_EXCEPTION}
+        spans = [(start, ends[start]) for start in (0x11474, 0x11ca0, 0x11ea0, 0x11f10)]
     for start, end in spans:
         code = pe.get_data(start, end-start)
         rows = []
@@ -64,6 +68,8 @@ def main():
         output = ROOT / 'dist/outer-string-search-machine.json'
     if args.stream_flush:
         output = ROOT / 'dist/outer-stream-flush-machine.json'
+    if args.console_output:
+        output = ROOT / 'dist/outer-console-output-machine.json'
     output.write_text(json.dumps({'source': str(source), 'source_sha256': digest,
                                  'ranges': ranges, 'limitations': ['仅指定机器码区间；没有执行回调或验证独立版动态等价']},
                                 ensure_ascii=False, indent=2), encoding='utf8')
