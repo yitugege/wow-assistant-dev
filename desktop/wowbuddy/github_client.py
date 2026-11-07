@@ -43,13 +43,14 @@ def check_latest(*,current_version=VERSION,fetch=fetch_bytes):
         result['manifest']=manifest
     return result
 
-def download_checked(info,workspace,*,fetch=fetch_bytes):
+def download_checked(info,workspace,*,fetch=fetch_bytes,progress=None):
     if not info.get('has_update'):raise ValueError('没有更新可下载')
     # 使用检查时固定的版本清单，下载期间latest变化不混用附件。
     workspace=Path(workspace).absolute();workspace.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='client-download-',dir=workspace) as tmp:
         package=Path(tmp)/ZIP_NAME
-        package.write_bytes(fetch(info['package_url'],256*1024*1024))
+        options={'progress':progress} if progress is not None else {}
+        package.write_bytes(fetch(info['package_url'],256*1024*1024,**options))
         manifest=package.with_suffix('.manifest.json')
         manifest.write_text(json.dumps(info['manifest']),'utf8')
         staged=stage_update(package,manifest,workspace)

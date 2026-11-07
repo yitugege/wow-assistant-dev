@@ -76,8 +76,11 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             if not getattr(self,'_client_update_info',{}).get('has_update'):return
             if self.session.is_active():self.toggle_monitor()
             from wowbuddy.github_client import download_checked
+            from queue import SimpleQueue
+            progress=SimpleQueue()
+            self._client_download_progress=progress
             workspace=APP_ROOT.parent/'WowBuddyDev-updates'
-            self._start_client_update_task(lambda:download_checked(self._client_update_info,workspace),
+            self._start_client_update_task(lambda:download_checked(self._client_update_info,workspace,progress=lambda received,total:progress.put((received,total))),
                                            '正在下载并校验客户端更新包…','download')
 
         def _start_client_update_task(self, operation, status, phase):
@@ -89,14 +92,36 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.ui.update_check_button.setEnabled(False)
             self.ui.update_apply_button.setEnabled(False)
             self.ui.update_status.setText(status)
+            self.ui.update_progress.setVisible(phase=='download')
+            if phase=='download':self.ui.update_progress.setRange(0,0)
             self._client_update_timer=QTimer(self)
             self._client_update_timer.timeout.connect(self._finish_client_update_task)
             self._client_update_timer.start(100)
 
         def _finish_client_update_task(self):
+            if self._client_update_phase=='download':
+                from queue import Empty
+                progress=getattr(self,'_client_download_progress',None)
+                latest=None
+                if progress is not None:
+                    while True:
+                        try:latest=progress.get_nowait()
+                        except Empty:break
+                if latest is not None:
+                    received,total=latest
+                    if total>0 and received<=total:
+                        self.ui.update_progress.setRange(0,100)
+                        self.ui.update_progress.setValue(received*100//total)
+                        status=f'已下载 {received/1048576:.1f} / {total/1048576:.1f} MiB'
+                        if received==total:status+='，正在校验…'
+                    else:
+                        self.ui.update_progress.setRange(0,0)
+                        status=f'已下载 {received/1048576:.1f} MiB（总大小未知）'
+                    self.ui.update_status.setText(status)
             if not self._client_update_future.done():return
             self._client_update_timer.stop()
             self._client_update_executor.shutdown(wait=False)
+            self.ui.update_progress.hide()
             try:
                 result=self._client_update_future.result()
                 if self._client_update_phase=='check':
@@ -129,9 +154,13 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                     else:status+='；源码模式请使用打包后的客户端安装更新'
             except Exception as error:
                 status='客户端更新失败：'+str(error)
+                self._client_auto_chain=False
                 if self._client_update_phase=='check':
                     self._client_update_info={}
                     self.ui.update_apply_button.hide()
+                elif self._client_update_phase=='download':
+                    self.ui.update_apply_button.setText('重试下载')
+                    self.ui.update_apply_button.setEnabled(bool(getattr(self,'_client_update_info',{}).get('has_update')))
             self.ui.update_status.setText(status)
             self.logger.append(status)
             self.ui.update_check_button.setEnabled(not bool(getattr(self,'_handoff',None)))

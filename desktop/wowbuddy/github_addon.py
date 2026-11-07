@@ -23,13 +23,26 @@ class GithubRedirect(HTTPRedirectHandler):
         return super().redirect_request(req,fp,code,msg,headers,newurl)
 
 
-def fetch_bytes(url,limit):
+def read_download(response,limit,progress=None):
+    try:total=max(0,int(response.headers.get('Content-Length','0')))
+    except (TypeError,ValueError):total=0
+    if total>limit:raise ValueError('GitHub下载内容超过大小限制')
+    chunks=[];received=0
+    if progress:progress(0,total)
+    while True:
+        block=response.read(min(256*1024,limit+1-received))
+        if not block:break
+        received+=len(block)
+        if received>limit:raise ValueError('GitHub下载内容超过大小限制')
+        chunks.append(block)
+        if progress:progress(received,total)
+    return b''.join(chunks)
+
+
+def fetch_bytes(url,limit,*,progress=None):
     request=Request(url,headers={'User-Agent':'WowBuddyDev','Accept':'application/vnd.github+json'})
     with build_opener(GithubRedirect()).open(request,timeout=30) as response:
-        content=response.read(limit+1)
-    if len(content)>limit:
-        raise ValueError('GitHub下载内容超过大小限制')
-    return content
+        return read_download(response,limit,progress)
 
 
 def download_latest(data_dir, *, repository=REPOSITORY, fetch=fetch_bytes):
