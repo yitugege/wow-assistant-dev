@@ -28,7 +28,10 @@ class OriginalClassReadyTests(unittest.TestCase):
             function WowBuddyDev.RegisterPixelStripV2() end
             WowBuddyDev.classes={};WowBuddyDev.forceAvailableState={}
             function WowBuddyDev.RegisterClass(id,data) registeredClass=data;WowBuddyDev.classes[id]=data end
-            function IsSpellKnown(id) return fixtureKnown end
+            function IsSpellKnown(id)
+              if learnedRanks then return learnedRanks[id]==true end
+              return fixtureKnown
+            end
             function WowBuddyDev.GetForeverTalentState() return {packet=655360} end''')
             def source(path):
                 return original[path] if old else (ROOT / 'addon/WowBuddyDev' / path).read_text('utf8')
@@ -49,6 +52,8 @@ class OriginalClassReadyTests(unittest.TestCase):
             function WowBuddyDev.GetSpellCooldownRemaining(id) return fixtureCooldown end''')
             return lua
         count = 0
+        rank_comparisons = 0
+        alias_successes = 0
         for name in ('Mage','Druid','Hunter','Paladin','Priest','Rogue','Shaman','Warlock','Warrior'):
             old, new = create(name, True), create(name, False)
             original_ids = list(old.globals().registeredClass.actionAvailSpellIDs.values())
@@ -74,7 +79,32 @@ class OriginalClassReadyTests(unittest.TestCase):
                         self.assertEqual(old.globals().WowBuddyDev[function](spell),
                                          new.globals().WowBuddyDev[function](spell))
                     count += 1
+            def aliases(lua):
+                table = lua.globals().registeredClass.spellReadyAliases
+                return {base: list(ranks.values()) for base, ranks in table.items()} if table else {}
+            old_aliases = aliases(old)
+            self.assertEqual(old_aliases, aliases(new))
+            ranks = sorted(set(original_ids).union(*(set(values) for values in old_aliases.values())))
+            for learned in [[], ranks] + [[rank] for rank in ranks]:
+                for lua in (old,new):
+                    g = lua.globals()
+                    g.learnedRanks = lua.table_from({rank: True for rank in learned})
+                    g.fixtureUsable, g.fixtureCooldown = True, 0
+                    g.WowBuddyDev.forceAvailableState = lua.table()
+                for spell in original_ids:
+                    with self.subTest(class_name=name, learned=learned, spell=spell):
+                        before = old.globals().WowBuddyDev
+                        after = new.globals().WowBuddyDev
+                        for function in ('IsSpellKnown','IsSpellReadyRaw','IsSpellReady'):
+                            self.assertEqual(before[function](spell),after[function](spell))
+                        if (len(learned)==1 and learned[0]!=spell
+                                and learned[0] in old_aliases.get(spell,[])
+                                and not before.IsSpellReadyRaw(spell) and before.IsSpellReady(spell)):
+                            alias_successes += 1
+                        rank_comparisons += 1
         self.assertEqual(count, 3822)
+        self.assertGreater(alias_successes,0)
+        print('rank cases='+str(rank_comparisons)+' alias-only readiness='+str(alias_successes))
 
 
 if __name__ == '__main__':
