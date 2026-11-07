@@ -59,7 +59,7 @@
 
 ## 构建自己的EXE
 
-客户端更新检查已连接本仓库 GitHub Release；也可运行 `python run_dev.py --check-update --data-dir="D:/更新检查"`。有新版本时可下载校验并暂存，自动替换重启仍未接通，详见 [CLIENT-UPDATE.md](CLIENT-UPDATE.md)。
+客户端更新检查已连接本仓库 GitHub Release；也可运行 `python run_dev.py --check-update --data-dir="D:/更新检查"`。冻结客户端有新版本时可下载校验，然后点击“安装并重启”；独立交接进程等待旧程序退出后替换整目录并保留设置。尚未完成全部原自动更新策略，详见 [CLIENT-UPDATE.md](CLIENT-UPDATE.md)。
 
 安装requirements-dev.txt后运行 `python tools/build_desktop.py`。构建产物为 `dist/desktop/WowBuddyDev/WowBuddyDev.exe`，是目录版：需要保留旁边的_internal和packages目录，不能只复制EXE。
 

@@ -51,10 +51,15 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.ui.hub_pull_button.setToolTip(str(Path(data_dir)/'hub/rotations.json'))
 
         def check_update(self, checked=False, *, manual=True):
+            if getattr(self,'_handoff',None):return
+            self._client_update_staged=None
             from wowbuddy.github_client import check_latest
             self._start_client_update_task(check_latest,'正在检查GitHub客户端版本…','check')
 
         def download_update(self, checked=False):
+            if getattr(self,'_client_update_staged',None):
+                self._begin_update_handoff()
+                return
             if not getattr(self,'_client_update_info',{}).get('has_update'):return
             if self.session.is_active():self.toggle_monitor()
             from wowbuddy.github_client import download_checked
@@ -87,10 +92,23 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                     self.ui.update_apply_button.setText('下载更新包')
                     self.ui.update_apply_button.setVisible(result['has_update'])
                     self.ui.update_apply_button.setEnabled(result['has_update'])
-                    self.ui.update_apply_button.setToolTip('下载并校验完整客户端；自动替换重启交接尚未接入')
+                    self.ui.update_apply_button.setToolTip('下载并校验完整客户端，完成后可安装并重启')
+                elif self._client_update_phase=='handoff':
+                    self._handoff=result
+                    import time
+                    self._handoff_deadline=time.monotonic()+30
+                    self._handoff_timer=QTimer(self)
+                    self._handoff_timer.timeout.connect(self._poll_update_handoff)
+                    self._handoff_timer.start(100)
+                    status='等待更新交接进程就绪…'
                 else:
                     self._client_update_staged=result
-                    status='更新包已校验并暂存，尚未替换程序：'+result['staged']
+                    status='更新包已校验并暂存：'+result['staged']
+                    if FROZEN:
+                        self.ui.update_apply_button.setText('安装并重启')
+                        self.ui.update_apply_button.setToolTip('退出当前助手后替换整个客户端目录，并保留本地设置')
+                        self.ui.update_apply_button.setEnabled(True)
+                    else:status+='；源码模式请使用打包后的客户端安装更新'
             except Exception as error:
                 status='客户端更新失败：'+str(error)
                 if self._client_update_phase=='check':
@@ -98,9 +116,36 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                     self.ui.update_apply_button.hide()
             self.ui.update_status.setText(status)
             self.logger.append(status)
-            self.ui.update_check_button.setEnabled(True)
+            self.ui.update_check_button.setEnabled(not bool(getattr(self,'_handoff',None)))
+
+        def _begin_update_handoff(self):
+            if not FROZEN:return
+            if self.session.is_active():self.toggle_monitor()
+            self.watch_timer.stop()
+            from wowbuddy.dev_update_handoff import prepare_handoff
+            self._start_client_update_task(lambda:prepare_handoff(self._client_update_staged['staged'],APP_ROOT,sys.argv[1:]),
+                                           '正在准备退出后的更新交接…','handoff')
+
+        def _poll_update_handoff(self):
+            import time
+            job=Path(self._handoff['job'])
+            if job.with_suffix('.ready.json').is_file() and self._handoff['process'].poll() is None:
+                self._handoff_timer.stop()
+                self._quit_development_app()
+                return
+            if self._handoff['process'].poll() is not None or time.monotonic()>self._handoff_deadline:
+                self._handoff_timer.stop()
+                detail='交接进程未就绪，当前助手保持运行；未替换程序。'
+                result=job.with_suffix('.result.json')
+                if result.is_file():detail+=' '+json.loads(result.read_text('utf8')).get('error','')
+                self.ui.update_status.setText(detail)
+                self.logger.append(detail)
+                self._handoff=None
+                self.ui.update_check_button.setEnabled(True)
 
         def shutdown(self):
+            handoff_timer=getattr(self,'_handoff_timer',None)
+            if handoff_timer is not None:handoff_timer.stop()
             timer=getattr(self,'_client_update_timer',None)
             if timer is not None:timer.stop()
             executor=getattr(self,'_client_update_executor',None)
@@ -364,6 +409,10 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
 
 
 def main():
+    if len(sys.argv)==3 and sys.argv[1]=='--apply-client-update':
+        if not FROZEN:return 2
+        from wowbuddy.dev_update_handoff import run_handoff
+        return run_handoff(sys.argv[2])
     parser=argparse.ArgumentParser(description='WowBuddyDev源码开发入口',allow_abbrev=False)
     parser.add_argument('--selftest', action='store_true')
     parser.add_argument('--selftest-backends', action='store_true',
