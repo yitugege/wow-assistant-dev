@@ -11,6 +11,7 @@ FROZEN = bool(getattr(sys, 'frozen', False))
 APP_ROOT = Path(sys.executable).resolve().parent if FROZEN else ROOT
 PACKAGE_DIR = APP_ROOT/'packages' if FROZEN else ROOT/'dist'
 sys.path.insert(0, str(ROOT/'desktop'))
+from wowbuddy.dev_startup import record as startup_record
 
 
 def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False):
@@ -474,10 +475,14 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 self.ui.addon_status.setText('安装失败：' + str(error))
                 self.logger.append('开发插件安装失败：' + str(error))
 
+    startup_record('准备构造 QApplication')
     app = QApplication.instance() or QApplication(['WowBuddyDev'])
+    from wowbuddy.dev_startup import qt_ready,log_path,STYLE_READY
+    qt_ready()
     app.setApplicationName('WowBuddyDev')
     app.setOrganizationName('WowBuddyDev')
     app.setStyleSheet(NATIVE_STYLESHEET)
+    startup_record(STYLE_READY)
     if (selftest and not real_backends) or dump_ui is not None:
         from wowbuddy.desktop import NoSystemBackend
         windows = capture = keys = NoSystemBackend()
@@ -489,11 +494,17 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
     data_dir = Path(data_dir).resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
     seed_library(ROOT/'assets', data_dir)
+    startup_record('独立循环库种子快照就绪')
     settings = open_ini_settings(str(data_dir/'settings.ini'))
-    window = DevWindow(Assets.load(ROOT/'assets'), settings,
+    startup_record('准备加载契约和规则资源')
+    assets=Assets.load(ROOT/'assets')
+    startup_record('契约和规则资源加载完成，准备构造主窗口')
+    window = DevWindow(assets, settings,
         window_backend=windows, capture=capture, key_backend=keys,
         application_dir=data_dir, environment={'WOWBUDDY_HOME':str(data_dir),'WOWBUDDY_NO_GAME_SCAN':''},
-        network_enabled=False, automatic=watch, tray_enabled=not selftest and dump_ui is None)
+        network_enabled=False, automatic=watch, tray_enabled=not selftest and dump_ui is None,
+        startup_record=startup_record,startup_log_path=log_path())
+    startup_record('独立主窗口构造完成')
     window.setWindowTitle('WowBuddyDev — 独立开发版')
     window._configure_automatic_client_update(client_online and not selftest and dump_ui is None,no_update)
     window._configure_addon_refresh(addon_online and not selftest and dump_ui is None)
@@ -510,6 +521,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         window._refresh_online_library()
         window.hub_timer.start()
     window.show()
+    startup_record('独立主窗口已显示')
     if dump_ui is not None:
         from wowbuddy.dev_dump_ui import run_dump
         try:
@@ -641,9 +653,5 @@ def main():
 
 
 if __name__=='__main__':
-    try:
-        raise SystemExit(main())
-    except Exception:
-        import traceback
-        (APP_ROOT/'startup-error.log').write_text(traceback.format_exc(), 'utf8')
-        raise SystemExit(1)
+    from wowbuddy.dev_startup import run_logged
+    raise SystemExit(run_logged(main,application=APP_ROOT,arguments=sys.argv))

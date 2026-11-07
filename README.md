@@ -16,6 +16,8 @@
 
 ## 当前内容
 
+当前源码新增启动取证日志：默认位于程序旁 `.local/startup.log`，也可由 `--data-dir` 指定；记录Qt、资源加载和主窗口阶段，Python异常的完整堆栈写入同目录startup-error.log。尚未包含在公开v0.2.2附件中，原生崩溃捕获的未完成范围见STARTUP-DIAGNOSTICS.md。
+
 - `desktop/wowbuddy/`：迁入当前桌面重建源码，由独立run_dev.py入口使用，并提供自有EXE构建脚本。
 - `addon/WowBuddyDev/`：独立插件源码，固定目录及TOC名称。
 - `assets/`：协议、规则JSON及离线循环库快照，保持桌面端与插件协议对应。
