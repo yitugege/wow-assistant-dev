@@ -1,10 +1,18 @@
 # 当前源码本地构建验收
 
-## 构建之后的产品改动
+## 最新本地构建与回归：c29fe27，未公开发布
 
-目录创建前缀的UTF16计数修复已修改`desktop/wowbuddy/launcher.py`，见OUTER-MKDIR-NATIVE-PARITY.md。当前保存的6bb86ed与公开0.2.8均未包含此改动，需要后续重建和冻结验证；下文源码摘要一致的结论只适用于当时的构建快照。
+目录创建前缀的UTF16计数修复已打入本地目录版和单文件，见OUTER-MKDIR-NATIVE-PARITY.md。源码基线为c29fe27，版本字段仍为0.2.8；公开附件未覆盖。
 
-## 最新本地构建与回归：6bb86ed，未公开发布
+- 单文件：`dist/local-c29fe27/WowBuddyDev-Outer.exe`，SHA256 `69820bf5423781a0d7dd1349136c0bdae8adb441e5baf24ce1c4bb35346817a1`。
+- 目录版：`dist/desktop/WowBuddyDev/WowBuddyDev.exe`，SHA256 `9cd9d0f80678036d28a935d399a680e726d7a755c7c231194d595b260bce3848`，运行需要相邻依赖。
+- 源码回归286项顶层（180.803秒）及153项核心（1.450秒）通过，共439项，无跳过；本轮只构建和验证，未修改产品源码。
+- 构建前后及验证后源码摘要一致，内嵌259成员、身份资源和负载检查通过。冻结GUI及系统后端初始化自检通过；六种规则输入、12项启动环境字段、三种解包缓存场景通过。
+- 两次诊断参数窗口启动、设置保留、旧缓存清理通过，仅关闭测试Job窗口PID23388、41180；各次3个测试进程最终全部退出。使用`--dump-ui --no-watch --no-update --no-stealth`和禁止游戏目录扫描，不是普通启动或游戏测试。
+
+报告：`dist/frozen-selftest-c29fe27.json`、`dist/frozen-outer-c29fe27.json`、`dist/outer-gui-c29fe27.json`；日志：`.local/build-c29fe27-{desktop,outer}.log`和`.local/check-c29fe27-{selftest,outer,gui}.log`。未覆盖公开附件、未安装到游戏目录；在线替换重启、真实抓屏施法和自动换怪仍未验证。原机器码对照的特殊路径场景属于源码测试，不能声称已在冻结程序中再次执行故障注入。
+
+## 历史本地构建与回归：6bb86ed，未公开发布
 
 已包含更新取消记录无法落盘后的界面恢复修复。版本字段仍为0.2.8，公开附件未变。保存的单文件为`dist/local-6bb86ed/WowBuddyDev-Outer.exe`，SHA256 `e59ec68588439764b820d13831e12e4246bbca7e13cb8ebacfaac54d62c15aca`；目录版`dist/desktop/WowBuddyDev/WowBuddyDev.exe`摘要为`12b0ad2619cc29af53db4c3785f2c5e59c8b6299021ef574ea208812197f6fd6`。构建前后及验证后产品源码摘要一致，外层259成员和身份资源校验通过。
 
