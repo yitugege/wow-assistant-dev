@@ -6,14 +6,20 @@ from .native_cli import parse_native_cli
 from .dev_library import seed_library, profile_action_gaps
 
 
-def run_hub_diagnostics(assets_dir, data_dir):
+def run_hub_diagnostics(assets_dir, data_dir, *, fetch_online=False, fetch=None):
     assets_dir=Path(assets_dir)
     data_dir=Path(data_dir).resolve()
     data_dir.mkdir(parents=True,exist_ok=True)
     seeded=seed_library(assets_dir,data_dir)
     # 显式环境隔离，不能继承历史WOWBUDDY_HOME或服务器地址。
-    result=run_local_hub_command(parse_native_cli(['WowBuddyDev','--hub-selftest']),
-        application_dir=data_dir,environment={'WOWBUDDY_HOME':str(data_dir)})
+    from .dev_hub_online import HUB_URL,BackupHubFiles
+    arguments=['WowBuddyDev','--hub-selftest']
+    if fetch_online:
+        from PySide6.QtCore import QCoreApplication
+        app=QCoreApplication.instance() or QCoreApplication(['WowBuddyDev'])
+        arguments.append('--hub-fetch')
+    result=run_local_hub_command(parse_native_cli(arguments),files=BackupHubFiles(),fetch=fetch,
+        application_dir=data_dir,environment={'WOWBUDDY_HOME':str(data_dir),'WOWBUDDY_HUB_URL':HUB_URL})
     documents=[json.loads((assets_dir/name).read_text('utf8'))
                for name in ('rules.json','rules_readable.json')]
     gaps=[]
@@ -28,7 +34,8 @@ def run_hub_diagnostics(assets_dir, data_dir):
             'status':result.status.replace('正在联网检查更新…','离线诊断，未联网'),
             'cache_error':result.hub.error,
             'profiles_with_missing_actions':len(gaps),'action_gaps':gaps,
-            'network_used':False,
+            'network_used':fetch_online,
+            'fetch_timed_out':result.fetch_wait.timed_out if result.fetch_wait else None,
             'scope':'缓存读取与静态动作引用检查；PASS不证明宏可用、条件正确或游戏施法成功'}
     (data_dir/'hub-selftest.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),'utf8')
     return int(not success)

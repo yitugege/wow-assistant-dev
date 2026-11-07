@@ -50,6 +50,7 @@ class UiWidgets:
     poll_interval_spin: QSpinBox
     rotation_combo: QComboBox
     hub_pull_button: QPushButton
+    hub_online_button: QPushButton
     hub_status: QLabel
     sent_label: QLabel
     fps_label: QLabel
@@ -239,6 +240,9 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
     row.addWidget(_label('循环方案'))
     row.addWidget(rotation_combo, 1)
     row.addWidget(hub_pull_button)
+    hub_online_button = _button('GitHub刷新', 29)
+    hub_online_button.setVisible(False)
+    row.addWidget(hub_online_button)
     target_layout.addLayout(row)
     hub_status = _label('尚未拉取循环库', name='Dim', wrap=True)
     target_layout.addWidget(hub_status)

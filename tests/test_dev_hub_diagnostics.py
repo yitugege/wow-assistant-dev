@@ -54,7 +54,7 @@ class HubDiagnosticTests(unittest.TestCase):
             self.assertTrue(report['report_error'])
 
     def test_network_flag_and_conflicting_modes_rejected(self):
-        for extra in ('--hub-fetch','--watch','--dump-ui'):
+        for extra in ('--watch','--dump-ui'):
             result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--hub-selftest',extra],
                 cwd=ROOT,capture_output=True,timeout=10)
             self.assertEqual(result.returncode,2)

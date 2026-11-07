@@ -39,6 +39,8 @@
 
 ## 独立桌面源码入口
 
+循环库已接回自有 GitHub 在线同步：正常启动请求一次，每30分钟刷新，可点“GitHub刷新”立即更新；“重载本地方案”保持离线读取。覆盖前自动备份旧快照。`--hub-selftest --hub-fetch` 可无主窗验证联网；详见 [HUB-ONLINE.md](HUB-ONLINE.md)。此说明替代下文早期“未配置远程循环库”的记录。
+
 插件页“自动检测”会优先选运行中的客户端，并读取最近目录、配置根目录和常见安装位置；支持 `_classic_beta_`、`_cn_beta_`、`_forever_`。右键该按钮可选择或清空最近目录。手选允许游戏根目录、客户端、Interface、AddOns，安装前仍需退出游戏。原检测实现保留作对照，新增路径支持位于 `dev_game_paths.py`。
 
 无界面安装使用 `python run_dev.py --install-addon --install-addon-dir="D:/游戏/_forever_/Interface/AddOns" --data-dir="D:/安装报告"`。直接目录语义、返回码及原版差异见 [CLI-INSTALL.md](CLI-INSTALL.md)。此命令新增于 v0.2.0 发布之后的源码。

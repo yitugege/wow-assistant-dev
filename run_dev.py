@@ -13,7 +13,7 @@ PACKAGE_DIR = APP_ROOT/'packages' if FROZEN else ROOT/'dist'
 sys.path.insert(0, str(ROOT/'desktop'))
 
 
-def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None):
+def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True):
     if selftest and (auto_start or watch):
         raise ValueError('自检不能同时自动开始监控')
     if dump_ui is not None and (selftest or auto_start or watch):
@@ -60,6 +60,14 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.hub.status = status
             self.logger.append(status)
             return True
+
+        def _periodic_library_refresh(self):
+            self._refresh_online_library()
+
+        def _refresh_online_library(self):
+            if self.hub_client is not None:
+                from wowbuddy.dev_hub_online import HUB_URL
+                self.hub_client.refresh(HUB_URL)
 
         def _render_hub_status(self):
             super()._render_hub_status()
@@ -222,6 +230,16 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
     window.ui.auto_update_check.setChecked(False)
     window.ui.auto_update_check.setEnabled(False)
     window.ui.update_status.setText('插件更新：在插件页点击“GitHub下载更新”；客户端请下载配套Release。')
+    if hub_online and not selftest and dump_ui is None:
+        from wowbuddy.qt_network import QtHubClient
+        from wowbuddy.dev_hub_online import BackupHubFiles
+        window.hub.files=BackupHubFiles()
+        window.hub_client=QtHubClient(window.hub,window)
+        window.ui.hub_online_button.setVisible(True)
+        window.ui.hub_online_button.setToolTip('从自有GitHub仓库刷新；替换前快照备份在 hub/backups 中。')
+        window.ui.hub_online_button.clicked.connect(window._refresh_online_library)
+        window._refresh_online_library()
+        window.hub_timer.start()
     window.show()
     if dump_ui is not None:
         from wowbuddy.dev_dump_ui import run_dump
@@ -299,6 +317,7 @@ def main():
     parser.add_argument('--install-addon-dir',default=None,help='直接安装目标目录，原版格式为 --install-addon-dir=路径')
     parser.add_argument('--dump-ui',action='store_true',help='离屏导出界面诊断到data-dir后退出，不抓屏或发键')
     parser.add_argument('--hub-selftest',action='store_true',help='检查本地循环库并报告缺失动作，不联网')
+    parser.add_argument('--hub-fetch',action='store_true',help='与 --hub-selftest 合用，从自有GitHub拉取循环库')
     parser.add_argument('--engine-selftest',action='store_true',help='运行原引擎离线自检并记录失败/跳过计数')
     parser.add_argument('--spec',action='append',default=[],help='界面诊断的专精ID，可重复指定')
     parser.add_argument('--talent',default=None,help='界面诊断的天赋字符串')
@@ -306,6 +325,8 @@ def main():
     parser.add_argument('--rotation',default='',help='界面诊断的专精ID|子分类|方案名')
     parser.add_argument('--toggle-showall',action='store_true',help='同时导出显示全部切换诊断')
     args=parser.parse_args()
+    if args.hub_fetch and not args.hub_selftest:
+        parser.error('--hub-fetch 需要 --hub-selftest')
     if args.install_addon:
         if (args.selftest or args.selftest_backends or args.dump_ui or args.auto or args.watch
                 or args.hub_selftest or args.engine_selftest or args.spec or args.talent is not None
@@ -329,7 +350,7 @@ def main():
             from wowbuddy.dev_engine_diagnostics import run_engine_diagnostics
             return run_engine_diagnostics(ROOT/'assets',args.data_dir)
         from wowbuddy.dev_hub_diagnostics import run_hub_diagnostics
-        return run_hub_diagnostics(ROOT/'assets',args.data_dir)
+        return run_hub_diagnostics(ROOT/'assets',args.data_dir,fetch_online=args.hub_fetch)
     if args.dump_ui:
         if args.selftest or args.selftest_backends or args.auto or args.watch:
             parser.error('--dump-ui 不能与自检或自动监控参数同时使用')
