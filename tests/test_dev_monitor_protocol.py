@@ -78,4 +78,18 @@ class MonitorProtocolTests(unittest.TestCase):
                     window.toggle_monitor()
                     result=window.poll_once()
                     self.assertEqual(result.status,'inactive')
+                    # 原0a2070仅清内部计数；089570实际尝试主键才刷新累计文案。
+                    window.toggle_monitor()
+                    state['time']+=5000
+                    state['minimized']=False
+                    window.poll_once()
+                    self.assertEqual(window.dispatcher.state.success_count,0)
+                    self.assertEqual(window.ui.sent_label.text(),'0')
+                    self.assertEqual(window.ui.send_status_label.text(),'发键：累计 1 条')
+                    state['image']=frame(0x800000)
+                    sender.send=lambda *args,**kwargs:False
+                    state['time']+=5000
+                    result=window.poll_once()
+                    self.assertEqual(result.tick.dispatch.status,'failed')
+                    self.assertEqual(window.ui.send_status_label.text(),'发键：累计 0 条')
                 test_dev_tray.TrayTests.run_window(self,False,exercise)

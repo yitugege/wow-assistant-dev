@@ -568,7 +568,6 @@ class AssistantWindow(QWidget):
         self.ui.fps_label.setText(fps_text(self.session.state.frame_count, elapsed))
         self.ui.frame_status_label.setText(statistics_text(self.session.state.frame_count,
                                                           self.session.state.frame_auxiliary, elapsed))
-        self.ui.send_status_label.setText(success_count_text(self.dispatcher.state.success_count))
         self.ui.suggestions.setPlainText(candidate_text(decision.candidates,
             now_ms=result.tick.display_now_ms, suppression_until=result.tick.display_suppression_until))
         spec = self.pipeline.engine.specs.get(decision.frame.spec_id)
@@ -576,6 +575,8 @@ class AssistantWindow(QWidget):
         self.ui.available_count.setText(available.summary)
         self.ui.available_details.setText(available.detail_html)
         if result.tick.dispatch is not None:
+            if result.tick.dispatch.status in ('sent','failed'):
+                self.ui.send_status_label.setText(success_count_text(self.dispatcher.state.success_count))
             display = send_display(result.tick.selected, result.tick.dispatch,
                                    focus_known=self.scheduler.state.focus_known)
             if display.status is not None:
