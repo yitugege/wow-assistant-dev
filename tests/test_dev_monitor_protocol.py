@@ -74,6 +74,7 @@ class MonitorProtocolTests(unittest.TestCase):
                     state['minimized']=True
                     result=window.poll_once()
                     self.assertEqual(result.capture.status,'minimized')
+                    self.assertEqual(window.ui.status_label.text(),'游戏窗口已最小化，恢复后自动继续')
                     self.assertEqual(sent,['SHIFT-F2'])
                     state['minimized']=False
                     state['time']+=5000
@@ -99,4 +100,16 @@ class MonitorProtocolTests(unittest.TestCase):
                     result=window.poll_once()
                     self.assertEqual(result.tick.dispatch.status,'failed')
                     self.assertEqual(window.ui.send_status_label.text(),'发键：累计 0 条')
+                    failed_status=window.ui.status_label.text()
+                    window.dispatcher.sender=None
+                    state['time']+=5000
+                    result=window.poll_once()
+                    self.assertEqual(result.tick.dispatch.status,'no_sender')
+                    self.assertEqual(window.ui.status_label.text(),failed_status)
+                    self.assertEqual(window.ui.send_status_label.text(),'发键：累计 0 条')
+                    state['image']=None
+                    state['time']+=5000
+                    result=window.poll_once()
+                    self.assertEqual(result.status,'capture_failed')
+                    self.assertEqual(window.ui.status_label.text(),'抓屏失败')
                 test_dev_tray.TrayTests.run_window(self,False,exercise)

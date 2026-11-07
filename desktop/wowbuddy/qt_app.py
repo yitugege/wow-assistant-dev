@@ -515,7 +515,7 @@ class AssistantWindow(QWidget):
     def poll_once(self):
         result = self.loop.poll()
         self._last_result = result
-        self._render_monitor()
+        self._render_monitor(update_status=result.tick is None)
         if result.tick is None:
             if result.status == "descriptor_unverified":
                 self.ui.status_label.setText(self.session.state.status)
