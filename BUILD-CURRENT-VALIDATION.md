@@ -1,12 +1,20 @@
 # 当前源码本地构建验收
 
-## 最新源码完整回归：0a99c06
+## 最新本地构建与回归：6bb86ed，未公开发布
+
+已包含更新取消记录无法落盘后的界面恢复修复。版本字段仍为0.2.8，公开附件未变。保存的单文件为`dist/local-6bb86ed/WowBuddyDev-Outer.exe`，SHA256 `e59ec68588439764b820d13831e12e4246bbca7e13cb8ebacfaac54d62c15aca`；目录版`dist/desktop/WowBuddyDev/WowBuddyDev.exe`摘要为`12b0ad2619cc29af53db4c3785f2c5e59c8b6299021ef574ea208812197f6fd6`。构建前后及验证后产品源码摘要一致，外层259成员和身份资源校验通过。
+
+完整源码回归261项通过（163.888秒），核心153项通过（1.462秒），共414项，无跳过。日志`.local/regression-6bb86ed.log`及`.local/regression-core-6bb86ed.log`。冻结GUI/系统后端构造自检、六种规则输入、首次解包/缓存复用/缺失ready三场景均通过。两次诊断参数下的GUI启动、设置保留与旧缓存清理通过，仅关闭自有Job窗口PID40812、65800，各次3个进程全部退出。
+
+报告保存在`dist/frozen-selftest-6bb86ed.json`、`dist/frozen-outer-6bb86ed.json`、`dist/outer-gui-6bb86ed.json`；构建日志`.local/build-6bb86ed-{desktop,outer}.log`，检查日志`.local/check-6bb86ed-{selftest,outer,gui}.log`。未安装到游戏目录、未覆盖公开附件。新增取消失败分支的故障注入仍是源码Qt测试，不是冻结故障注入；未验证此构建在线替换重启及真实游戏施法。
+
+## 历史源码完整回归：0a99c06
 
 顶层259项测试通过，157.256秒；核心153项通过，1.468秒，合计412项。日志 `.local/regression-0a99c06.log`、`.local/regression-core-0a99c06.log`。使用原包/机器码的子场景不另算顶层测试数。没有为本轮绕过或跳过新增测试。
 
 同时重新比较目录版和单文件构建清单中每个产品源文件摘要，当前产品源码与64ec113构建一致；后续修改为测试和文档。保存的单文件副本SHA256仍为 `46131bbd861aff6e42162cb014e667a0f218cc9f04312647257318376a42c134`。本轮没有重新构建或覆盖发布附件，也未进行游戏施法验收。
 
-## 最新本地构建：源码64ec113，未公开发布
+## 历史本地构建：源码64ec113，未公开发布
 
 已包含ea60f7f排序临时缓冲区回退、57dca3a交接准备重试、8ff0fe3交接超时及错误报告恢复。版本字段仍为0.2.8；本地后续构建未覆盖公开Release附件。单文件另存于 `dist/local-64ec113/WowBuddyDev-Outer.exe`，SHA256 `46131bbd861aff6e42162cb014e667a0f218cc9f04312647257318376a42c134`；目录业务EXE位于 `dist/desktop/WowBuddyDev/WowBuddyDev.exe`，SHA256 `41d1ca0560406d191e2289c47aa7f0c9120c774ef35934c69a04cd4d66aafd1f`。
 

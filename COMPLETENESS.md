@@ -4,12 +4,12 @@
 
 ## 当前交付与源码身份
 
-最新源码另包含取消更新记录写入失败后的界面恢复修复，见MANUAL-UPDATE-VALIDATION.md。该产品改动尚未打包；下面64ec113本地EXE和公开0.2.8均不包含它，历史“产品源码摘要与64ec113一致”只适用于当时核验的0a99c06。
+最新本地构建6bb86ed已包含取消更新记录写入失败后的界面恢复修复，保存于dist/local-6bb86ed/WowBuddyDev-Outer.exe，完整414项回归及冻结启动检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖；历史64ec113和“产品源码摘要一致”仅指此前构建记录。
 
 |对象|当前状态|证据|
 |---|---|---|
 |公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
-|最新本地EXE|源码64ec113，版本字段仍为0.2.8；包含排序缓冲区回退及两轮更新失败恢复，未覆盖公开附件|dist/local-64ec113/WowBuddyDev-Outer.exe；SHA256 46131bbd861aff6e42162cb014e667a0f218cc9f04312647257318376a42c134|
+|最新本地EXE|源码6bb86ed，版本字段仍为0.2.8；包含取消失败恢复，未覆盖公开附件|dist/local-6bb86ed/WowBuddyDev-Outer.exe；SHA256 e59ec68588439764b820d13831e12e4246bbca7e13cb8ebacfaac54d62c15aca|
 |后续源码|截至0a99c06，新增原职业、事件、命令、等级和分类对照；此阶段没有额外产品逻辑修改|ORIGINAL-CLASS-READY-PARITY.md、WARRIOR-FEEDBACK-PARITY.md、SWITCH-COMMAND-PARITY.md|
 
 ## 明确未完成项
@@ -22,7 +22,7 @@
 
 ## 最近新增证据及其范围
 
-当前源码0a99c06完整回归：259项顶层与153项核心测试通过，共412项。产品源码摘要与最新本地64ec113构建一致，见BUILD-CURRENT-VALIDATION.md。测试数量不能代替本表未完成要求的验收。
+当前源码6bb86ed完整回归：261项顶层与153项核心测试通过，共414项。产品源码摘要与最新本地6bb86ed构建一致，见BUILD-CURRENT-VALIDATION.md。测试数量不能代替本表未完成要求的验收。
 
 - 九职业182个技能可用位，共236帧真实Lua纹理→客户端解码→规则读取；游戏API为替身，见CLASS-ACTION-PIXEL-VALIDATION.md。
 - 原addon.bin与独立Lua就绪判定3822组、逐等级学习19022组一致；包含680组基础ID不可用而等级别名可用。九职业注册表未配置通用宠物分类，不能推断整个游戏没有宠物功能。见ORIGINAL-CLASS-READY-PARITY.md。
