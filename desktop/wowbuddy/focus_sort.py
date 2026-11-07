@@ -119,14 +119,41 @@ def _merge_trimmed(left, right, health, capacity=None):
     return prefix + output + suffix
 
 
+def _allocate_buffer(size):
+    return bytearray(size)
+
+
+def _temporary_buffer(count):
+    # 049735..0497b8：1024项栈空间始终可用；更大请求失败时折半。
+    capacity = (count + 1) // 2
+    if capacity <= 1024:
+        return capacity, None
+    while capacity:
+        try:
+            reserved = _allocate_buffer(capacity * 4)
+        except MemoryError:
+            capacity //= 2
+            continue
+        if capacity > 1024:
+            return capacity, reserved
+        # 原程序释放小于等于1024项的成功分配，改用固定栈缓冲区。
+        return 1024, None
+    return 1024, None
+
+
 def health_order(health, *, buffer_capacity=None):
     """buffer_capacity 指定原临时缓冲区容量，用于受限容量路径对照。
 
-    Python 中间列表仍需内存；容量为零不代表本实现零内存分配。
+    默认按原调用方申请临时容量并在该申请失败时回退。
+    Python 中间列表仍需内存；这不是所有分配失败的恢复机制。
     """
     if buffer_capacity is not None and (not isinstance(buffer_capacity, int) or buffer_capacity < 0):
         raise ValueError('排序缓冲区容量必须是非负整数')
     items = list(range(len(health)))
+    reserved = None
+    if buffer_capacity is None and len(items) > 32:
+        buffer_capacity, reserved = _temporary_buffer(len(items))
+    # 保持容量预留存活到本次排序结束；中间列表异常仍向上传播。
     return _sort(items, health, buffer_capacity)
 
 

@@ -7,12 +7,14 @@ import random
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.candidates import Candidate, _reorder_focus_health
 from wowbuddy.expressions import EvaluationContext
 from wowbuddy.focus_sort import health_order
+from wowbuddy.focus_sort import _temporary_buffer
 
 
 class FocusSortNativeTests(unittest.TestCase):
@@ -67,6 +69,45 @@ class FocusSortNativeTests(unittest.TestCase):
                     with self.subTest(count=count,capacity=capacity,case=case):
                         self.assertEqual(health_order(values,buffer_capacity=capacity),
                                          self.order(values,capacity))
+
+    def test_caller_allocation_failure_selects_stack_or_reduced_heap(self):
+        # 049735..0497b8/049bcf：失败后折半；成功容量<=1024或全失败均用1024栈空间。
+        scenarios = (
+            (33, 0, [], 17), (2048, 0, [], 1024),
+            (2049, 0, [4100], 1025), (2049, 1, [4100, 2048], 1024),
+            (4097, 1, [8196, 4096], 1024),
+            (8193, 1, [16388, 8192], 2048),
+            (8193, 2, [16388, 8192, 4096], 1024),
+            (2049, 99, [4100, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4], 1024),
+        )
+        for count, failures, requests, capacity in scenarios:
+            with self.subTest(count=count, failures=failures):
+                calls = []
+                def allocate(size):
+                    calls.append(size)
+                    if len(calls) <= failures:
+                        raise MemoryError('只注入临时缓冲区申请失败')
+                    return bytearray(size)
+                with patch('wowbuddy.focus_sort._allocate_buffer', allocate):
+                    actual, reserved = _temporary_buffer(count)
+                self.assertEqual(calls, requests)
+                self.assertEqual(actual, capacity)
+                self.assertEqual(reserved is not None, capacity > 1024)
+                rng = random.Random(count)
+                values = [rng.choice([0., 10., 50., 99., float('nan')]) for _ in range(count)]
+                calls.clear()
+                with patch('wowbuddy.focus_sort._allocate_buffer', allocate):
+                    result = health_order(values)
+                self.assertEqual(calls, requests)
+                self.assertEqual(result, self.order(values, capacity))
+
+    def test_only_buffer_memory_error_is_recoverable(self):
+        with patch('wowbuddy.focus_sort._allocate_buffer', side_effect=RuntimeError('allocator')):
+            with self.assertRaisesRegex(RuntimeError, 'allocator'):
+                health_order([1.] * 2049)
+        with patch('wowbuddy.focus_sort._sort', side_effect=MemoryError('intermediate')):
+            with self.assertRaisesRegex(MemoryError, 'intermediate'):
+                health_order([1.] * 2049)
 
     def test_large_groups_against_original_merge(self):
         rng=random.Random(326)
