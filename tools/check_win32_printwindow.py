@@ -1,20 +1,22 @@
-"""自有测试窗口提供协议图像，实际 PrintWindow/DIB 裁剪后再解码。"""
+"""自有测试窗口提供协议图像，实际 PrintWindow 或 DXGI 抓屏后解码。"""
 import json
 import os
 from pathlib import Path
 import sys
+import time
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 sys.path.insert(0,str(ROOT/'tests/core'))
 
 
-def check():
+def check(*, backend='printwindow'):
+    if backend not in ('printwindow','dxgi'):raise ValueError(backend)
     if os.name!='nt':raise RuntimeError('需要 Windows')
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication,QWidget
     from PySide6.QtGui import QImage,QPainter
-    from wowbuddy.capture import Win32WindowAPI,Win32PrintWindow
+    from wowbuddy.capture import Win32WindowAPI,Win32PrintWindow,Win32DxgiBackend,DxgiCapture,Rect
     from wowbuddy.pixel_geometry import RGBImage
     from wowbuddy.assets import Assets
     from test_old_protocol import render_old
@@ -23,7 +25,9 @@ def check():
     if app.platformName()!='windows':raise RuntimeError('此检查需要原生 Windows Qt 平台')
     class Receiver(QWidget):
         def __init__(self):
-            super().__init__(None,Qt.FramelessWindowHint|Qt.Tool)
+            flags=Qt.FramelessWindowHint|Qt.Tool
+            if backend=='dxgi':flags|=Qt.WindowStaysOnTopHint
+            super().__init__(None,flags)
             self.setAttribute(Qt.WA_ShowWithoutActivating)
             self.frame=None
         def set_frame(self,frame):
@@ -39,6 +43,8 @@ def check():
                 painter.end()
     window=Receiver()
     windows=Win32WindowAPI();capture=Win32PrintWindow()
+    gpu=Win32DxgiBackend() if backend=='dxgi' else None
+    dxgi=DxgiCapture(gpu) if gpu is not None else None
     assets=Assets.load(ROOT/'assets')
     results=[]
     try:
@@ -61,7 +67,20 @@ def check():
                 rect=windows.window_rect(hwnd);client=windows.client_rect(hwnd)
                 origin=windows.client_to_screen(hwnd)
                 assert rect is not None and client is not None and origin is not None
-                image=capture.capture(hwnd,rect,origin,client.width,client.height)
+                attempts=0
+                if dxgi is None:
+                    image=capture.capture(hwnd,rect,origin,client.width,client.height)
+                else:
+                    expected=tuple(row[:48] for row in frame.rows)
+                    deadline=time.monotonic()+4
+                    while True:
+                        app.processEvents()
+                        image=dxgi.capture(Rect(origin[0],origin[1],origin[0]+client.width,origin[1]+client.height))
+                        attempts+=1
+                        if image is not None and image.rows==expected:break
+                        if time.monotonic()>=deadline:
+                            raise RuntimeError(f'DXGI未取得匹配帧: {spec}/{protocol}, error={dxgi.last_error}, attempts={attempts}')
+                        time.sleep(0.03)
                 assert image is not None,(spec,protocol)
                 assert (image.width,image.height)==(min(48,frame.width),frame.height)
                 differences=[(x,y,image.rows[y][x],frame.rows[y][x])
@@ -73,17 +92,26 @@ def check():
                 assert decoded.spec_id==str(spec),(spec,protocol,decoded.spec_id)
                 assert decoded.protocol==protocol,(spec,protocol,decoded.protocol)
                 results.append({'spec':spec,'protocol':protocol,'width':image.width,
-                                'height':image.height,'pixels_exact':True,'decoded':True})
-        return {'passed':True,'backend':'Win32PrintWindow','receiver':'本进程无激活 Qt 测试窗口',
+                                'height':image.height,'pixels_exact':True,'decoded':True,'attempts':attempts})
+        return {'passed':True,'backend':'Win32DxgiBackend' if dxgi else 'Win32PrintWindow','receiver':'本进程无激活 Qt 测试窗口',
                 'cases':results,
-                'dxgi_verified':False,'game_capture_verified':False}
+                'dxgi_verified':dxgi is not None,'game_capture_verified':False}
     finally:
+        if gpu is not None:gpu.close()
         window.close();window.destroy()
 
 
 if __name__=='__main__':
-    result=check()
-    output=ROOT/'dist/win32-printwindow-check.json'
+    import argparse
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--backend',choices=('printwindow','dxgi'),default='printwindow')
+    args=parser.parse_args()
+    try:
+        result=check(backend=args.backend)
+    except Exception as error:
+        result={'passed':False,'backend':args.backend,'error':str(error),'game_capture_verified':False}
+    output=ROOT/f'dist/win32-{args.backend}-check.json'
     output.parent.mkdir(exist_ok=True)
     output.write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps(result,ensure_ascii=True))
+    raise SystemExit(0 if result['passed'] else 1)
