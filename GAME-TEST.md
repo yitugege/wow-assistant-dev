@@ -1,5 +1,7 @@
 # 最新部署状态（2026-11-07 UTC）
 
+后续更新：现已从公开GitHub v0.2.5包安装78个文件并逐项校验。固定目录身份保持WowBuddyDev，旧插件完整备份，70个WTF文件未变，详见ADDON-IDENTITY-AUDIT.md及本地dist/game-addon-025-install.json。游戏尚未启动验证。下方0.2.0-dev段落保留此前部署历史。
+
 已将0.2.0-dev插件安装到 `D:/Program Files (x86)/World of Warcraft/_forever_/Interface/AddOns/WowBuddyDev`。安装前未检测到Wow/WowB/WowClassic进程。安装后78个文件逐项摘要与本仓库源码一致；原v9te4am6目录78个文件的安装前后摘要一致。完整报告：dist/game-addon-install.json。真实客户端加载、Lua报错、受保护操作和实际施法尚未验证。
 
 已请求用户在游戏插件列表禁用旧插件、启用WowBuddyDev、进入角色并停止旧助手。尚未收到准备完成的回复；不能把文件安装完成当作游戏加载通过。测试必须使用配套新桌面EXE。

@@ -91,8 +91,9 @@ def _install_package(package, addons, backup_root, record_path):
         if record.get('product')!='wowbuddy-dev' or (prior!=NAME and not re.fullmatch(r'w[0-9a-f]{12}',prior)):
             raise ValueError('上次安装记录无效；不修改无法识别的目录')
         previous=addons/prior
-    # 首次安装采用发布包随机目录；以后沿用本机随机目录，保留游戏启用状态和存档文件名。
-    installed_name=previous.name if record_path.exists() and previous.name!=NAME else addon_name
+    # 首次安装采用发布包随机目录；已有安装（包括固定名开发版）保持本机身份。
+    # 不改目录名，才能延续游戏启用状态及按插件名关联的存档文件。
+    installed_name=previous.name if record_path.exists() or previous.exists() else addon_name
     if installed_name!=addon_name:
         payload[Path(f'{installed_name}.toc')]=payload.pop(Path(f'{addon_name}.toc'))
     target=addons/installed_name

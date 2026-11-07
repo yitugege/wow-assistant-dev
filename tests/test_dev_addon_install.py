@@ -105,3 +105,34 @@ class InstallTests(unittest.TestCase):
 
     def test_invalid_client_rejected(self):
         with self.assertRaises(ValueError):client_directory(self.root)
+
+    def test_random_release_preserves_existing_fixed_identity_and_saved_files(self):
+        install_package(self.package,self.client)
+        saved=self.client/'WTF/Account/fixture/SavedVariables/WowBuddyDev.lua'
+        saved.parent.mkdir(parents=True)
+        saved.write_bytes(b'WowBuddyDevDB = { masterKey = "F6" }\n')
+        enabled=self.client/'WTF/Account/fixture/realm/character/AddOns.txt'
+        enabled.parent.mkdir(parents=True);enabled.write_bytes(b'WowBuddyDev: enabled\n')
+        before={path:path.read_bytes() for path in (saved,enabled)}
+        manifest=build(self.source,self.package,random_names=True)
+        self.package.with_suffix('.manifest.json').write_text(json.dumps(manifest),'utf8')
+        result=install_package(self.package,self.client)
+        self.assertEqual(result['addon_directory'],'WowBuddyDev')
+        self.assertEqual(Path(result['target']),self.target)
+        self.assertTrue((self.target/'WowBuddyDev.toc').is_file())
+        self.assertFalse((self.target.parent/manifest['addon_directory']).exists())
+        self.assertTrue(Path(result['backup']).is_dir())
+        self.assertEqual(before,{path:path.read_bytes() for path in before})
+        for line in (self.target/'WowBuddyDev.toc').read_text('utf8').splitlines():
+            if line and not line.startswith('#'):self.assertTrue((self.target/line).is_file())
+
+    def test_existing_fixed_install_without_record_keeps_identity(self):
+        install_package(self.package,self.client)
+        (self.client/'.wowbuddy-install.json').unlink()
+        manifest=build(self.source,self.package,random_names=True)
+        self.package.with_suffix('.manifest.json').write_text(json.dumps(manifest),'utf8')
+        result=install_package(self.package,self.client)
+        self.assertEqual(result['addon_directory'],'WowBuddyDev')
+        self.assertTrue((self.target/'WowBuddyDev.toc').is_file())
+        record=json.loads((self.client/'.wowbuddy-install.json').read_text('utf8'))
+        self.assertEqual(record['addon_directory'],'WowBuddyDev')
