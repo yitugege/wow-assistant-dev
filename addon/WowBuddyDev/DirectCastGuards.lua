@@ -92,3 +92,9 @@ function DC.KeeperAuraPresent(ids)
   if byIDAuraPresent(ids) then return true end
   return nameScanAuraPresent(ids) ~= false
 end
+
+-- 内部模块共享同一份惰性快照，保留原空快照不重建的行为。
+function DC.IterGuardInfo()
+  if not guardInfo then buildGuardIDs() end
+  return pairs(guardInfo)
+end

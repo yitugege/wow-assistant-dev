@@ -6,7 +6,7 @@
 
 最新本地构建9fa2008已包含交接等待后清单复核及此前目录创建前缀UTF16等修复，保存于dist/local-9fa2008/WowBuddyDev-Outer.exe。48项相关源码回归及本轮冻结清单变化、启动、缓存检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
 
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码新增DirectCast的Slots、Guards、Actions、Movement子模块，并修复读取Core真实职业宏登记的缺口，与9fa2008构建内嵌插件已不同，尚未重新构建EXE；最新本地插件包见dist/directcast-movement。历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码新增DirectCast的Slots、Guards、Actions、Keeper、Movement子模块，并修复读取Core真实职业宏登记的缺口，与9fa2008构建内嵌插件已不同，尚未重新构建EXE；最新本地插件包见dist/directcast-keeper。历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
 
 |对象|当前状态|证据|
 |---|---|---|
@@ -16,7 +16,7 @@
 
 ## 明确未完成项
 
-- DirectCast的Slots、Guards、Actions、Movement四个子模块已接入TOC：显式Cast及`/dc test`已消费手工槽位、宏解析与光环判断，自动占槽、API回退及移动意图/停步补发已通过原调用轨迹对照。完整逻辑仍未装入：自动按钮挂钩、自Buff续挂和环境直调尚缺，普通按钮还不调用MovementGate，普通按键通道不能代替完成证明。动作条放置、施法和权限结果尚未游戏验收；已保留原“失败仍缓存槽位”“off后已有意图仍补发”等行为，见DIRECT-CAST-ORIGINAL-FINDINGS.md。
+- DirectCast的Slots、Guards、Actions、Keeper、Movement五个子模块已接入TOC：显式Cast及`/dc test`已消费手工槽位、宏解析与光环判断，自动占槽、API回退、移动意图/停步补发及自Buff续挂调度已通过原调用轨迹对照。完整逻辑仍未装入：自动按钮挂钩和环境直调尚缺，普通按钮还不调用MovementGate，普通按键通道不能代替完成证明。动作条放置、施法和权限结果尚未游戏验收；已保留原“失败仍缓存槽位”“off后已有意图仍补发”等行为，见DIRECT-CAST-ORIGINAL-FINDINGS.md。
 - DirectCast原文现有12项隔离测试，已确认光环未知值、5秒重试、8秒移动意图、引导状态及槽位缓存边界；API未抛错也可能报告虚假“成功”。这些是迁入约束证据，仍不是实际游戏施法证明。
 - 标注20.0.1的readable协议对应真实发送端仍未定位。已有客户端解码和合成输入测试不能代替发送端与完整绘制验收。
 - 已直接核对原EXE的34个交付成员及其中29个PE的54项资源，仅发现既有addon.bin插件容器；原安装器路径常量也指向该文件。此范围内无第二套插件交付证据，不排除其他编码或远程来源，见ADDON-PROTOCOL-ORIGIN.md。

@@ -89,6 +89,6 @@ SlashCmdList.DIRECTCAST = function(msg)
   elseif msg == "on" then DC.enabled = true end
   print("[DirectCast] 开关: " .. (DC.enabled and "开启" or "关闭"))
   print("用法: /dc on|off；/dc test <动作键> 显式调用（返回值不代表施法生效）")
-  print("移动意图补发已接入；尚无自动按钮挂钩和自Buff续挂。")
+  print("移动意图补发与自Buff续挂已接入；尚无自动按钮挂钩。")
   print("沿用原行为：off不清除已有移动意图，也不禁止显式test命令。")
 end

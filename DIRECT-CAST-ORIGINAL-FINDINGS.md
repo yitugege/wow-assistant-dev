@@ -86,3 +86,13 @@ b7bc7e3后加入DirectCastActions.lua，在Guards之后加载。恢复EnsureSlot
 有意保留原行为并在`/dc`帮助中提示：off不清已有意图；引导状态不阻止补发；普通读条会保留意图等待；超过8秒或死亡/冷却会丢弃。实际游戏权限仍由游戏决定，没有新增内存写入、污染标记修改或解锁手段。本轮未游戏实测，也未接入自Buff续挂或按钮挂钩。
 
 最新本地随机包为`dist/directcast-movement/WowBuddyDev-addon.zip`，目录`wf1c9f2648bcb`，SHA256 `64ed6bfc600dc6a2546c9da5101faeedd5bf30641eddc4deff8463d1a49a415e`。旧包、EXE及公开Release未覆盖；本包未安装。
+
+## 后续迁入：自Buff续挂调度
+
+e2bc73b之后新增DirectCastKeeper.lua，在Actions之后、Movement之前加载，注册1秒周期回调。Guards提供内部迭代入口，与GuardBlocked共用原先惰性建立的光环契约快照。续挂按同组首个技能ID去重，仅确认光环不存在时尝试；死亡、普通读条、引导、冷却或off阻止尝试。沿用原5秒重试间隔，包括两个API都抛错的情况。
+
+5项新增测试将独立回调与原addon.bin完整模块的实际回调对照，覆盖光环ID/名字/未知/完整扫描缺失，4.999与5秒边界，角色状态、未知技能名、两API失败、返回false语义、首次空快照后不刷新。另执行完整插件法师登录，使用真实Mage光环契约中的一个组，仅为该组提供已知技能API，确认计时器到达UseAction(slot=7, unit=player)替身；不是游戏施法测试。相关46项测试通过（7.409秒）。
+
+有意改变提示文案：原来直接写“自动续挂”，现在写“已尝试续挂（是否生效以游戏为准）”，避免把pcall未抛错误报为技能生效。调度顺序、光环判定、失败重试等保持原对照行为。代码仍扫描已注册契约，未额外添加只限当前职业/已学习技能的过滤；完整游戏环境的技能可用性和实际施法仍需验证。
+
+自动按钮挂钩与EnvCloakCast尚未接入，不能声明DirectCast完整恢复。最新本地包`dist/directcast-keeper/WowBuddyDev-addon.zip`，随机目录`wf9c828087b6d`，SHA256 `ac9209cfb1e108119a2176c8e5d96170301c5463906060bd17dd5705a4a2ca55`。原有包保留，新包未安装/公开发布，EXE未重建。
