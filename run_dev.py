@@ -180,6 +180,9 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 elif self._client_update_phase=='download':
                     self.ui.update_apply_button.setText('重试下载')
                     self.ui.update_apply_button.setEnabled(bool(getattr(self,'_client_update_info',{}).get('has_update')))
+                elif self._client_update_phase=='handoff':
+                    self.ui.update_apply_button.setText('重试安装')
+                    self.ui.update_apply_button.setEnabled(bool(getattr(self,'_client_update_staged',None)))
             self.ui.update_status.setText(status)
             self.logger.append(status)
             self.ui.update_check_button.setEnabled(not bool(getattr(self,'_handoff',None)))
