@@ -81,10 +81,16 @@ def _mask(fields: Mapping[str, str]) -> int | None:
     raw = fields.get("action_avail", "")
     if not isinstance(raw, str):
         raise TypeError("decoded fields must contain strings")
-    token = _trim(_trim(raw).split(" ", 1)[0])
+    # 0a2d70: Unicode trimmed只发生在section之前；toLongLong自身
+    # 在NUL终止，并仅接受ASCII空白，不再做一次Unicode trimmed。
+    token = _trim(raw).split(" ", 1)[0].split("\0", 1)[0].strip(" \t\n\r\v\f")
     if not re.fullmatch(r"[+-]?[0-9]+", token):
         return None
-    value = int(token)
+    negative = token.startswith("-")
+    digits = token.lstrip("+-").lstrip("0") or "0"
+    if len(digits) > 19:
+        return None
+    value = int(digits) * (-1 if negative else 1)
     return value if -(2**63) <= value < 2**63 else None
 
 
