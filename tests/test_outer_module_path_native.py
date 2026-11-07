@@ -38,6 +38,21 @@ class ModulePathNativeTests(unittest.TestCase):
                 elif not (op.type == capstone.x86.X86_OP_MEM and op.mem.base == capstone.x86.X86_REG_RIP
                           and i.address+i.size+op.mem.disp-pe.OPTIONAL_HEADER.ImageBase == 0x14078):
                     raise ValueError('未知间接调用')
+        resize_code = pe.get_data(0x1300,0x148c-0x1300)
+        resize_instructions = list(decoder.disasm(resize_code,pe.OPTIONAL_HEADER.ImageBase+0x1300))
+        if sum(i.size for i in resize_instructions) != len(resize_code):
+            raise ValueError('原向量函数解码不完整')
+        for i in resize_instructions:
+            if i.mnemonic == 'call' or i.group(capstone.CS_GRP_JUMP):
+                op = i.operands[0]
+                if op.type != capstone.x86.X86_OP_IMM:
+                    raise ValueError('原向量函数意外间接控制流')
+                target = op.imm-pe.OPTIONAL_HEADER.ImageBase
+                if i.mnemonic == 'call':
+                    if target not in {0x11a0,0x12d00,0x12660,0x4d8c,0xaa44,0x1a90,0x1bc0}:
+                        raise ValueError('原向量函数未知调用')
+                elif not 0x1300 <= target < 0x148c:
+                    raise ValueError('原向量函数跳转越界')
         k = C.WinDLL('kernel32',use_last_error=True)
         k.VirtualAlloc.argtypes=[C.c_void_p,C.c_size_t,C.c_ulong,C.c_ulong]
         k.VirtualAlloc.restype=C.c_void_p
@@ -55,14 +70,10 @@ class ModulePathNativeTests(unittest.TestCase):
             # 元数据使原大缓冲释放校验可检查到合法的原分配地址。
             buffer=C.create_string_buffer(size+8)
             raw=C.addressof(buffer)
+            C.memset(raw,0xa5,size+8)
             C.c_uint64.from_address(raw).value=raw
             cls.state['buffers'].append(buffer)
             return raw+8
-
-        def resize(vector,units,unused):
-            pointer=allocate(units*2)
-            values=(C.c_uint64*3).from_address(vector)
-            values[:]=[pointer,pointer+units*2,pointer+units*2]
 
         def module(handle,buffer,capacity):
             cls.state['calls'].append(capacity)
@@ -96,23 +107,28 @@ class ModulePathNativeTests(unittest.TestCase):
             return target
 
         C.memmove(address+0x25a0,code,len(code))
+        C.memmove(address+0x1300,resize_code,len(resize_code))
         C.memmove(address+0x14478,pe.get_data(0x14478,4),4)
         install(0x4d50,C.c_void_p,[C.c_size_t],allocate)
-        install(0x1300,None,[C.c_void_p,C.c_size_t,C.c_void_p],resize)
+        install(0x11a0,C.c_void_p,[C.c_size_t],allocate)
         install(0xad90,C.c_size_t,[C.c_void_p],length)
         install(0x1210,C.c_void_p,[C.c_void_p,C.c_void_p,C.c_size_t],construct)
         install(0x4d8c,None,[C.c_void_p],release)
         target=install(0x8000,C.c_uint32,[C.c_void_p,C.c_void_p,C.c_uint32],module)
         C.c_uint64.from_address(address+0x14078).value=target
         cls.ucrt=C.CDLL('ucrtbase')
-        target=C.cast(cls.ucrt.memset,C.c_void_p).value
-        C.memmove(address+0x12d00,b'\x48\xb8'+target.to_bytes(8,'little')+b'\xff\xe0',12)
-        C.memmove(address+0xaa44,b'\xcc',1)
+        for rva,name in [(0x12d00,'memset'),(0x12660,'memcpy')]:
+            target=C.cast(getattr(cls.ucrt,name),C.c_void_p).value
+            C.memmove(address+rva,b'\x48\xb8'+target.to_bytes(8,'little')+b'\xff\xe0',12)
+        for rva in (0xaa44,0x1a90,0x1bc0):
+            C.memmove(address+rva,b'\xcc',1)
         for page in (0x1000,0x2000,0x4000,0x8000,0xa000,0x12000):
             old=C.c_ulong()
             if not k.VirtualProtect(address+page,0x1000,0x20,C.byref(old)):
                 raise C.WinError(C.get_last_error())
         cls.native=C.CFUNCTYPE(C.c_void_p,C.c_void_p)(address+0x25a0)
+        cls.resize=C.CFUNCTYPE(None,C.c_void_p,C.c_size_t)(address+0x1300)
+        cls.allocate=staticmethod(allocate)
 
     def test_growth_failure_utf16_and_return_count(self):
         cases=[[(0,'')],[(1,'.')],[(10,'C:\\中文\\😀.exe')],[(1022,'x'*1022)],
@@ -136,7 +152,7 @@ class ModulePathNativeTests(unittest.TestCase):
                         return WideBufferResult(returned,text)
                 self.assertEqual(self.state['text'],read_module_path(API()))
                 self.assertEqual(self.state['calls'],expected_calls)
-                self.assertEqual(len(self.state['freed']),1)
+                self.assertEqual(len(self.state['freed']),len(expected_calls))
                 self.assertEqual(self.state['answers'],[])
 
     def test_actual_windows_module_query(self):
@@ -148,6 +164,34 @@ class ModulePathNativeTests(unittest.TestCase):
         self.assertTrue(self.state['text'].lower().endswith('.exe'))
         self.assertEqual(self.state['calls'],[1024])
         self.assertEqual(len(self.state['freed']),1)
+
+    def test_actual_vector_resize_growth_and_preservation(self):
+        for initial_capacity in (0,1,7,16,2048):
+            with self.subTest(capacity=initial_capacity):
+                self.state.clear()
+                self.state.update(buffers=[],freed=[])
+                start=self.allocate(initial_capacity*2) if initial_capacity else 0
+                vector=(C.c_uint64*3)(start,start+initial_capacity*2,start+initial_capacity*2)
+                expected=list(range(1,initial_capacity+1))
+                if expected:
+                    data=(C.c_uint16*len(expected))(*expected)
+                    C.memmove(start,data,len(expected)*2)
+                capacity=initial_capacity
+                for requested in (initial_capacity,initial_capacity//2,initial_capacity,
+                                  initial_capacity+1,initial_capacity+2,initial_capacity*2+9):
+                    old_start=vector[0]
+                    previous_frees=len(self.state['freed'])
+                    expected=expected[:requested]+[0]*max(0,requested-len(expected))
+                    growing=requested>capacity
+                    if growing:capacity=max(requested,capacity+capacity//2)
+                    self.resize(vector,requested)
+                    self.assertEqual((vector[1]-vector[0])//2,requested)
+                    self.assertEqual((vector[2]-vector[0])//2,capacity)
+                    actual=list((C.c_uint16*requested).from_address(vector[0])) if requested else []
+                    self.assertEqual(actual,expected)
+                    self.assertEqual(len(self.state['freed'])-previous_frees,int(growing and bool(old_start)))
+                    if not growing:self.assertEqual(vector[0],old_start)
+                    elif old_start:self.assertNotEqual(vector[0],old_start)
 
 
 if __name__=='__main__':unittest.main()
