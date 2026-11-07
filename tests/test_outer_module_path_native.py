@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import sys
 import unittest
+import test_outer_path_native as path_tests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
@@ -79,6 +80,9 @@ class ModulePathNativeTests(unittest.TestCase):
         address=k.VirtualAlloc(None,0x22000,0x3000,4)
         if not address:raise C.WinError(C.get_last_error())
         cls.addClassCleanup(lambda:k.VirtualFree(address,0,0x8000))
+        cls.kernel=k
+        cls.search_flags=C.c_uint32.from_address(address+0x21094)
+        cls.length_flags=C.c_uint32.from_address(address+0x21090)
         cls.state={}
         cls.callbacks=[]
 
@@ -101,12 +105,6 @@ class ModulePathNativeTests(unittest.TestCase):
             C.memmove(buffer,data,len(data))
             return returned
 
-        def length(pointer):
-            count=0
-            while C.c_uint16.from_address(pointer+count*2).value:
-                count+=1
-            return count
-
         def release(pointer):
             cls.state['freed'].append(pointer)
 
@@ -126,7 +124,7 @@ class ModulePathNativeTests(unittest.TestCase):
         # 原固定分隔集合为/和反斜杠，保留陷阱以避免意外执行未映射依赖。
         linked_spans=[(0x2280,0x2595),(0x43d0,0x4429),(0x4430,0x4604),
                       (0x4610,0x4822),(0x4830,0x4965),(0x4970,0x4acc),
-                      (0x4c30,0x4c35),(0x4eb0,0x4ece)]
+                      (0x4c30,0x4c35),(0x4eb0,0x4ece),(0xad90,0xaed8)]
         permitted={0x25a0,0x4c30,0x12d00,0x4260,0x1210,0x4d8c,0x4eb0,0xaa44,
                    0x43d0,0x4610,0x4830,0x4970,0x12660}
         for start,end in linked_spans:
@@ -147,7 +145,6 @@ class ModulePathNativeTests(unittest.TestCase):
             raise ValueError('原分隔符集合变化')
         C.memmove(address+0x16000,pe.get_data(0x16000,0x1000),0x1000)
         install(0x4d50,C.c_void_p,[C.c_size_t],allocate)
-        install(0xad90,C.c_size_t,[C.c_void_p],length)
         install(0x4d8c,None,[C.c_void_p],release)
         target=install(0x8000,C.c_uint32,[C.c_void_p,C.c_void_p,C.c_uint32],module)
         C.c_uint64.from_address(address+0x14078).value=target
@@ -169,7 +166,12 @@ class ModulePathNativeTests(unittest.TestCase):
         cls.resize=C.CFUNCTYPE(None,C.c_void_p,C.c_size_t)(address+0x1300)
         cls.construct=C.CFUNCTYPE(None,C.c_void_p,C.c_void_p,C.c_size_t)(address+0x1210)
         cls.aligned_allocate=C.CFUNCTYPE(C.c_void_p,C.c_size_t)(address+0x11a0)
+        cls.string_length=C.CFUNCTYPE(C.c_size_t,C.c_void_p)(address+0xad90)
         cls.allocate=staticmethod(allocate)
+
+    def setUp(self):
+        self.search_flags.value=0
+        self.length_flags.value=0
 
     def decode_string(self,output):
         fields=(C.c_uint64*4).from_buffer(output)
@@ -263,6 +265,39 @@ class ModulePathNativeTests(unittest.TestCase):
             elif size>=4096:self.assertEqual(pointer%32,0)
 
     def test_complete_directory_chain(self):
+        self.check_complete_directory_chain()
+        self.check_string_length_alignment()
+
+    def test_complete_directory_chain_sse(self):
+        if not all(self.kernel.IsProcessorFeaturePresent(n) for n in (37,38)):
+            self.skipTest('需要SSE4.1/4.2搜索支持')
+        self.search_flags.value=4
+        self.length_flags.value=1
+        self.check_complete_directory_chain()
+        self.check_string_length_alignment()
+
+    def test_complete_directory_chain_avx2(self):
+        path_tests.OuterPathNativeTests.require_avx2(self)
+        if not all(self.kernel.IsProcessorFeaturePresent(n) for n in (37,38)):
+            self.skipTest('需要SSE4.1/4.2回退支持')
+        self.search_flags.value=0x24
+        self.length_flags.value=5
+        self.check_complete_directory_chain()
+        self.check_string_length_alignment()
+
+    def check_string_length_alignment(self):
+        count=0
+        for units in (0,1,7,8,15,16,17,31,32,33,63,65):
+            data=b'\x2d\x4e'*units+b'\0\0'
+            for offset in range(32):
+                buffer=C.create_string_buffer(b'\xa5'*(len(data)+96))
+                pointer=C.addressof(buffer)+offset
+                C.memmove(pointer,data,len(data))
+                self.assertEqual(self.string_length(pointer),units,(units,pointer%32,self.length_flags.value))
+                count+=1
+        self.assertEqual(count,384)
+
+    def check_complete_directory_chain(self):
         paths=['','a.exe','C:\\a.exe','C:/a.exe','/a','\\a','C:\\中文\\😀.exe',
                '\\\\server\\share\\a.exe','C:\\a\ud800/b.exe','C:/a\udc00\\b.exe']
         for size in (6,7,8,12,13,14,15,16,1022,1023,2047):
