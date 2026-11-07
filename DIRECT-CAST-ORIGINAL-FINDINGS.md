@@ -96,3 +96,13 @@ e2bc73b之后新增DirectCastKeeper.lua，在Actions之后、Movement之前加�
 有意改变提示文案：原来直接写“自动续挂”，现在写“已尝试续挂（是否生效以游戏为准）”，避免把pcall未抛错误报为技能生效。调度顺序、光环判定、失败重试等保持原对照行为。代码仍扫描已注册契约，未额外添加只限当前职业/已学习技能的过滤；完整游戏环境的技能可用性和实际施法仍需验证。
 
 自动按钮挂钩与EnvCloakCast尚未接入，不能声明DirectCast完整恢复。最新本地包`dist/directcast-keeper/WowBuddyDev-addon.zip`，随机目录`wf9c828087b6d`，SHA256 `ac9209cfb1e108119a2176c8e5d96170301c5463906060bd17dd5705a4a2ca55`。原有包保留，新包未安装/公开发布，EXE未重建。
+
+## 后续迁入：EnvCloakCast显式入口
+
+00c7720后增加DirectCastProbe.lua，按原函数恢复字符串格式化、loadstring编译、getfenv/setfenv当前环境选择及pcall调用返回。原函数名与签名保持不变；没有引入游戏内存修改、污染标记修改或解锁器。原注释里的“环境伪装”不能当作实际绕过权限的证据：代码只是选择当前Lua环境，实际API仍可被拒绝。
+
+4项新测试对照经过原包摘要校验的完整DirectCast：默认/指定单位、带引号及换行的单位字符串、API正常/返回false/抛错、编译失败、环境函数缺失或显式环境、数字格式转换和非法参数。测试使用记录替身，不执行真实施法。完整TOC与随机包确认入口已定义，加载本身不调用该入口。相关54项测试通过（7.732秒，包含此前原挂钩诊断）。
+
+API返回false但不抛错仍返回true与spellID；数字格式错误发生在pcall之外，会向调用者抛错。这些均保留原行为，不将true视为游戏施法成功。此入口不自动接入普通按钮，自动按钮挂钩仍未完成，见DIRECT-CAST-HOOK-VALIDATION.md。
+
+本地随机包`dist/directcast-probe/WowBuddyDev-addon.zip`，目录`w6aa684678cda`，SHA256 `2f0b22c05f25b4064496fec6cdd11aa32ddc5725d08a9f4fc43e783c788c08b6`。该增量尚未重新构建EXE，04cd6be构建不含Probe文件；未安装或公开发布。

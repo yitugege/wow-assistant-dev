@@ -1,5 +1,7 @@
 # 当前源码本地构建验收
 
+构建后新增差异：DirectCastProbe.lua恢复EnvCloakCast入口，最新随机插件包位于dist/directcast-probe；下述04cd6be EXE尚不含此文件，未再次重建。仅插件源码与包有此增量，未安装或公开发布。
+
 ## 最新本地构建：04cd6be，未公开发布
 
 已将DirectCast的Slots、Guards、Actions、Keeper、Movement五个子模块及Core职业宏查询修复打入目录版和单文件。版本字段仍为0.2.8，公开0.2.8附件未覆盖。前轮46项相关源码测试通过，本轮没有改动产品源码，执行实际打包程序验证。
