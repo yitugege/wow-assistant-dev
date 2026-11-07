@@ -4,6 +4,8 @@
 
 ## 当前交付与源码身份
 
+最新源码另修复04a530阈值设置键的两阶段Qt占位符替换。原Qt对照2项及核心157项通过；下列local-408afed EXE尚未包含该后续改动，见THRESHOLD-KEY-FORMATTING.md。
+
 最新可测试单文件为 `dist/local-408afed/WowBuddyDev-Outer.exe`，SHA256 `757a380f85502048a087632ee71c63c70d8e317ab76b8ec23fc85c9e8df487aa`。已包含随机身份扫描编码修复，目录/单文件安装12场景和缓存3场景通过；详见BUILD-408AFED-VALIDATION.md。未更新公开Release或真实游戏插件。
 
 前一轮本地构建为手动随机插件身份修复版：`dist/local-manual-identity/WowBuddyDev-Outer.exe`，SHA256 `70f5d0ac0bdde1921674a1abec62e2c2e4e9fa65fbd055b216d763f456ea0358`；实际冻结安装12场景、缓存3场景通过。见MANUAL-RANDOM-INSTALL-IDENTITY.md。下列local-random-embedded为前一构建及其验证范围；公开附件与本机游戏安装未改变。

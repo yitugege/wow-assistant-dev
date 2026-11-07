@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, replace
+import re
 from typing import Mapping, Sequence
 
 from .candidates import Action, Rule, parse_rules
@@ -100,6 +101,23 @@ def action_labels(actions: object) -> dict[str, str]:
     return result
 
 
+def threshold_key(action: str, field: str, direction: str, default: int) -> str:
+    """04a530：先同时替换三个文本，再用整数arg替换最低编号占位符。"""
+    text = f"sw_{action or '-'}~{field}_{'b' if direction == 'below' else 'a'}%4"
+    # 原包整数arg只认一至两位ASCII编号；%L使用当前Qt区域格式。
+    pattern = r'%(L?)([0-9]{1,2})'
+    matches = tuple(re.finditer(pattern, text))
+    lowest = min(int(match.group(2)) for match in matches)
+    def substitute(match):
+        if int(match.group(2)) != lowest:
+            return match.group(0)
+        if match.group(1):
+            from PySide6.QtCore import QLocale
+            return QLocale().toString(default)
+        return str(default)
+    return re.sub(pattern, substitute, text)
+
+
 def promote_rules(rules: Sequence[Rule], fields: Mapping[str, SwitchField],
                   labels: Mapping[str, str], group: str = "") -> Promotion:
     """041a80/040940；只提升匹配元数据且为正整数的三项比较。"""
@@ -116,7 +134,7 @@ def promote_rules(rules: Sequence[Rule], fields: Mapping[str, SwitchField],
                 if number.is_integer() and 0 < number <= meta.maximum:
                     default = int(number)
                     direction = "below" if value[0] == "num_below" else "at_least"
-                    key = f"sw_{rule.action or '-'}~{meta.field}_{'b' if direction == 'below' else 'a'}{default}"
+                    key = threshold_key(rule.action, meta.field, direction, default)
                     if key in indices:
                         index = indices[key]
                         old = thresholds[index]
