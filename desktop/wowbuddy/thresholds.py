@@ -41,7 +41,8 @@ class Threshold:
 
     @property
     def legacy_key(self) -> str:
-        return f"sw_{self.field}_{'b' if self.direction == 'below' else 'a'}{self.default}"
+        # 0406d0：两个文本同时替换后，再执行整数arg。
+        return _integer_arg(f"sw_{self.field}_{'b' if self.direction == 'below' else 'a'}%3", self.default)
 
 
 @dataclass(frozen=True)
@@ -104,6 +105,10 @@ def action_labels(actions: object) -> dict[str, str]:
 def threshold_key(action: str, field: str, direction: str, default: int) -> str:
     """04a530：先同时替换三个文本，再用整数arg替换最低编号占位符。"""
     text = f"sw_{action or '-'}~{field}_{'b' if direction == 'below' else 'a'}%4"
+    return _integer_arg(text, default)
+
+
+def _integer_arg(text: str, default: int) -> str:
     # 原包整数arg只认一至两位ASCII编号；%L使用当前Qt区域格式。
     pattern = r'%(L?)([0-9]{1,2})'
     matches = tuple(re.finditer(pattern, text))

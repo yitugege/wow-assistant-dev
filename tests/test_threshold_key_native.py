@@ -7,7 +7,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'desktop'))
-from wowbuddy.thresholds import threshold_key, promote_rules, SwitchField
+from wowbuddy.thresholds import threshold_key, promote_rules, SwitchField, migrate_settings
 from wowbuddy.candidates import parse_rules
 from test_availability_display_native import QString
 
@@ -49,6 +49,26 @@ class ThresholdKeyNativeTests(unittest.TestCase):
         result = promote_rules([rule], {'health': SwitchField('health', '生命')}, {})
         self.assertEqual(result.thresholds[0].key, 'sw_cast30~health_b%4')
         self.assertEqual(result.rules[0].when, ['flag', result.thresholds[0].key, True])
+
+    def test_legacy_keys_match_original_numeric_arg(self):
+        for token in ('', '%1', '%3', '%0', '%01', '%%1', '%100', '%１', '%L1'):
+            field = 'health' + token
+            result = promote_rules(parse_rules([{'action': 'cast', 'when': ['num_below', field, 30]}]),
+                                   {field: SwitchField(field, '生命')}, {})
+            with self.subTest(token=token):
+                self.assertEqual(result.thresholds[0].legacy_key, self.native(f'sw_{field}_b%3', 30))
+
+    def test_legacy_migration_copies_all_actions_before_removal(self):
+        field = 'health%1'
+        rules = parse_rules([{'action': action, 'when': ['num_below', field, 30]}
+                             for action in ('castA', 'castB')])
+        result = promote_rules(rules, {field: SwitchField(field, '生命')}, {})
+        first, second = result.thresholds
+        old = self.native('sw_health%1_b%3', 30)
+        migrated = migrate_settings(result.thresholds, {old: 19, first.key: 23, 'other': 7})
+        self.assertEqual(migrated.values, {first.key: 23, second.key: 19, 'other': 7})
+        self.assertEqual(migrated.writes, {second.key: 19})
+        self.assertEqual(migrated.removed, (old,))
 
 
 if __name__ == '__main__': unittest.main()
