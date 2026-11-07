@@ -1,0 +1,66 @@
+## Interface: 16001, 120100
+## Title: WowBuddyDev
+## Notes: 独立开发版
+## Author: Unknown
+## Version: 0.2.0-dev
+## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics
+
+ForeverCompat.lua
+ForeverTalentData.lua
+ForeverTalents.lua
+ForeverSpecSpells.lua
+Libs/LibStub/LibStub.lua
+Libs/CallbackHandler-1.0/CallbackHandler-1.0.lua
+Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua
+Libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua
+Core.lua
+SecurityDiagnostics.lua
+Bindings.lua
+HealingNpcFocus.lua
+Locale.lua
+ActionKeyCheck.lua
+RaidFocus.lua
+AutoTarget.lua
+PanelV2.lua
+ChargeDisplay.lua
+MacroRefsData.lua
+MacroAuthorize.lua
+CDMImport.lua
+SettingsUI.lua
+SettingsReset.lua
+DebugAuras.lua
+DebugDock.lua
+PixelBar.lua
+TimelineData_1.lua
+TimelineData_2.lua
+TimelineData_3.lua
+TimelineData_4.lua
+TimelineData_5.lua
+TimelineData_6.lua
+TimelineData_7.lua
+TimelineData_8.lua
+TimelinePlanner.lua
+TimelineTrash.lua
+# ---- 魔兽世界:无限（wow_classic_beta 1.60.1 / Interface 16001） ----
+# 当前运行范围：全职业支持
+ForeverClassSupport.lua
+classes/Hunter/class_forever.lua
+classes/Hunter/Hunter-Bindings.lua
+classes/Warrior/class_forever.lua
+classes/Warrior/Warrior-Bindings.lua
+classes/Mage/class_forever.lua
+classes/Mage/Mage-Bindings.lua
+classes/Priest/class_forever.lua
+classes/Priest/Priest-Bindings.lua
+classes/Warlock/class_forever.lua
+classes/Warlock/Warlock-Bindings.lua
+classes/Rogue/class_forever.lua
+classes/Rogue/Rogue-Bindings.lua
+classes/Paladin/class_forever.lua
+classes/Paladin/Paladin-Bindings.lua
+classes/Shaman/class_forever.lua
+classes/Shaman/Shaman-Bindings.lua
+classes/Druid/class_forever.lua
+classes/Druid/Druid-Bindings.lua
+BuildCompat.lua
+DecisionBridge.lua

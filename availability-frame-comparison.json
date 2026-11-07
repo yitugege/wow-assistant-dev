@@ -1,0 +1,941 @@
+{
+  "cases": 200,
+  "failed_cases": 3,
+  "failures": [
+    {
+      "spec": "1484",
+      "case": "all",
+      "bitmap": 33554431,
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "decoded": "—",
+      "mismatches": [
+        {
+          "spell": 1126,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 467,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5176,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 2912,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 8921,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5570,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 24858,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 768,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5487,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 9634,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 407995,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1082,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5221,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1822,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1079,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 22568,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6807,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 779,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 414644,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5217,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 417141,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 22812,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1850,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 17056,
+          "expected": 1,
+          "actual": -1
+        }
+      ]
+    },
+    {
+      "spec": "1484",
+      "case": "only_17056",
+      "bitmap": 16777217,
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "decoded": "—",
+      "mismatches": [
+        {
+          "spell": 1126,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 467,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5176,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 2912,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 8921,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5570,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 24858,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 768,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5487,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 9634,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 407995,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 1082,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5221,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 1822,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 1079,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 22568,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 6807,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 779,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 414644,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5217,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 417141,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 22812,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 1850,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 17056,
+          "expected": 1,
+          "actual": -1
+        }
+      ]
+    },
+    {
+      "spec": "1491",
+      "case": "all",
+      "bitmap": 16777215,
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "decoded": "—",
+      "mismatches": [
+        {
+          "spell": 78,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 100,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6673,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 772,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6343,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 7384,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 72,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 2687,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6572,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 845,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1240193,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 402927,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5308,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1680,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6552,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 12294,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 23881,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 23922,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1310222,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 12292,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 12328,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 871,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 12975,
+          "expected": 1,
+          "actual": -1
+        }
+      ]
+    }
+  ],
+  "frame_cases": 400,
+  "failed_frame_cases": 5,
+  "frame_failures": [
+    {
+      "spec": "1484",
+      "case": "all",
+      "protocol": "old",
+      "bitmap_field_type": "count",
+      "decoded_bitmap": "—",
+      "allow_unknown_availability": false,
+      "mismatches": [
+        {
+          "spell": 1126,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 467,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5176,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 2912,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 8921,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5570,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 24858,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 768,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5487,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 9634,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 407995,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1082,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5221,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1822,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1079,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 22568,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6807,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 779,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 414644,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5217,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 417141,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 22812,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1850,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 17056,
+          "expected": 1,
+          "actual": -1
+        }
+      ]
+    },
+    {
+      "spec": "1484",
+      "case": "all",
+      "protocol": "readable",
+      "bitmap_field_type": "number",
+      "decoded_bitmap": "16777215",
+      "allow_unknown_availability": true,
+      "mismatches": [
+        {
+          "spell": 17056,
+          "expected": 1,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "spec": "1484",
+      "case": "only_17056",
+      "protocol": "old",
+      "bitmap_field_type": "count",
+      "decoded_bitmap": "—",
+      "allow_unknown_availability": false,
+      "mismatches": [
+        {
+          "spell": 1126,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 467,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5176,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 2912,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 8921,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5570,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 24858,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 768,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5487,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 9634,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 407995,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 1082,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5221,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 1822,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 1079,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 22568,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 6807,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 779,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 414644,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 5217,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 417141,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 22812,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 1850,
+          "expected": 0,
+          "actual": -1
+        },
+        {
+          "spell": 17056,
+          "expected": 1,
+          "actual": -1
+        }
+      ]
+    },
+    {
+      "spec": "1484",
+      "case": "only_17056",
+      "protocol": "readable",
+      "bitmap_field_type": "number",
+      "decoded_bitmap": "16777215",
+      "allow_unknown_availability": true,
+      "mismatches": [
+        {
+          "spell": 1126,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 467,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 5176,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 2912,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 8921,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 5570,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 24858,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 768,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 5487,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 9634,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 407995,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 1082,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 5221,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 1822,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 1079,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 22568,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 6807,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 779,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 414644,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 5217,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 417141,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 22812,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 1850,
+          "expected": 0,
+          "actual": 1
+        },
+        {
+          "spell": 17056,
+          "expected": 1,
+          "actual": 0
+        }
+      ]
+    },
+    {
+      "spec": "1491",
+      "case": "all",
+      "protocol": "old",
+      "bitmap_field_type": "count",
+      "decoded_bitmap": "—",
+      "allow_unknown_availability": false,
+      "mismatches": [
+        {
+          "spell": 78,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 100,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6673,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 772,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6343,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 7384,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 72,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 2687,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6572,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 845,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1240193,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 402927,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 5308,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1680,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 6552,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 12294,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 23881,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 23922,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 1310222,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 12292,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 12328,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 871,
+          "expected": 1,
+          "actual": -1
+        },
+        {
+          "spell": 12975,
+          "expected": 1,
+          "actual": -1
+        }
+      ]
+    }
+  ],
+  "inputs_sha256": {
+    "addon\\WowBuddyDev\\PixelBar.lua": "2ff8aae196fc4aa169c7877db18824f7a617b5805db4cc44be985ca4b43b2987",
+    "assets\\contract.json": "867dd8e78bc5be4d3eeb62d0158865c4e638fedf069ebab6adc7652796523aee",
+    "assets\\contract_readable.json": "4330f1f37e7646b003390cbc302d88638fe6d4989f933aa62ebaa7758011874d",
+    "assets\\rules.json": "b55632e8e797094baa8332a3a6c207c15574cfcc9f18e5e4f3c2afe612986c8b"
+  },
+  "scope": "真实Lua编码到字段解码，以及合成完整旧/可读图像到当前管线和可用性判断；不证明游戏中的出现频率。"
+}

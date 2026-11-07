@@ -1,0 +1,42 @@
+# 循环方案动作缺口核对
+
+后续核对：本仓库rules.json和rules_readable.json与原程序已提取资源逐字节相同，原表同样没有这些动作。证据见rotation-original-resource-comparison.json。因此这是方案与原动作资源不匹配，并非迁移漏拷贝；本次没有修改原动作语义。开发版选择受影响方案时会显示“部分动作未注册”，悬停及日志列出动作名。
+
+本次执行真实Lua职业注册文件，提取ACTION_TO_KEY，与本仓库桌面动作表及离线方案比对。41套方案中18套含缺失动作；这不是18套全部失效，而是所列动作分支会被跳过。
+
+|方案ID|专精|方案|缺失动作|
+|---|---|---|---|
+|1|1482|官方 · 练级（冰霜 · 单体+AOE）|shoot_wand|
+|7|1487|官方 · 练级（暗影练级）|shoot_wand|
+|10|1490|官方 · 练级（痛苦练级）|shoot_wand|
+|13|1482|官方 · 练级（火焰）|shoot_wand|
+|14|1482|官方 · 练级（奥术）|shoot_wand|
+|20|1487|官方 · 练级（戒律 · 治疗）|shoot_wand|
+|21|1487|官方 · 练级（神圣 · 治疗）|shoot_wand|
+|23|1490|官方 · 练级（毁灭）|shoot_wand|
+|24|1490|官方 · 练级（恶魔学识）|shoot_wand|
+|28|1482|火法自用（调试中）|shoot_wand|
+|31|1482|冰法练级|shoot_wand|
+|33|1490|练级|start_attack, shoot_wand|
+|60|1490|单怪练级|shoot_wand|
+|67|1487|20副本|shoot_wand|
+|68|1487|练级2|shoot_wand|
+|102|1487|魔杖练级|shoot_wand|
+|130|1487|练级2B|shoot_wand|
+|131|1487|练级2B|shoot_wand|
+
+每个缺失的桌面动作还被送入CandidateEngine，以always条件测试；报告中的absent_even_with_unconditional_rule记录是否仍不生成对应候选。这只能确认动作注册缺失，不证明其他规则条件正确。
+
+复现命令：`python tools/audit_rotation_bindings.py`，详细结果写入dist/rotation-binding-audit.json。
+
+尚未擅自分配按键或新增射击宏：补齐需要同步桌面动作表、插件职业宏、可用性/施法状态字段，再验证不与现有按键冲突和实际游戏动作。当前检查排除由专用模块动态生成的focus_*和auto_target；不代表已验证它们。
+
+## 实际职业宏注册核对与修复
+
+进一步执行Bindings.lua和9份职业*-Bindings.lua后确认：ApplyClassMacros成功时，Core.lua不再为每个未编辑动作单独创建默认宏。只比较ACTION_TO_KEY与桌面键表不足以证明技能按钮存在。
+
+修复前241个桌面动作中，德鲁伊spell_17056（变换之力）的SHIFT-F2为空槽；虽然class_forever.lua有该动作和默认宏，实际没有按钮创建请求。独立版现将该空槽填入现有默认宏 `/cast [@player,nochanneling] 变换之力`，不另分配按键。修复前完整报告保存在binding-registration-before-fix.json。修复后9职业全部241个桌面动作均有非空安全按钮创建请求，且每个职业实际注册无重复键；tests/test_class_macro_registration.py直接执行真实Lua注册和应用函数。这里替换了游戏API与本地化函数，不证明游戏施法成功或目标条件正确。
+
+静态ACTION_TO_KEY有13组重复键（德鲁伊7、猎人4、牧师2），但实际职业宏表每键仅注册一次。因此这些不是已证明的运行时抢键冲突；扩展动作和默认宏表不能直接作为实际绑定表使用。猎人/战士宏原始字符串还有换行转义与空格差异，报告逐项保留，没有将文本不同直接判为技能语义错误。
+
+shoot_wand及术士start_attack仍缺少可对应的原动作/绑定定义，18套方案缺口仍在。另发现德鲁伊若干普通治疗宏带harm条件，需继续核对目标语义；本轮仅修复已有动作对应的空绑定槽。

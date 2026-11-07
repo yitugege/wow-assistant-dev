@@ -1,0 +1,119 @@
+{
+  "rows": [
+    {
+      "spec": "1482",
+      "old_status": "ok",
+      "old_field_count": 98,
+      "transition_status": "ok",
+      "readable_field_count": 104,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 104,
+      "legacy_transition_status": "descriptor_unverified",
+      "legacy_error": "留存字段表短于 readable 采样数量；原生表外行为尚未验证（1482：98/104）",
+      "matches_fresh_readable": true
+    },
+    {
+      "spec": "1484",
+      "old_status": "ok",
+      "old_field_count": 183,
+      "transition_status": "ok",
+      "readable_field_count": 160,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 160,
+      "legacy_transition_status": "ok",
+      "legacy_field_count": 160,
+      "matches_fresh_readable": true
+    },
+    {
+      "spec": "1485",
+      "old_status": "ok",
+      "old_field_count": 84,
+      "transition_status": "ok",
+      "readable_field_count": 134,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 134,
+      "legacy_transition_status": "descriptor_unverified",
+      "legacy_error": "留存字段表短于 readable 采样数量；原生表外行为尚未验证（1485：84/134）",
+      "matches_fresh_readable": true
+    },
+    {
+      "spec": "1486",
+      "old_status": "ok",
+      "old_field_count": 129,
+      "transition_status": "ok",
+      "readable_field_count": 147,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 147,
+      "legacy_transition_status": "descriptor_unverified",
+      "legacy_error": "留存字段表短于 readable 采样数量；原生表外行为尚未验证（1486：129/147）",
+      "matches_fresh_readable": true
+    },
+    {
+      "spec": "1487",
+      "old_status": "ok",
+      "old_field_count": 171,
+      "transition_status": "ok",
+      "readable_field_count": 144,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 144,
+      "legacy_transition_status": "ok",
+      "legacy_field_count": 144,
+      "matches_fresh_readable": true
+    },
+    {
+      "spec": "1488",
+      "old_status": "ok",
+      "old_field_count": 86,
+      "transition_status": "ok",
+      "readable_field_count": 101,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 101,
+      "legacy_transition_status": "descriptor_unverified",
+      "legacy_error": "留存字段表短于 readable 采样数量；原生表外行为尚未验证（1488：86/101）",
+      "matches_fresh_readable": true
+    },
+    {
+      "spec": "1489",
+      "old_status": "ok",
+      "old_field_count": 130,
+      "transition_status": "ok",
+      "readable_field_count": 139,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 139,
+      "legacy_transition_status": "descriptor_unverified",
+      "legacy_error": "留存字段表短于 readable 采样数量；原生表外行为尚未验证（1489：130/139）",
+      "matches_fresh_readable": true
+    },
+    {
+      "spec": "1490",
+      "old_status": "ok",
+      "old_field_count": 94,
+      "transition_status": "ok",
+      "readable_field_count": 124,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 124,
+      "legacy_transition_status": "descriptor_unverified",
+      "legacy_error": "留存字段表短于 readable 采样数量；原生表外行为尚未验证（1490：94/124）",
+      "matches_fresh_readable": true
+    },
+    {
+      "spec": "1491",
+      "old_status": "ok",
+      "old_field_count": 87,
+      "transition_status": "ok",
+      "readable_field_count": 121,
+      "fresh_readable_status": "ok",
+      "fresh_readable_field_count": 121,
+      "legacy_transition_status": "descriptor_unverified",
+      "legacy_error": "留存字段表短于 readable 采样数量；原生表外行为尚未验证（1491：87/121）",
+      "matches_fresh_readable": true
+    }
+  ],
+  "assets_sha256": {
+    "contract.json": "867dd8e78bc5be4d3eeb62d0158865c4e638fedf069ebab6adc7652796523aee",
+    "contract_readable.json": "4330f1f37e7646b003390cbc302d88638fe6d4989f933aa62ebaa7758011874d"
+  },
+  "blocked_transitions": 0,
+  "legacy_blocked_transitions": 7,
+  "scope": "当前源码合成帧的控制器生命周期；没有运行原EXE或游戏，没有发键。"
+}

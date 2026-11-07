@@ -1,0 +1,14 @@
+[
+  {
+    "original_extracted_resource": "D:\\reverse-analysis\\wow-assistant\\unpacked\\rules.json",
+    "repository_resource": "assets\\rules.json",
+    "identical_bytes": true,
+    "sha256": "b55632e8e797094baa8332a3a6c207c15574cfcc9f18e5e4f3c2afe612986c8b"
+  },
+  {
+    "original_extracted_resource": "D:\\reverse-analysis\\wow-assistant\\unpacked\\rules_readable.json",
+    "repository_resource": "assets\\rules_readable.json",
+    "identical_bytes": true,
+    "sha256": "7315c3c90795a354d027627ab4cfddc74259cdd42e90d582803c07e8646af76a"
+  }
+]

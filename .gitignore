@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+.local/
+build/
+dist/
+*.exe
+*.dll
+*.log
+*.ini
+.env
+.env.*
+!.env.example
+assets/addon.bin

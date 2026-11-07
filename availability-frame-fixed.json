@@ -1,0 +1,15 @@
+{
+  "cases": 371,
+  "protocol_version": 5718529,
+  "frame_cases": 742,
+  "failed_frame_cases": 0,
+  "frame_failures": [],
+  "inputs_sha256": {
+    "addon\\WowBuddyDev\\PixelBar.lua": "7b1ee4dade853a7a9ca097cbafcd5ff81c6b3dea00c7371f51646fdc54b0f4d6",
+    "addon\\WowBuddyDev\\Core.lua": "fa4367906b4a2b10eec9e38d8fa74a2139b256f7653d2ebf59b7839ad5616bcd",
+    "assets\\contract.json": "867dd8e78bc5be4d3eeb62d0158865c4e638fedf069ebab6adc7652796523aee",
+    "assets\\contract_readable.json": "4330f1f37e7646b003390cbc302d88638fe6d4989f933aa62ebaa7758011874d",
+    "assets\\rules.json": "b55632e8e797094baa8332a3a6c207c15574cfcc9f18e5e4f3c2afe612986c8b"
+  },
+  "scope": "真实Lua编码到字段解码，以及合成完整旧/可读图像到当前管线和可用性判断；不证明游戏中的出现频率。"
+}

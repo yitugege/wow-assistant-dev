@@ -1,0 +1,5037 @@
+{
+ "_comment": "由 pixel_reader/export_cpp_contract.py 从 field_defs.py 导出，勿手改",
+ "constants": {
+  "noValue": 16777215,
+  "cdUnavailable": 601,
+  "expectedVersion": 10576675,
+  "identityHeroShift": 4096,
+  "fiducialX": 4,
+  "fiducialY": 128,
+  "cellSize": 4,
+  "commonCount": 29
+ },
+ "commonFields": [
+  {
+   "id": "master_switch",
+   "label": "总开关",
+   "type": "switch",
+   "note": "插件总开关；绿=ON，红=OFF。治疗专精时该格被治疗层叠血条占用"
+  },
+  {
+   "id": "burst",
+   "label": "爆发",
+   "type": "burst",
+   "note": "爆发开关；蓝=ON(爆发中)，黄=OFF"
+  },
+  {
+   "id": "aoe_mode",
+   "label": "模式",
+   "type": "count",
+   "note": "输出模式：0=自动，1=单体，2=群体"
+  },
+  {
+   "id": "distance",
+   "label": "距离",
+   "type": "distance",
+   "note": "与目标的距离（码，0.1 精度）"
+  },
+  {
+   "id": "isMoving",
+   "label": "移动",
+   "type": "isMoving",
+   "note": "移动状态编码（值 = 移动绑定档位，无值=3527951）"
+  },
+  {
+   "id": "target_health_pct",
+   "label": "目标血量",
+   "type": "health",
+   "note": "目标血量百分比（蓝字节 = 百分比 0~100）"
+  },
+  {
+   "id": "spec_id",
+   "label": "专精ID",
+   "type": "number",
+   "note": "当前专精 ID"
+  },
+  {
+   "id": "target_casting",
+   "label": "目标施法",
+   "type": "castcolor",
+   "note": "目标是否在读条（用颜色编码）"
+  },
+  {
+   "id": "focus_casting",
+   "label": "焦点施法",
+   "type": "castcolor",
+   "note": "焦点是否在读条（用颜色编码）"
+  },
+  {
+   "id": "player_health_pct",
+   "label": "自身血量",
+   "type": "health",
+   "note": "自身血量百分比（蓝字节 = 百分比 0~100）"
+  },
+  {
+   "id": "active_enemies",
+   "label": "怪物数量",
+   "type": "count",
+   "note": "当前有效敌人数（受模式影响：单体=1，群体=5）"
+  },
+  {
+   "id": "item_red_potion",
+   "label": "红药水",
+   "type": "cooldown",
+   "note": "红药水剩余冷却（秒，0.1 精度）；601=背包没货"
+  },
+  {
+   "id": "item_healing_stone",
+   "label": "治疗石",
+   "type": "cooldown",
+   "note": "治疗石剩余冷却（秒，0.1 精度）；601=战斗中不可用，或背包没货"
+  },
+  {
+   "id": "item_burst_potion",
+   "label": "爆发药水",
+   "type": "cooldown",
+   "note": "爆发药水剩余冷却（秒，0.1 精度）；601=背包没货"
+  },
+  {
+   "id": "trinket1_cd",
+   "label": "饰品1",
+   "type": "cooldown",
+   "note": "饰品栏1 剩余冷却（秒，0.1 精度）；601=槽位空／未装备／物品未加载"
+  },
+  {
+   "id": "trinket2_cd",
+   "label": "饰品2",
+   "type": "cooldown",
+   "note": "饰品栏2 剩余冷却（秒，0.1 精度）；601=槽位空／未装备／物品未加载"
+  },
+  {
+   "id": "enemies_8yd",
+   "label": "8码内敌人",
+   "type": "count",
+   "note": "8 码范围内的敌人数量"
+  },
+  {
+   "id": "gcd",
+   "label": "GCD",
+   "type": "validity",
+   "note": "原生公共冷却：绿=激活，红=空闲，黄=未读到"
+  },
+  {
+   "id": "addon_version_code",
+   "label": "插件版本",
+   "type": "count",
+   "note": "插件版本号（当前 10576675，读取端靠它判断字段是否可信）"
+  },
+  {
+   "id": "ttd",
+   "label": "TTD",
+   "type": "number",
+   "note": "自动选目标包里的 TTD 值"
+  },
+  {
+   "id": "ttf",
+   "label": "TTF",
+   "type": "number",
+   "note": "TTF 值（当前固定 0）"
+  },
+  {
+   "id": "player_casting",
+   "label": "玩家读条",
+   "type": "playercast",
+   "note": "玩家是否在读条；绿系=读条中，红系=未读条，蓝分量=读条代次"
+  },
+  {
+   "id": "cast_remaining",
+   "label": "读条剩余",
+   "type": "number",
+   "note": "当前读条剩余时间"
+  },
+  {
+   "id": "player_succeeded_generation",
+   "label": "成功代次",
+   "type": "count",
+   "note": "最近一次成功施法的代次"
+  },
+  {
+   "id": "player_succeeded_spell_id",
+   "label": "成功技能ID",
+   "type": "number",
+   "note": "最近一次成功施放的技能 ID"
+  },
+  {
+   "id": "combat_time",
+   "label": "战斗计时",
+   "type": "number",
+   "note": "进入战斗后的秒数"
+  },
+  {
+   "id": "action_avail",
+   "label": "动作可用",
+   "type": "count",
+   "note": "动作可用状态码"
+  },
+  {
+   "id": "player_cast_spell_id",
+   "label": "当前读条技能ID",
+   "type": "number",
+   "note": "正在读条的技能 ID"
+  },
+  {
+   "id": "player_cast_observation_code",
+   "label": "读条观测状态",
+   "type": "count",
+   "note": "读条观测状态码"
+  }
+ ],
+ "classNames": {
+  "1482": "法师",
+  "1484": "德鲁伊",
+  "1485": "猎人",
+  "1486": "圣骑士",
+  "1487": "牧师",
+  "1488": "潜行者",
+  "1489": "萨满祭司",
+  "1490": "术士",
+  "1491": "战士"
+ },
+ "talentGroups": {
+  "mage_talents": [
+   "奥术",
+   "火焰",
+   "冰霜"
+  ],
+  "druid_talents": [
+   "平衡",
+   "野性战斗",
+   "恢复"
+  ],
+  "hunter_talents": [
+   "野兽控制",
+   "射击",
+   "生存"
+  ],
+  "paladin_talents": [
+   "神圣",
+   "防护",
+   "惩戒"
+  ],
+  "priest_talents": [
+   "戒律",
+   "神圣",
+   "暗影"
+  ],
+  "rogue_talents": [
+   "刺杀",
+   "战斗",
+   "敏锐"
+  ],
+  "shaman_talents": [
+   "元素",
+   "增强",
+   "恢复"
+  ],
+  "warlock_talents": [
+   "痛苦",
+   "恶魔学识",
+   "毁灭"
+  ],
+  "warrior_talents": [
+   "武器",
+   "狂怒",
+   "防护"
+  ]
+ },
+ "classOnlyFields": {
+  "stealthed": [
+   1484,
+   1488
+  ],
+  "form": [
+   1484
+  ],
+  "fire_totem": [
+   1489
+  ],
+  "water_totem": [
+   1489
+  ],
+  "energy": [
+   1484,
+   1488
+  ],
+  "combo_points": [
+   1484,
+   1488
+  ],
+  "rage": [
+   1484,
+   1491
+  ],
+  "mana_pct": [
+   1482,
+   1484,
+   1485,
+   1486,
+   1487,
+   1489,
+   1490
+  ],
+  "pet_valid": [
+   1485,
+   1490
+  ],
+  "pet_on_target": [
+   1485,
+   1490
+  ],
+  "pet_health": [
+   1485,
+   1490
+  ],
+  "auto_attack_active": [
+   1484,
+   1485,
+   1486,
+   1488,
+   1491
+  ]
+ },
+ "sentinel601": {
+  "action_avail": "该技能未学会",
+  "active_enemies": "该技能未学会",
+  "addon_version_code": "该技能未学会",
+  "adrenaline_rush": "该技能未学会",
+  "agony": "该技能未学会",
+  "aoe_mode": "该技能未学会",
+  "arcane_power": "该技能未学会",
+  "auto_attack_active": "该技能未学会",
+  "auto_shot_active": "该技能未学会",
+  "battle_shout": "该技能未学会",
+  "berserk": "该技能未学会",
+  "blade_flurry": "该技能未学会",
+  "blessing_might": "该技能未学会",
+  "burst": "该技能未学会",
+  "cast_remaining": "该技能未学会",
+  "cd_100": "该技能未学会",
+  "cd_12292": "该技能未学会",
+  "cd_12294": "该技能未学会",
+  "cd_12328": "该技能未学会",
+  "cd_1240193": "该技能未学会",
+  "cd_1310222": "该技能未学会",
+  "cd_1680": "该技能未学会",
+  "cd_23881": "该技能未学会",
+  "cd_23922": "该技能未学会",
+  "cd_2687": "该技能未学会",
+  "cd_2973": "该技能未学会",
+  "cd_3044": "该技能未学会",
+  "cd_5116": "该技能未学会",
+  "cd_6343": "该技能未学会",
+  "cd_6552": "该技能未学会",
+  "cd_6572": "该技能未学会",
+  "cd_72": "该技能未学会",
+  "cd_7384": "该技能未学会",
+  "cold_blood": "该技能未学会",
+  "combat_time": "该技能未学会",
+  "combo_points": "该技能未学会",
+  "concussive_slow": "该技能未学会",
+  "corruption": "该技能未学会",
+  "death_wish": "该技能未学会",
+  "demon_armor": "该技能未学会",
+  "demon_skin": "该技能未学会",
+  "demonic_brand": "该技能未学会",
+  "demoralizing_shout": "该技能未学会",
+  "devotion_aura": "该技能未学会",
+  "distance": "该技能未学会",
+  "divine_favor": "该技能未学会",
+  "druid_talents": "该技能未学会",
+  "enemies_8yd": "该技能未学会",
+  "energy": "该技能未学会",
+  "fingers_of_frost": "该技能未学会",
+  "fire_totem": "该技能未学会",
+  "flame_shock": "该技能未学会",
+  "focus_casting": "该技能未学会",
+  "focus_index": "该技能未学会",
+  "form": "该技能未学会",
+  "fortitude": "该技能未学会",
+  "friendly_party1": "该技能未学会",
+  "friendly_party2": "该技能未学会",
+  "friendly_party3": "该技能未学会",
+  "friendly_party4": "该技能未学会",
+  "friendly_player": "该技能未学会",
+  "friendly_target": "该技能未学会",
+  "frost_armor": "该技能未学会",
+  "garrote": "该技能未学会",
+  "gcd": "该技能未学会",
+  "hawk_aspect": "该技能未学会",
+  "hawk_known": "该技能未学会",
+  "health_party1": "该技能未学会",
+  "health_party2": "该技能未学会",
+  "health_party3": "该技能未学会",
+  "health_party4": "该技能未学会",
+  "health_player": "该技能未学会",
+  "health_target": "该技能未学会",
+  "holy_shield": "该技能未学会",
+  "hot_streak": "该技能未学会",
+  "hunter_mark": "该技能未学会",
+  "hunter_talents": "该技能未学会",
+  "ice_armor": "该技能未学会",
+  "ice_barrier": "该技能未学会",
+  "immolate": "该技能未学会",
+  "inner_fire": "该技能未学会",
+  "insect_swarm": "该技能未学会",
+  "intellect": "该技能未学会",
+  "isMoving": "该技能未学会",
+  "item_burst_potion": "背包没货",
+  "item_healing_stone": "战斗中不可用，或背包没货",
+  "item_red_potion": "背包没货",
+  "known_10060": "该技能未学会",
+  "known_1064": "该技能未学会",
+  "known_1079": "该技能未学会",
+  "known_1082": "该技能未学会",
+  "known_11113": "该技能未学会",
+  "known_11129": "该技能未学会",
+  "known_1126": "该技能未学会",
+  "known_11366": "该技能未学会",
+  "known_11426": "该技能未学会",
+  "known_116": "该技能未学会",
+  "known_1160": "该技能未学会",
+  "known_12042": "该技能未学会",
+  "known_12043": "该技能未学会",
+  "known_12051": "该技能未学会",
+  "known_122": "该技能未学会",
+  "known_1243": "该技能未学会",
+  "known_1293241": "该技能未学会",
+  "known_1293695": "该技能未学会",
+  "known_1293817": "该技能未学会",
+  "known_12975": "该技能未学会",
+  "known_1299346": "该技能未学会",
+  "known_1310687": "该技能未学会",
+  "known_1310707": "该技能未学会",
+  "known_1311606": "该技能未学会",
+  "known_1312002": "该技能未学会",
+  "known_1316697": "该技能未学会",
+  "known_1317257": "该技能未学会",
+  "known_133": "该技能未学会",
+  "known_136": "该技能未学会",
+  "known_13750": "该技能未学会",
+  "known_13877": "该技能未学会",
+  "known_139": "该技能未学会",
+  "known_14177": "该技能未学会",
+  "known_14183": "该技能未学会",
+  "known_14278": "该技能未学会",
+  "known_1449": "该技能未学会",
+  "known_1454": "该技能未学会",
+  "known_1459": "该技能未学会",
+  "known_14751": "该技能未学会",
+  "known_1510": "该技能未学会",
+  "known_15237": "该技能未学会",
+  "known_15286": "该技能未学会",
+  "known_15407": "该技能未学会",
+  "known_15473": "该技能未学会",
+  "known_15487": "该技能未学会",
+  "known_16188": "该技能未学会",
+  "known_16190": "该技能未学会",
+  "known_16511": "该技能未学会",
+  "known_168": "该技能未学会",
+  "known_17": "该技能未学会",
+  "known_17116": "该技能未学会",
+  "known_172": "该技能未学会",
+  "known_17364": "该技能未学会",
+  "known_1752": "该技能未学会",
+  "known_1766": "该技能未学会",
+  "known_1776": "该技能未学会",
+  "known_17877": "该技能未学会",
+  "known_1822": "该技能未学会",
+  "known_18265": "该技能未学会",
+  "known_18288": "该技能未学会",
+  "known_1850": "该技能未学会",
+  "known_18562": "该技能未学会",
+  "known_19028": "该技能未学会",
+  "known_19263": "该技能未学会",
+  "known_19306": "该技能未学会",
+  "known_1943": "该技能未学会",
+  "known_19434": "该技能未学会",
+  "known_19574": "该技能未学会",
+  "known_19577": "该技能未学会",
+  "known_19740": "该技能未学会",
+  "known_19750": "该技能未学会",
+  "known_20154": "该技能未学会",
+  "known_20163": "该技能未学会",
+  "known_20216": "该技能未学会",
+  "known_20271": "该技能未学会",
+  "known_20375": "该技能未学会",
+  "known_2050": "该技能未学会",
+  "known_2060": "该技能未学会",
+  "known_2061": "该技能未学会",
+  "known_20925": "该技能未学会",
+  "known_2098": "该技能未学会",
+  "known_2136": "该技能未学会",
+  "known_2139": "该技能未学会",
+  "known_22568": "该技能未学会",
+  "known_22812": "该技能未学会",
+  "known_24275": "该技能未学会",
+  "known_24858": "该技能未学会",
+  "known_2565": "该技能未学会",
+  "known_2643": "该技能未学会",
+  "known_26573": "该技能未学会",
+  "known_2912": "该技能未学会",
+  "known_2944": "该技能未学会",
+  "known_2948": "该技能未学会",
+  "known_3045": "该技能未学会",
+  "known_324": "该技能未学会",
+  "known_331": "该技能未学会",
+  "known_348": "该技能未学会",
+  "known_355": "该技能未学会",
+  "known_3599": "该技能未学会",
+  "known_400574": "该技能未学会",
+  "known_401859": "该技能未学会",
+  "known_402174": "该技能未学会",
+  "known_403": "该技能未学会",
+  "known_407995": "该技能未学会",
+  "known_408120": "该技能未学会",
+  "known_408490": "该技能未学会",
+  "known_408510": "该技能未学会",
+  "known_408521": "该技能未学会",
+  "known_412758": "该技能未学会",
+  "known_414644": "该技能未学会",
+  "known_417141": "该技能未学会",
+  "known_421": "该技能未学会",
+  "known_425336": "该技能未学会",
+  "known_465": "该技能未学会",
+  "known_467": "该技能未学会",
+  "known_498": "该技能未学会",
+  "known_5143": "该技能未学会",
+  "known_5171": "该技能未学会",
+  "known_5176": "该技能未学会",
+  "known_5185": "该技能未学会",
+  "known_5217": "该技能未学会",
+  "known_5221": "该技能未学会",
+  "known_5229": "该技能未学会",
+  "known_5277": "该技能未学会",
+  "known_53": "该技能未学会",
+  "known_5487": "该技能未学会",
+  "known_5570": "该技能未学会",
+  "known_5675": "该技能未学会",
+  "known_585": "该技能未学会",
+  "known_588": "该技能未学会",
+  "known_589": "该技能未学会",
+  "known_6117": "该技能未学会",
+  "known_633": "该技能未学会",
+  "known_635": "该技能未学会",
+  "known_6353": "该技能未学会",
+  "known_678": "该技能未学会",
+  "known_6789": "该技能未学会",
+  "known_6807": "该技能未学会",
+  "known_686": "该技能未学会",
+  "known_687": "该技能未学会",
+  "known_688": "该技能未学会",
+  "known_689": "该技能未学会",
+  "known_703": "该技能未学会",
+  "known_706": "该技能未学会",
+  "known_7294": "该技能未学会",
+  "known_7302": "该技能未学会",
+  "known_7386": "该技能未学会",
+  "known_768": "该技能未学会",
+  "known_774": "该技能未学会",
+  "known_779": "该技能未学会",
+  "known_8004": "该技能未学会",
+  "known_8042": "该技能未学会",
+  "known_8050": "该技能未学会",
+  "known_8056": "该技能未学会",
+  "known_8092": "该技能未学会",
+  "known_853": "该技能未学会",
+  "known_8676": "该技能未学会",
+  "known_871": "该技能未学会",
+  "known_879": "该技能未学会",
+  "known_8921": "该技能未学会",
+  "known_8936": "该技能未学会",
+  "known_9634": "该技能未学会",
+  "known_980": "该技能未学会",
+  "lacerate": "该技能未学会",
+  "lightning_shield": "该技能未学会",
+  "maelstrom": "该技能未学会",
+  "mage_armor": "该技能未学会",
+  "mage_talents": "该技能未学会",
+  "mana_pct": "该技能未学会",
+  "mark_wild": "该技能未学会",
+  "master_switch": "该技能未学会",
+  "missile_barrage": "该技能未学会",
+  "monkey_aspect": "该技能未学会",
+  "monkey_known": "该技能未学会",
+  "moonfire": "该技能未学会",
+  "natures_swiftness": "该技能未学会",
+  "nightfall": "该技能未学会",
+  "pain": "该技能未学会",
+  "paladin_talents": "该技能未学会",
+  "pet_health": "该技能未学会",
+  "pet_on_target": "该技能未学会",
+  "pet_valid": "该技能未学会",
+  "plague": "该技能未学会",
+  "player_cast_observation_code": "该技能未学会",
+  "player_cast_spell_id": "该技能未学会",
+  "player_casting": "该技能未学会",
+  "player_health_pct": "该技能未学会",
+  "player_in_combat": "该技能未学会",
+  "player_moving": "该技能未学会",
+  "player_succeeded_generation": "该技能未学会",
+  "player_succeeded_spell_id": "该技能未学会",
+  "player_valid": "该技能未学会",
+  "prayer_of_mending_party1": "该技能未学会",
+  "prayer_of_mending_party2": "该技能未学会",
+  "prayer_of_mending_party3": "该技能未学会",
+  "prayer_of_mending_party4": "该技能未学会",
+  "prayer_of_mending_player": "该技能未学会",
+  "prayer_of_mending_target": "该技能未学会",
+  "presence_of_mind": "该技能未学会",
+  "priest_talents": "该技能未学会",
+  "primary_known": "该技能未学会",
+  "rage": "该技能未学会",
+  "rake": "该技能未学会",
+  "range_10060": "该技能未学会",
+  "range_1064": "该技能未学会",
+  "range_1064_party1": "该技能未学会",
+  "range_1064_party2": "该技能未学会",
+  "range_1064_party3": "该技能未学会",
+  "range_1064_party4": "该技能未学会",
+  "range_1064_player": "该技能未学会",
+  "range_1064_target": "该技能未学会",
+  "range_1079": "该技能未学会",
+  "range_1082": "该技能未学会",
+  "range_11113": "该技能未学会",
+  "range_11129": "该技能未学会",
+  "range_1126": "该技能未学会",
+  "range_11366": "该技能未学会",
+  "range_11426": "该技能未学会",
+  "range_116": "该技能未学会",
+  "range_1160": "该技能未学会",
+  "range_12042": "该技能未学会",
+  "range_12043": "该技能未学会",
+  "range_12051": "该技能未学会",
+  "range_122": "该技能未学会",
+  "range_1243": "该技能未学会",
+  "range_1293241": "该技能未学会",
+  "range_1293695": "该技能未学会",
+  "range_1293817": "该技能未学会",
+  "range_12975": "该技能未学会",
+  "range_1299346": "该技能未学会",
+  "range_1310687": "该技能未学会",
+  "range_1310707": "该技能未学会",
+  "range_1311606": "该技能未学会",
+  "range_1311606_party1": "该技能未学会",
+  "range_1311606_party2": "该技能未学会",
+  "range_1311606_party3": "该技能未学会",
+  "range_1311606_party4": "该技能未学会",
+  "range_1311606_player": "该技能未学会",
+  "range_1311606_target": "该技能未学会",
+  "range_1312002": "该技能未学会",
+  "range_1316697": "该技能未学会",
+  "range_1317257": "该技能未学会",
+  "range_133": "该技能未学会",
+  "range_136": "该技能未学会",
+  "range_13750": "该技能未学会",
+  "range_13877": "该技能未学会",
+  "range_139": "该技能未学会",
+  "range_139_party1": "该技能未学会",
+  "range_139_party2": "该技能未学会",
+  "range_139_party3": "该技能未学会",
+  "range_139_party4": "该技能未学会",
+  "range_139_player": "该技能未学会",
+  "range_139_target": "该技能未学会",
+  "range_14177": "该技能未学会",
+  "range_14183": "该技能未学会",
+  "range_14278": "该技能未学会",
+  "range_1449": "该技能未学会",
+  "range_1454": "该技能未学会",
+  "range_1459": "该技能未学会",
+  "range_14751": "该技能未学会",
+  "range_1510": "该技能未学会",
+  "range_15237": "该技能未学会",
+  "range_15286": "该技能未学会",
+  "range_15407": "该技能未学会",
+  "range_15473": "该技能未学会",
+  "range_15487": "该技能未学会",
+  "range_16188": "该技能未学会",
+  "range_16190": "该技能未学会",
+  "range_16511": "该技能未学会",
+  "range_168": "该技能未学会",
+  "range_17": "该技能未学会",
+  "range_17116": "该技能未学会",
+  "range_172": "该技能未学会",
+  "range_17364": "该技能未学会",
+  "range_1752": "该技能未学会",
+  "range_1766": "该技能未学会",
+  "range_1776": "该技能未学会",
+  "range_17877": "该技能未学会",
+  "range_17_party1": "该技能未学会",
+  "range_17_party2": "该技能未学会",
+  "range_17_party3": "该技能未学会",
+  "range_17_party4": "该技能未学会",
+  "range_17_player": "该技能未学会",
+  "range_17_target": "该技能未学会",
+  "range_1822": "该技能未学会",
+  "range_18265": "该技能未学会",
+  "range_18288": "该技能未学会",
+  "range_1850": "该技能未学会",
+  "range_18562": "该技能未学会",
+  "range_18562_party1": "该技能未学会",
+  "range_18562_party2": "该技能未学会",
+  "range_18562_party3": "该技能未学会",
+  "range_18562_party4": "该技能未学会",
+  "range_18562_player": "该技能未学会",
+  "range_18562_target": "该技能未学会",
+  "range_19028": "该技能未学会",
+  "range_19263": "该技能未学会",
+  "range_19306": "该技能未学会",
+  "range_1943": "该技能未学会",
+  "range_19434": "该技能未学会",
+  "range_19574": "该技能未学会",
+  "range_19577": "该技能未学会",
+  "range_19740": "该技能未学会",
+  "range_19750": "该技能未学会",
+  "range_19750_party1": "该技能未学会",
+  "range_19750_party2": "该技能未学会",
+  "range_19750_party3": "该技能未学会",
+  "range_19750_party4": "该技能未学会",
+  "range_19750_player": "该技能未学会",
+  "range_19750_target": "该技能未学会",
+  "range_20154": "该技能未学会",
+  "range_20163": "该技能未学会",
+  "range_20216": "该技能未学会",
+  "range_20271": "该技能未学会",
+  "range_20375": "该技能未学会",
+  "range_2050": "该技能未学会",
+  "range_2050_party1": "该技能未学会",
+  "range_2050_party2": "该技能未学会",
+  "range_2050_party3": "该技能未学会",
+  "range_2050_party4": "该技能未学会",
+  "range_2050_player": "该技能未学会",
+  "range_2050_target": "该技能未学会",
+  "range_2060": "该技能未学会",
+  "range_2060_party1": "该技能未学会",
+  "range_2060_party2": "该技能未学会",
+  "range_2060_party3": "该技能未学会",
+  "range_2060_party4": "该技能未学会",
+  "range_2060_player": "该技能未学会",
+  "range_2060_target": "该技能未学会",
+  "range_2061": "该技能未学会",
+  "range_2061_party1": "该技能未学会",
+  "range_2061_party2": "该技能未学会",
+  "range_2061_party3": "该技能未学会",
+  "range_2061_party4": "该技能未学会",
+  "range_2061_player": "该技能未学会",
+  "range_2061_target": "该技能未学会",
+  "range_20925": "该技能未学会",
+  "range_2098": "该技能未学会",
+  "range_2136": "该技能未学会",
+  "range_2139": "该技能未学会",
+  "range_22568": "该技能未学会",
+  "range_22812": "该技能未学会",
+  "range_24275": "该技能未学会",
+  "range_24858": "该技能未学会",
+  "range_2565": "该技能未学会",
+  "range_2643": "该技能未学会",
+  "range_26573": "该技能未学会",
+  "range_2912": "该技能未学会",
+  "range_2944": "该技能未学会",
+  "range_2948": "该技能未学会",
+  "range_3045": "该技能未学会",
+  "range_324": "该技能未学会",
+  "range_331": "该技能未学会",
+  "range_331_party1": "该技能未学会",
+  "range_331_party2": "该技能未学会",
+  "range_331_party3": "该技能未学会",
+  "range_331_party4": "该技能未学会",
+  "range_331_player": "该技能未学会",
+  "range_331_target": "该技能未学会",
+  "range_348": "该技能未学会",
+  "range_355": "该技能未学会",
+  "range_3599": "该技能未学会",
+  "range_400574": "该技能未学会",
+  "range_401859": "该技能未学会",
+  "range_401859_party1": "该技能未学会",
+  "range_401859_party2": "该技能未学会",
+  "range_401859_party3": "该技能未学会",
+  "range_401859_party4": "该技能未学会",
+  "range_401859_player": "该技能未学会",
+  "range_401859_target": "该技能未学会",
+  "range_402174": "该技能未学会",
+  "range_402174_party1": "该技能未学会",
+  "range_402174_party2": "该技能未学会",
+  "range_402174_party3": "该技能未学会",
+  "range_402174_party4": "该技能未学会",
+  "range_402174_player": "该技能未学会",
+  "range_402174_target": "该技能未学会",
+  "range_403": "该技能未学会",
+  "range_407995": "该技能未学会",
+  "range_408120": "该技能未学会",
+  "range_408120_party1": "该技能未学会",
+  "range_408120_party2": "该技能未学会",
+  "range_408120_party3": "该技能未学会",
+  "range_408120_party4": "该技能未学会",
+  "range_408120_player": "该技能未学会",
+  "range_408120_target": "该技能未学会",
+  "range_408490": "该技能未学会",
+  "range_408510": "该技能未学会",
+  "range_408521": "该技能未学会",
+  "range_408521_party1": "该技能未学会",
+  "range_408521_party2": "该技能未学会",
+  "range_408521_party3": "该技能未学会",
+  "range_408521_party4": "该技能未学会",
+  "range_408521_player": "该技能未学会",
+  "range_408521_target": "该技能未学会",
+  "range_412758": "该技能未学会",
+  "range_414644": "该技能未学会",
+  "range_417141": "该技能未学会",
+  "range_421": "该技能未学会",
+  "range_425336": "该技能未学会",
+  "range_465": "该技能未学会",
+  "range_467": "该技能未学会",
+  "range_498": "该技能未学会",
+  "range_5143": "该技能未学会",
+  "range_5171": "该技能未学会",
+  "range_5176": "该技能未学会",
+  "range_5185": "该技能未学会",
+  "range_5185_party1": "该技能未学会",
+  "range_5185_party2": "该技能未学会",
+  "range_5185_party3": "该技能未学会",
+  "range_5185_party4": "该技能未学会",
+  "range_5185_player": "该技能未学会",
+  "range_5185_target": "该技能未学会",
+  "range_5217": "该技能未学会",
+  "range_5221": "该技能未学会",
+  "range_5229": "该技能未学会",
+  "range_5277": "该技能未学会",
+  "range_53": "该技能未学会",
+  "range_5487": "该技能未学会",
+  "range_5570": "该技能未学会",
+  "range_5675": "该技能未学会",
+  "range_585": "该技能未学会",
+  "range_588": "该技能未学会",
+  "range_589": "该技能未学会",
+  "range_6117": "该技能未学会",
+  "range_633": "该技能未学会",
+  "range_633_party1": "该技能未学会",
+  "range_633_party2": "该技能未学会",
+  "range_633_party3": "该技能未学会",
+  "range_633_party4": "该技能未学会",
+  "range_633_player": "该技能未学会",
+  "range_633_target": "该技能未学会",
+  "range_635": "该技能未学会",
+  "range_6353": "该技能未学会",
+  "range_635_party1": "该技能未学会",
+  "range_635_party2": "该技能未学会",
+  "range_635_party3": "该技能未学会",
+  "range_635_party4": "该技能未学会",
+  "range_635_player": "该技能未学会",
+  "range_635_target": "该技能未学会",
+  "range_678": "该技能未学会",
+  "range_6789": "该技能未学会",
+  "range_6807": "该技能未学会",
+  "range_686": "该技能未学会",
+  "range_687": "该技能未学会",
+  "range_688": "该技能未学会",
+  "range_689": "该技能未学会",
+  "range_703": "该技能未学会",
+  "range_706": "该技能未学会",
+  "range_7294": "该技能未学会",
+  "range_7302": "该技能未学会",
+  "range_7386": "该技能未学会",
+  "range_768": "该技能未学会",
+  "range_774": "该技能未学会",
+  "range_774_party1": "该技能未学会",
+  "range_774_party2": "该技能未学会",
+  "range_774_party3": "该技能未学会",
+  "range_774_party4": "该技能未学会",
+  "range_774_player": "该技能未学会",
+  "range_774_target": "该技能未学会",
+  "range_779": "该技能未学会",
+  "range_8004": "该技能未学会",
+  "range_8004_party1": "该技能未学会",
+  "range_8004_party2": "该技能未学会",
+  "range_8004_party3": "该技能未学会",
+  "range_8004_party4": "该技能未学会",
+  "range_8004_player": "该技能未学会",
+  "range_8004_target": "该技能未学会",
+  "range_8042": "该技能未学会",
+  "range_8050": "该技能未学会",
+  "range_8056": "该技能未学会",
+  "range_8092": "该技能未学会",
+  "range_853": "该技能未学会",
+  "range_8676": "该技能未学会",
+  "range_871": "该技能未学会",
+  "range_879": "该技能未学会",
+  "range_8921": "该技能未学会",
+  "range_8936": "该技能未学会",
+  "range_8936_party1": "该技能未学会",
+  "range_8936_party2": "该技能未学会",
+  "range_8936_party3": "该技能未学会",
+  "range_8936_party4": "该技能未学会",
+  "range_8936_player": "该技能未学会",
+  "range_8936_target": "该技能未学会",
+  "range_9634": "该技能未学会",
+  "range_980": "该技能未学会",
+  "ready_1160": "该技能未学会",
+  "ready_17116": "该技能未学会",
+  "ready_18562": "该技能未学会",
+  "ready_2565": "该技能未学会",
+  "ready_355": "该技能未学会",
+  "ready_408120": "该技能未学会",
+  "ready_5185": "该技能未学会",
+  "ready_5229": "该技能未学会",
+  "ready_7386": "该技能未学会",
+  "ready_774": "该技能未学会",
+  "ready_8936": "该技能未学会",
+  "regrowth_party1": "该技能未学会",
+  "regrowth_party2": "该技能未学会",
+  "regrowth_party3": "该技能未学会",
+  "regrowth_party4": "该技能未学会",
+  "regrowth_player": "该技能未学会",
+  "regrowth_target": "该技能未学会",
+  "rejuvenation_party1": "该技能未学会",
+  "rejuvenation_party2": "该技能未学会",
+  "rejuvenation_party3": "该技能未学会",
+  "rejuvenation_party4": "该技能未学会",
+  "rejuvenation_player": "该技能未学会",
+  "rejuvenation_target": "该技能未学会",
+  "rend": "该技能未学会",
+  "renew_party1": "该技能未学会",
+  "renew_party2": "该技能未学会",
+  "renew_party3": "该技能未学会",
+  "renew_party4": "该技能未学会",
+  "renew_player": "该技能未学会",
+  "renew_target": "该技能未学会",
+  "retribution_aura": "该技能未学会",
+  "rip": "该技能未学会",
+  "riptide_party1": "该技能未学会",
+  "riptide_party2": "该技能未学会",
+  "riptide_party3": "该技能未学会",
+  "riptide_party4": "该技能未学会",
+  "riptide_player": "该技能未学会",
+  "riptide_target": "该技能未学会",
+  "rogue_talents": "该技能未学会",
+  "rupture": "该技能未学会",
+  "seal_command": "该技能未学会",
+  "seal_fury": "该技能未学会",
+  "seal_righteousness": "该技能未学会",
+  "serpent_sting": "该技能未学会",
+  "shadowform": "该技能未学会",
+  "shaman_talents": "该技能未学会",
+  "shield_block": "该技能未学会",
+  "shield_party1": "该技能未学会",
+  "shield_party2": "该技能未学会",
+  "shield_party3": "该技能未学会",
+  "shield_party4": "该技能未学会",
+  "shield_player": "该技能未学会",
+  "shield_target": "该技能未学会",
+  "siphon_life": "该技能未学会",
+  "slice_and_dice": "该技能未学会",
+  "soul_link": "该技能未学会",
+  "spec_id": "该技能未学会",
+  "stance": "该技能未学会",
+  "stealthed": "该技能未学会",
+  "strike_queued": "该技能未学会",
+  "sunder_armor": "该技能未学会",
+  "sweeping_strikes": "该技能未学会",
+  "target_casting": "该技能未学会",
+  "target_health_pct": "该技能未学会",
+  "target_valid": "该技能未学会",
+  "thorns": "该技能未学会",
+  "tigers_fury": "该技能未学会",
+  "trinket1_cd": "槽位空／未装备／物品未加载",
+  "trinket2_cd": "槽位空／未装备／物品未加载",
+  "trueshot_aura": "该技能未学会",
+  "ttd": "该技能未学会",
+  "ttf": "该技能未学会",
+  "vampiric_embrace": "该技能未学会",
+  "warlock_talents": "该技能未学会",
+  "warrior_talents": "该技能未学会",
+  "water_shield": "该技能未学会",
+  "water_totem": "该技能未学会",
+  "weakened_soul_party1": "该技能未学会",
+  "weakened_soul_party2": "该技能未学会",
+  "weakened_soul_party3": "该技能未学会",
+  "weakened_soul_party4": "该技能未学会",
+  "weakened_soul_player": "该技能未学会",
+  "weakened_soul_target": "该技能未学会",
+  "wild_growth_party1": "该技能未学会",
+  "wild_growth_party2": "该技能未学会",
+  "wild_growth_party3": "该技能未学会",
+  "wild_growth_party4": "该技能未学会",
+  "wild_growth_player": "该技能未学会",
+  "wild_growth_target": "该技能未学会",
+  "wrack": "该技能未学会"
+ },
+ "specs": {
+  "1484": {
+   "title": "无限德鲁伊 1484 · 平衡 / 野性战斗 / 恢复",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "validity"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "validity"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "validity"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "validity"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "validity"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "druid_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_1126",
+     "label": "野性印记已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1126",
+     "label": "野性印记射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_467",
+     "label": "荆棘术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_467",
+     "label": "荆棘术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5176",
+     "label": "愤怒已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5176",
+     "label": "愤怒射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2912",
+     "label": "星火术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2912",
+     "label": "星火术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_8921",
+     "label": "月火术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_8921",
+     "label": "月火术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5570",
+     "label": "虫群已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5570",
+     "label": "虫群射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_24858",
+     "label": "枭兽形态已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_24858",
+     "label": "枭兽形态射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_768",
+     "label": "猎豹形态已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_768",
+     "label": "猎豹形态射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5487",
+     "label": "熊形态已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5487",
+     "label": "熊形态射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_9634",
+     "label": "巨熊形态已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_9634",
+     "label": "巨熊形态射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_407995",
+     "label": "割碎已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_407995",
+     "label": "割碎射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1082",
+     "label": "爪击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1082",
+     "label": "爪击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5221",
+     "label": "撕碎已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5221",
+     "label": "撕碎射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1822",
+     "label": "扫击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1822",
+     "label": "扫击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1079",
+     "label": "撕扯已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1079",
+     "label": "撕扯射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_22568",
+     "label": "凶猛撕咬已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_22568",
+     "label": "凶猛撕咬射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_6807",
+     "label": "槌击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_6807",
+     "label": "槌击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_779",
+     "label": "挥击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_779",
+     "label": "挥击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_414644",
+     "label": "割伤已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_414644",
+     "label": "割伤射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5217",
+     "label": "猛虎之怒已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5217",
+     "label": "猛虎之怒射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_417141",
+     "label": "狂暴已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_417141",
+     "label": "狂暴射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_22812",
+     "label": "树皮术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_22812",
+     "label": "树皮术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1850",
+     "label": "急奔已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1850",
+     "label": "急奔射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_8936",
+     "label": "愈合已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_8936",
+     "label": "愈合射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_8936",
+     "label": "愈合可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_774",
+     "label": "回春术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_774",
+     "label": "回春术射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_774",
+     "label": "回春术可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_5185",
+     "label": "治疗之触已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5185",
+     "label": "治疗之触射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_5185",
+     "label": "治疗之触可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_18562",
+     "label": "迅捷治愈已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_18562",
+     "label": "迅捷治愈射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_18562",
+     "label": "迅捷治愈可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_408120",
+     "label": "野性成长已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_408120",
+     "label": "野性成长射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_408120",
+     "label": "野性成长可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_17116",
+     "label": "自然迅捷已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_17116",
+     "label": "自然迅捷射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_17116",
+     "label": "自然迅捷可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_5229",
+     "label": "狂怒已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5229",
+     "label": "狂怒射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_5229",
+     "label": "狂怒可用",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_player",
+     "label": "player有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_player",
+     "label": "player血量",
+     "type": "number"
+    },
+    {
+     "id": "range_8936_player",
+     "label": "愈合 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_774_player",
+     "label": "回春术 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_5185_player",
+     "label": "治疗之触 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_18562_player",
+     "label": "迅捷治愈 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408120_player",
+     "label": "野性成长 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_target",
+     "label": "target有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_target",
+     "label": "target血量",
+     "type": "number"
+    },
+    {
+     "id": "range_8936_target",
+     "label": "愈合 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_774_target",
+     "label": "回春术 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_5185_target",
+     "label": "治疗之触 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_18562_target",
+     "label": "迅捷治愈 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408120_target",
+     "label": "野性成长 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party1",
+     "label": "party1有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party1",
+     "label": "party1血量",
+     "type": "number"
+    },
+    {
+     "id": "range_8936_party1",
+     "label": "愈合 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_774_party1",
+     "label": "回春术 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_5185_party1",
+     "label": "治疗之触 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_18562_party1",
+     "label": "迅捷治愈 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408120_party1",
+     "label": "野性成长 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party2",
+     "label": "party2有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party2",
+     "label": "party2血量",
+     "type": "number"
+    },
+    {
+     "id": "range_8936_party2",
+     "label": "愈合 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_774_party2",
+     "label": "回春术 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_5185_party2",
+     "label": "治疗之触 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_18562_party2",
+     "label": "迅捷治愈 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408120_party2",
+     "label": "野性成长 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party3",
+     "label": "party3有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party3",
+     "label": "party3血量",
+     "type": "number"
+    },
+    {
+     "id": "range_8936_party3",
+     "label": "愈合 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_774_party3",
+     "label": "回春术 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_5185_party3",
+     "label": "治疗之触 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_18562_party3",
+     "label": "迅捷治愈 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408120_party3",
+     "label": "野性成长 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party4",
+     "label": "party4有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party4",
+     "label": "party4血量",
+     "type": "number"
+    },
+    {
+     "id": "range_8936_party4",
+     "label": "愈合 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_774_party4",
+     "label": "回春术 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_5185_party4",
+     "label": "治疗之触 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_18562_party4",
+     "label": "迅捷治愈 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408120_party4",
+     "label": "野性成长 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "focus_index",
+     "label": "当前焦点",
+     "type": "count"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "mark_wild",
+     "label": "野性印记",
+     "type": "presence"
+    },
+    {
+     "id": "thorns",
+     "label": "荆棘术",
+     "type": "presence"
+    },
+    {
+     "id": "moonfire",
+     "label": "月火术",
+     "type": "presence"
+    },
+    {
+     "id": "insect_swarm",
+     "label": "虫群",
+     "type": "presence"
+    },
+    {
+     "id": "rake",
+     "label": "扫击",
+     "type": "presence"
+    },
+    {
+     "id": "rip",
+     "label": "撕扯",
+     "type": "presence"
+    },
+    {
+     "id": "lacerate",
+     "label": "割伤",
+     "type": "presence"
+    },
+    {
+     "id": "tigers_fury",
+     "label": "猛虎之怒",
+     "type": "presence"
+    },
+    {
+     "id": "berserk",
+     "label": "狂暴",
+     "type": "presence"
+    },
+    {
+     "id": "regrowth_player",
+     "label": "愈合",
+     "type": "presence"
+    },
+    {
+     "id": "regrowth_target",
+     "label": "愈合",
+     "type": "presence"
+    },
+    {
+     "id": "regrowth_party1",
+     "label": "愈合",
+     "type": "presence"
+    },
+    {
+     "id": "regrowth_party2",
+     "label": "愈合",
+     "type": "presence"
+    },
+    {
+     "id": "regrowth_party3",
+     "label": "愈合",
+     "type": "presence"
+    },
+    {
+     "id": "regrowth_party4",
+     "label": "愈合",
+     "type": "presence"
+    },
+    {
+     "id": "rejuvenation_player",
+     "label": "回春术",
+     "type": "presence"
+    },
+    {
+     "id": "rejuvenation_target",
+     "label": "回春术",
+     "type": "presence"
+    },
+    {
+     "id": "rejuvenation_party1",
+     "label": "回春术",
+     "type": "presence"
+    },
+    {
+     "id": "rejuvenation_party2",
+     "label": "回春术",
+     "type": "presence"
+    },
+    {
+     "id": "rejuvenation_party3",
+     "label": "回春术",
+     "type": "presence"
+    },
+    {
+     "id": "rejuvenation_party4",
+     "label": "回春术",
+     "type": "presence"
+    },
+    {
+     "id": "wild_growth_player",
+     "label": "野性成长",
+     "type": "presence"
+    },
+    {
+     "id": "wild_growth_target",
+     "label": "野性成长",
+     "type": "presence"
+    },
+    {
+     "id": "wild_growth_party1",
+     "label": "野性成长",
+     "type": "presence"
+    },
+    {
+     "id": "wild_growth_party2",
+     "label": "野性成长",
+     "type": "presence"
+    },
+    {
+     "id": "wild_growth_party3",
+     "label": "野性成长",
+     "type": "presence"
+    },
+    {
+     "id": "wild_growth_party4",
+     "label": "野性成长",
+     "type": "presence"
+    }
+   ]
+  },
+  "1485": {
+   "title": "",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "switch"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "switch"
+    },
+    {
+     "id": "auto_shot_active",
+     "label": "自动射击",
+     "type": "validity"
+    },
+    {
+     "id": "hawk_known",
+     "label": "已学雄鹰守护",
+     "type": "switch"
+    },
+    {
+     "id": "monkey_known",
+     "label": "已学灵猴守护",
+     "type": "switch"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "switch"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "switch"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "switch"
+    },
+    {
+     "id": "cd_3044",
+     "label": "奥术射击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_5116",
+     "label": "震荡射击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_2973",
+     "label": "猛禽一击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "hunter_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_19574",
+     "label": "狂野怒火已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_19574",
+     "label": "狂野怒火射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1293241",
+     "label": "召唤雄鹰已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1293241",
+     "label": "召唤雄鹰射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1310687",
+     "label": "狙击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1310687",
+     "label": "狙击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_19434",
+     "label": "瞄准射击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_19434",
+     "label": "瞄准射击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2643",
+     "label": "多重射击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2643",
+     "label": "多重射击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1510",
+     "label": "乱射已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1510",
+     "label": "乱射射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_3045",
+     "label": "急速射击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_3045",
+     "label": "急速射击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_19306",
+     "label": "反击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_19306",
+     "label": "反击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_19263",
+     "label": "威慑已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_19263",
+     "label": "威慑射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_19577",
+     "label": "胁迫已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_19577",
+     "label": "胁迫射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_136",
+     "label": "治疗宠物已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_136",
+     "label": "治疗宠物射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1317257",
+     "label": "Strider Kick已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1317257",
+     "label": "Strider Kick射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1299346",
+     "label": "强击光环已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1299346",
+     "label": "强击光环射程",
+     "type": "validity"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "monkey_aspect",
+     "label": "灵猴守护",
+     "type": "presence"
+    },
+    {
+     "id": "hawk_aspect",
+     "label": "雄鹰守护",
+     "type": "presence"
+    },
+    {
+     "id": "hunter_mark",
+     "label": "猎人印记",
+     "type": "presence"
+    },
+    {
+     "id": "serpent_sting",
+     "label": "毒蛇钉刺",
+     "type": "presence"
+    },
+    {
+     "id": "concussive_slow",
+     "label": "震荡减速",
+     "type": "presence"
+    },
+    {
+     "id": "trueshot_aura",
+     "label": "强击光环",
+     "type": "presence"
+    }
+   ]
+  },
+  "1482": {
+   "title": "无限法师 1482 · 奥术 / 火焰 / 冰霜",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "validity"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "validity"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "validity"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "validity"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "validity"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "mage_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_1459",
+     "label": "奥术智慧已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1459",
+     "label": "奥术智慧射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_168",
+     "label": "霜甲术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_168",
+     "label": "霜甲术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_7302",
+     "label": "冰甲术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_7302",
+     "label": "冰甲术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_6117",
+     "label": "魔甲术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_6117",
+     "label": "魔甲术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_116",
+     "label": "寒冰箭已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_116",
+     "label": "寒冰箭射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_133",
+     "label": "火球术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_133",
+     "label": "火球术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2136",
+     "label": "火焰冲击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2136",
+     "label": "火焰冲击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5143",
+     "label": "奥术飞弹已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5143",
+     "label": "奥术飞弹射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1449",
+     "label": "魔爆术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1449",
+     "label": "魔爆术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2948",
+     "label": "灼烧已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2948",
+     "label": "灼烧射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_11366",
+     "label": "炎爆术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_11366",
+     "label": "炎爆术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_400574",
+     "label": "奥术冲击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_400574",
+     "label": "奥术冲击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1312002",
+     "label": "冰枪术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1312002",
+     "label": "冰枪术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2139",
+     "label": "法术反制已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2139",
+     "label": "法术反制射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_122",
+     "label": "冰霜新星已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_122",
+     "label": "冰霜新星射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_12051",
+     "label": "唤醒已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_12051",
+     "label": "唤醒射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_12042",
+     "label": "奥术强化已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_12042",
+     "label": "奥术强化射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_11129",
+     "label": "燃烧已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_11129",
+     "label": "燃烧射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_11426",
+     "label": "寒冰护体已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_11426",
+     "label": "寒冰护体射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_12043",
+     "label": "气定神闲已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_12043",
+     "label": "气定神闲射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_11113",
+     "label": "冲击波已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_11113",
+     "label": "冲击波射程",
+     "type": "validity"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "intellect",
+     "label": "奥术智慧",
+     "type": "presence"
+    },
+    {
+     "id": "ice_armor",
+     "label": "冰甲术",
+     "type": "presence"
+    },
+    {
+     "id": "frost_armor",
+     "label": "霜甲术",
+     "type": "presence"
+    },
+    {
+     "id": "mage_armor",
+     "label": "魔甲术",
+     "type": "presence"
+    },
+    {
+     "id": "ice_barrier",
+     "label": "寒冰护体",
+     "type": "presence"
+    },
+    {
+     "id": "hot_streak",
+     "label": "法术连击",
+     "type": "presence"
+    },
+    {
+     "id": "fingers_of_frost",
+     "label": "寒冰指",
+     "type": "presence"
+    },
+    {
+     "id": "missile_barrage",
+     "label": "飞弹连射",
+     "type": "presence"
+    },
+    {
+     "id": "presence_of_mind",
+     "label": "气定神闲",
+     "type": "presence"
+    },
+    {
+     "id": "arcane_power",
+     "label": "奥术强化",
+     "type": "presence"
+    }
+   ]
+  },
+  "1486": {
+   "title": "无限圣骑士 1486 · 神圣 / 防护 / 惩戒",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "validity"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "validity"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "validity"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "validity"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "validity"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "paladin_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_19740",
+     "label": "力量祝福已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_19740",
+     "label": "力量祝福射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_465",
+     "label": "虔诚光环已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_465",
+     "label": "虔诚光环射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_7294",
+     "label": "惩罚光环已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_7294",
+     "label": "惩罚光环射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_20163",
+     "label": "愤怒圣印已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_20163",
+     "label": "愤怒圣印射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_20154",
+     "label": "正义圣印已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_20154",
+     "label": "正义圣印射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_20375",
+     "label": "命令圣印已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_20375",
+     "label": "命令圣印射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_20271",
+     "label": "审判已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_20271",
+     "label": "审判射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_678",
+     "label": "神圣打击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_678",
+     "label": "神圣打击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_879",
+     "label": "驱邪术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_879",
+     "label": "驱邪术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_24275",
+     "label": "愤怒之锤已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_24275",
+     "label": "愤怒之锤射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_26573",
+     "label": "奉献已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_26573",
+     "label": "奉献射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_20925",
+     "label": "神圣之盾已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_20925",
+     "label": "神圣之盾射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_633",
+     "label": "圣疗术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_633",
+     "label": "圣疗术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_498",
+     "label": "圣佑术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_498",
+     "label": "圣佑术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_853",
+     "label": "制裁之锤已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_853",
+     "label": "制裁之锤射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_635",
+     "label": "圣光术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_635",
+     "label": "圣光术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_19750",
+     "label": "圣光闪现已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_19750",
+     "label": "圣光闪现射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1311606",
+     "label": "神圣震击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1311606",
+     "label": "神圣震击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_20216",
+     "label": "神恩术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_20216",
+     "label": "神恩术射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_player",
+     "label": "player有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_player",
+     "label": "player血量",
+     "type": "number"
+    },
+    {
+     "id": "range_635_player",
+     "label": "圣光术 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_19750_player",
+     "label": "圣光闪现 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1311606_player",
+     "label": "神圣震击 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_633_player",
+     "label": "圣疗术 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_target",
+     "label": "target有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_target",
+     "label": "target血量",
+     "type": "number"
+    },
+    {
+     "id": "range_635_target",
+     "label": "圣光术 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_19750_target",
+     "label": "圣光闪现 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1311606_target",
+     "label": "神圣震击 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_633_target",
+     "label": "圣疗术 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party1",
+     "label": "party1有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party1",
+     "label": "party1血量",
+     "type": "number"
+    },
+    {
+     "id": "range_635_party1",
+     "label": "圣光术 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_19750_party1",
+     "label": "圣光闪现 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1311606_party1",
+     "label": "神圣震击 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_633_party1",
+     "label": "圣疗术 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party2",
+     "label": "party2有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party2",
+     "label": "party2血量",
+     "type": "number"
+    },
+    {
+     "id": "range_635_party2",
+     "label": "圣光术 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_19750_party2",
+     "label": "圣光闪现 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1311606_party2",
+     "label": "神圣震击 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_633_party2",
+     "label": "圣疗术 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party3",
+     "label": "party3有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party3",
+     "label": "party3血量",
+     "type": "number"
+    },
+    {
+     "id": "range_635_party3",
+     "label": "圣光术 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_19750_party3",
+     "label": "圣光闪现 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1311606_party3",
+     "label": "神圣震击 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_633_party3",
+     "label": "圣疗术 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party4",
+     "label": "party4有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party4",
+     "label": "party4血量",
+     "type": "number"
+    },
+    {
+     "id": "range_635_party4",
+     "label": "圣光术 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_19750_party4",
+     "label": "圣光闪现 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1311606_party4",
+     "label": "神圣震击 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_633_party4",
+     "label": "圣疗术 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "focus_index",
+     "label": "当前焦点",
+     "type": "count"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "blessing_might",
+     "label": "力量祝福",
+     "type": "presence"
+    },
+    {
+     "id": "devotion_aura",
+     "label": "虔诚光环",
+     "type": "presence"
+    },
+    {
+     "id": "retribution_aura",
+     "label": "惩罚光环",
+     "type": "presence"
+    },
+    {
+     "id": "seal_fury",
+     "label": "愤怒圣印",
+     "type": "presence"
+    },
+    {
+     "id": "seal_righteousness",
+     "label": "正义圣印",
+     "type": "presence"
+    },
+    {
+     "id": "seal_command",
+     "label": "命令圣印",
+     "type": "presence"
+    },
+    {
+     "id": "holy_shield",
+     "label": "神圣之盾",
+     "type": "presence"
+    },
+    {
+     "id": "divine_favor",
+     "label": "神恩术",
+     "type": "presence"
+    }
+   ]
+  },
+  "1487": {
+   "title": "无限牧师 1487 · 戒律 / 神圣 / 暗影",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "validity"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "validity"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "validity"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "validity"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "validity"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "priest_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_1243",
+     "label": "真言术：韧已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1243",
+     "label": "真言术：韧射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_588",
+     "label": "心灵之火已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_588",
+     "label": "心灵之火射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_589",
+     "label": "暗言术：痛已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_589",
+     "label": "暗言术：痛射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_585",
+     "label": "惩击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_585",
+     "label": "惩击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_8092",
+     "label": "心灵震爆已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_8092",
+     "label": "心灵震爆射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2944",
+     "label": "噬灵瘟疫已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2944",
+     "label": "噬灵瘟疫射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_15407",
+     "label": "精神鞭笞已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_15407",
+     "label": "精神鞭笞射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_15473",
+     "label": "暗影形态已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_15473",
+     "label": "暗影形态射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_15487",
+     "label": "沉默已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_15487",
+     "label": "沉默射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_15286",
+     "label": "吸血鬼的拥抱已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_15286",
+     "label": "吸血鬼的拥抱射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_17",
+     "label": "真言术：盾已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_17",
+     "label": "真言术：盾射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_139",
+     "label": "恢复已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_139",
+     "label": "恢复射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2050",
+     "label": "次级治疗术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2050",
+     "label": "次级治疗术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2060",
+     "label": "强效治疗术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2060",
+     "label": "强效治疗术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2061",
+     "label": "快速治疗已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2061",
+     "label": "快速治疗射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_402174",
+     "label": "苦修已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_402174",
+     "label": "苦修射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_401859",
+     "label": "愈合祷言已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_401859",
+     "label": "愈合祷言射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_15237",
+     "label": "神圣新星已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_15237",
+     "label": "神圣新星射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_10060",
+     "label": "能量灌注已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_10060",
+     "label": "能量灌注射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_14751",
+     "label": "心灵专注已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_14751",
+     "label": "心灵专注射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_player",
+     "label": "player有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_player",
+     "label": "player血量",
+     "type": "number"
+    },
+    {
+     "id": "range_17_player",
+     "label": "真言术：盾 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_139_player",
+     "label": "恢复 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2050_player",
+     "label": "次级治疗术 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2060_player",
+     "label": "强效治疗术 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2061_player",
+     "label": "快速治疗 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_402174_player",
+     "label": "苦修 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_401859_player",
+     "label": "愈合祷言 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_target",
+     "label": "target有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_target",
+     "label": "target血量",
+     "type": "number"
+    },
+    {
+     "id": "range_17_target",
+     "label": "真言术：盾 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_139_target",
+     "label": "恢复 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2050_target",
+     "label": "次级治疗术 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2060_target",
+     "label": "强效治疗术 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2061_target",
+     "label": "快速治疗 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_402174_target",
+     "label": "苦修 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_401859_target",
+     "label": "愈合祷言 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party1",
+     "label": "party1有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party1",
+     "label": "party1血量",
+     "type": "number"
+    },
+    {
+     "id": "range_17_party1",
+     "label": "真言术：盾 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_139_party1",
+     "label": "恢复 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2050_party1",
+     "label": "次级治疗术 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2060_party1",
+     "label": "强效治疗术 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2061_party1",
+     "label": "快速治疗 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_402174_party1",
+     "label": "苦修 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_401859_party1",
+     "label": "愈合祷言 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party2",
+     "label": "party2有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party2",
+     "label": "party2血量",
+     "type": "number"
+    },
+    {
+     "id": "range_17_party2",
+     "label": "真言术：盾 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_139_party2",
+     "label": "恢复 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2050_party2",
+     "label": "次级治疗术 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2060_party2",
+     "label": "强效治疗术 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2061_party2",
+     "label": "快速治疗 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_402174_party2",
+     "label": "苦修 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_401859_party2",
+     "label": "愈合祷言 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party3",
+     "label": "party3有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party3",
+     "label": "party3血量",
+     "type": "number"
+    },
+    {
+     "id": "range_17_party3",
+     "label": "真言术：盾 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_139_party3",
+     "label": "恢复 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2050_party3",
+     "label": "次级治疗术 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2060_party3",
+     "label": "强效治疗术 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2061_party3",
+     "label": "快速治疗 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_402174_party3",
+     "label": "苦修 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_401859_party3",
+     "label": "愈合祷言 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party4",
+     "label": "party4有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party4",
+     "label": "party4血量",
+     "type": "number"
+    },
+    {
+     "id": "range_17_party4",
+     "label": "真言术：盾 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_139_party4",
+     "label": "恢复 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2050_party4",
+     "label": "次级治疗术 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2060_party4",
+     "label": "强效治疗术 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_2061_party4",
+     "label": "快速治疗 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_402174_party4",
+     "label": "苦修 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_401859_party4",
+     "label": "愈合祷言 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "focus_index",
+     "label": "当前焦点",
+     "type": "count"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "fortitude",
+     "label": "真言术：韧",
+     "type": "presence"
+    },
+    {
+     "id": "inner_fire",
+     "label": "心灵之火",
+     "type": "presence"
+    },
+    {
+     "id": "pain",
+     "label": "暗言术：痛",
+     "type": "presence"
+    },
+    {
+     "id": "plague",
+     "label": "噬灵瘟疫",
+     "type": "presence"
+    },
+    {
+     "id": "shadowform",
+     "label": "暗影形态",
+     "type": "presence"
+    },
+    {
+     "id": "vampiric_embrace",
+     "label": "吸血鬼的拥抱",
+     "type": "presence"
+    },
+    {
+     "id": "shield_player",
+     "label": "真言术：盾",
+     "type": "presence"
+    },
+    {
+     "id": "shield_target",
+     "label": "真言术：盾",
+     "type": "presence"
+    },
+    {
+     "id": "shield_party1",
+     "label": "真言术：盾",
+     "type": "presence"
+    },
+    {
+     "id": "shield_party2",
+     "label": "真言术：盾",
+     "type": "presence"
+    },
+    {
+     "id": "shield_party3",
+     "label": "真言术：盾",
+     "type": "presence"
+    },
+    {
+     "id": "shield_party4",
+     "label": "真言术：盾",
+     "type": "presence"
+    },
+    {
+     "id": "renew_player",
+     "label": "恢复",
+     "type": "presence"
+    },
+    {
+     "id": "renew_target",
+     "label": "恢复",
+     "type": "presence"
+    },
+    {
+     "id": "renew_party1",
+     "label": "恢复",
+     "type": "presence"
+    },
+    {
+     "id": "renew_party2",
+     "label": "恢复",
+     "type": "presence"
+    },
+    {
+     "id": "renew_party3",
+     "label": "恢复",
+     "type": "presence"
+    },
+    {
+     "id": "renew_party4",
+     "label": "恢复",
+     "type": "presence"
+    },
+    {
+     "id": "prayer_of_mending_player",
+     "label": "愈合祷言",
+     "type": "presence"
+    },
+    {
+     "id": "prayer_of_mending_target",
+     "label": "愈合祷言",
+     "type": "presence"
+    },
+    {
+     "id": "prayer_of_mending_party1",
+     "label": "愈合祷言",
+     "type": "presence"
+    },
+    {
+     "id": "prayer_of_mending_party2",
+     "label": "愈合祷言",
+     "type": "presence"
+    },
+    {
+     "id": "prayer_of_mending_party3",
+     "label": "愈合祷言",
+     "type": "presence"
+    },
+    {
+     "id": "prayer_of_mending_party4",
+     "label": "愈合祷言",
+     "type": "presence"
+    },
+    {
+     "id": "weakened_soul_player",
+     "label": "虚弱灵魂",
+     "type": "presence"
+    },
+    {
+     "id": "weakened_soul_target",
+     "label": "虚弱灵魂",
+     "type": "presence"
+    },
+    {
+     "id": "weakened_soul_party1",
+     "label": "虚弱灵魂",
+     "type": "presence"
+    },
+    {
+     "id": "weakened_soul_party2",
+     "label": "虚弱灵魂",
+     "type": "presence"
+    },
+    {
+     "id": "weakened_soul_party3",
+     "label": "虚弱灵魂",
+     "type": "presence"
+    },
+    {
+     "id": "weakened_soul_party4",
+     "label": "虚弱灵魂",
+     "type": "presence"
+    }
+   ]
+  },
+  "1488": {
+   "title": "无限潜行者 1488 · 刺杀 / 战斗 / 敏锐",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "validity"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "validity"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "validity"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "validity"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "validity"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "rogue_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_1752",
+     "label": "邪恶攻击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1752",
+     "label": "邪恶攻击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2098",
+     "label": "刺骨已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2098",
+     "label": "刺骨射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5171",
+     "label": "切割已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5171",
+     "label": "切割射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_703",
+     "label": "绞喉已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_703",
+     "label": "绞喉射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1943",
+     "label": "割裂已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1943",
+     "label": "割裂射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_53",
+     "label": "背刺已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_53",
+     "label": "背刺射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_8676",
+     "label": "伏击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_8676",
+     "label": "伏击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_16511",
+     "label": "出血已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_16511",
+     "label": "出血射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1310707",
+     "label": "毁伤已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1310707",
+     "label": "毁伤射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_14278",
+     "label": "鬼魅攻击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_14278",
+     "label": "鬼魅攻击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1766",
+     "label": "脚踢已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1766",
+     "label": "脚踢射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5277",
+     "label": "闪避已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5277",
+     "label": "闪避射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_13877",
+     "label": "剑刃乱舞已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_13877",
+     "label": "剑刃乱舞射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_13750",
+     "label": "冲动已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_13750",
+     "label": "冲动射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_14177",
+     "label": "冷血已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_14177",
+     "label": "冷血射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_14183",
+     "label": "预谋已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_14183",
+     "label": "预谋射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1776",
+     "label": "凿击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1776",
+     "label": "凿击射程",
+     "type": "validity"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "slice_and_dice",
+     "label": "切割",
+     "type": "presence"
+    },
+    {
+     "id": "rupture",
+     "label": "割裂",
+     "type": "presence"
+    },
+    {
+     "id": "garrote",
+     "label": "绞喉",
+     "type": "presence"
+    },
+    {
+     "id": "blade_flurry",
+     "label": "剑刃乱舞",
+     "type": "presence"
+    },
+    {
+     "id": "adrenaline_rush",
+     "label": "冲动",
+     "type": "presence"
+    },
+    {
+     "id": "cold_blood",
+     "label": "冷血",
+     "type": "presence"
+    }
+   ]
+  },
+  "1489": {
+   "title": "无限萨满祭司 1489 · 元素 / 增强 / 恢复",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "validity"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "validity"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "validity"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "validity"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "validity"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "shaman_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_324",
+     "label": "闪电之盾已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_324",
+     "label": "闪电之盾射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_408510",
+     "label": "水之护盾已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_408510",
+     "label": "水之护盾射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_403",
+     "label": "闪电箭已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_403",
+     "label": "闪电箭射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_421",
+     "label": "闪电链已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_421",
+     "label": "闪电链射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_8042",
+     "label": "地震术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_8042",
+     "label": "地震术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_8050",
+     "label": "烈焰震击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_8050",
+     "label": "烈焰震击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_8056",
+     "label": "冰霜震击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_8056",
+     "label": "冰霜震击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_17364",
+     "label": "风暴打击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_17364",
+     "label": "风暴打击射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_408490",
+     "label": "熔岩爆裂已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_408490",
+     "label": "熔岩爆裂射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_425336",
+     "label": "先知之怒已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_425336",
+     "label": "先知之怒射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_331",
+     "label": "治疗波已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_331",
+     "label": "治疗波射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_8004",
+     "label": "次级治疗波已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_8004",
+     "label": "次级治疗波射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1064",
+     "label": "治疗链已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1064",
+     "label": "治疗链射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_408521",
+     "label": "激流已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_408521",
+     "label": "激流射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_16188",
+     "label": "自然迅捷已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_16188",
+     "label": "自然迅捷射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_16190",
+     "label": "法力之潮图腾已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_16190",
+     "label": "法力之潮图腾射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_3599",
+     "label": "灼热图腾已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_3599",
+     "label": "灼热图腾射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_5675",
+     "label": "法力之泉图腾已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_5675",
+     "label": "法力之泉图腾射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_player",
+     "label": "player有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_player",
+     "label": "player血量",
+     "type": "number"
+    },
+    {
+     "id": "range_331_player",
+     "label": "治疗波 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_8004_player",
+     "label": "次级治疗波 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1064_player",
+     "label": "治疗链 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408521_player",
+     "label": "激流 player射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_target",
+     "label": "target有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_target",
+     "label": "target血量",
+     "type": "number"
+    },
+    {
+     "id": "range_331_target",
+     "label": "治疗波 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_8004_target",
+     "label": "次级治疗波 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1064_target",
+     "label": "治疗链 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408521_target",
+     "label": "激流 target射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party1",
+     "label": "party1有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party1",
+     "label": "party1血量",
+     "type": "number"
+    },
+    {
+     "id": "range_331_party1",
+     "label": "治疗波 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_8004_party1",
+     "label": "次级治疗波 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1064_party1",
+     "label": "治疗链 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408521_party1",
+     "label": "激流 party1射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party2",
+     "label": "party2有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party2",
+     "label": "party2血量",
+     "type": "number"
+    },
+    {
+     "id": "range_331_party2",
+     "label": "治疗波 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_8004_party2",
+     "label": "次级治疗波 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1064_party2",
+     "label": "治疗链 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408521_party2",
+     "label": "激流 party2射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party3",
+     "label": "party3有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party3",
+     "label": "party3血量",
+     "type": "number"
+    },
+    {
+     "id": "range_331_party3",
+     "label": "治疗波 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_8004_party3",
+     "label": "次级治疗波 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1064_party3",
+     "label": "治疗链 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408521_party3",
+     "label": "激流 party3射程",
+     "type": "validity"
+    },
+    {
+     "id": "friendly_party4",
+     "label": "party4有效",
+     "type": "validity"
+    },
+    {
+     "id": "health_party4",
+     "label": "party4血量",
+     "type": "number"
+    },
+    {
+     "id": "range_331_party4",
+     "label": "治疗波 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_8004_party4",
+     "label": "次级治疗波 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_1064_party4",
+     "label": "治疗链 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "range_408521_party4",
+     "label": "激流 party4射程",
+     "type": "validity"
+    },
+    {
+     "id": "focus_index",
+     "label": "当前焦点",
+     "type": "count"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "lightning_shield",
+     "label": "闪电之盾",
+     "type": "presence"
+    },
+    {
+     "id": "water_shield",
+     "label": "水之护盾",
+     "type": "presence"
+    },
+    {
+     "id": "flame_shock",
+     "label": "烈焰震击",
+     "type": "presence"
+    },
+    {
+     "id": "maelstrom",
+     "label": "漩涡武器",
+     "type": "presence"
+    },
+    {
+     "id": "natures_swiftness",
+     "label": "自然迅捷",
+     "type": "presence"
+    },
+    {
+     "id": "riptide_player",
+     "label": "激流",
+     "type": "presence"
+    },
+    {
+     "id": "riptide_target",
+     "label": "激流",
+     "type": "presence"
+    },
+    {
+     "id": "riptide_party1",
+     "label": "激流",
+     "type": "presence"
+    },
+    {
+     "id": "riptide_party2",
+     "label": "激流",
+     "type": "presence"
+    },
+    {
+     "id": "riptide_party3",
+     "label": "激流",
+     "type": "presence"
+    },
+    {
+     "id": "riptide_party4",
+     "label": "激流",
+     "type": "presence"
+    }
+   ]
+  },
+  "1490": {
+   "title": "无限术士 1490 · 痛苦 / 恶魔学识 / 毁灭",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "validity"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "validity"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "validity"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "validity"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "validity"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "warlock_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_687",
+     "label": "恶魔皮肤已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_687",
+     "label": "恶魔皮肤射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_706",
+     "label": "魔甲术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_706",
+     "label": "魔甲术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_688",
+     "label": "召唤小鬼已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_688",
+     "label": "召唤小鬼射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_980",
+     "label": "痛苦灾祸已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_980",
+     "label": "痛苦灾祸射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_172",
+     "label": "腐蚀术已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_172",
+     "label": "腐蚀术射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_348",
+     "label": "献祭已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_348",
+     "label": "献祭射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_686",
+     "label": "暗影箭已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_686",
+     "label": "暗影箭射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_689",
+     "label": "吸取生命已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_689",
+     "label": "吸取生命射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1454",
+     "label": "生命分流已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1454",
+     "label": "生命分流射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_18265",
+     "label": "生命虹吸已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_18265",
+     "label": "生命虹吸射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1316697",
+     "label": "Wrack已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1316697",
+     "label": "Wrack射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_412758",
+     "label": "烧尽已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_412758",
+     "label": "烧尽射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1293817",
+     "label": "燃烧已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1293817",
+     "label": "燃烧射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_6353",
+     "label": "灵魂之火已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_6353",
+     "label": "灵魂之火射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_17877",
+     "label": "暗影灼烧已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_17877",
+     "label": "暗影灼烧射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_19028",
+     "label": "灵魂链接已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_19028",
+     "label": "灵魂链接射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_1293695",
+     "label": "恶魔印记已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1293695",
+     "label": "恶魔印记射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_6789",
+     "label": "死亡缠绕已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_6789",
+     "label": "死亡缠绕射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_18288",
+     "label": "诅咒增幅已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_18288",
+     "label": "诅咒增幅射程",
+     "type": "validity"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "demon_skin",
+     "label": "恶魔皮肤",
+     "type": "presence"
+    },
+    {
+     "id": "demon_armor",
+     "label": "魔甲术",
+     "type": "presence"
+    },
+    {
+     "id": "agony",
+     "label": "痛苦灾祸",
+     "type": "presence"
+    },
+    {
+     "id": "corruption",
+     "label": "腐蚀术",
+     "type": "presence"
+    },
+    {
+     "id": "immolate",
+     "label": "献祭",
+     "type": "presence"
+    },
+    {
+     "id": "siphon_life",
+     "label": "生命虹吸",
+     "type": "presence"
+    },
+    {
+     "id": "wrack",
+     "label": "Wrack",
+     "type": "presence"
+    },
+    {
+     "id": "demonic_brand",
+     "label": "恶魔印记",
+     "type": "presence"
+    },
+    {
+     "id": "soul_link",
+     "label": "灵魂链接",
+     "type": "presence"
+    },
+    {
+     "id": "nightfall",
+     "label": "暗影冥思",
+     "type": "presence"
+    }
+   ]
+  },
+  "1491": {
+   "title": "无限战士 1491（练级输出，按已学技能和当前姿态启用）。",
+   "fields": [
+    {
+     "id": "player_valid",
+     "label": "玩家有效",
+     "type": "switch"
+    },
+    {
+     "id": "target_valid",
+     "label": "敌对目标",
+     "type": "switch"
+    },
+    {
+     "id": "player_in_combat",
+     "label": "玩家战斗中",
+     "type": "switch"
+    },
+    {
+     "id": "auto_attack_active",
+     "label": "自动攻击",
+     "type": "validity"
+    },
+    {
+     "id": "strike_queued",
+     "label": "英勇或顺劈已排队",
+     "type": "validity"
+    },
+    {
+     "id": "primary_known",
+     "label": "已学天赋主攻",
+     "type": "switch"
+    },
+    {
+     "id": "stance",
+     "label": "姿态",
+     "type": "number"
+    },
+    {
+     "id": "rage",
+     "label": "怒气",
+     "type": "number"
+    },
+    {
+     "id": "player_moving",
+     "label": "正在移动",
+     "type": "validity"
+    },
+    {
+     "id": "cd_100",
+     "label": "冲锋冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_6343",
+     "label": "雷霆一击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_7384",
+     "label": "压制冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_72",
+     "label": "盾击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_2687",
+     "label": "血性狂暴冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_6572",
+     "label": "复仇冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_1240193",
+     "label": "猛击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_1680",
+     "label": "旋风斩冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_6552",
+     "label": "拳击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_12294",
+     "label": "致死打击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_23881",
+     "label": "嗜血冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_23922",
+     "label": "盾牌猛击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_1310222",
+     "label": "穿刺打击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_12292",
+     "label": "横扫攻击冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "cd_12328",
+     "label": "死亡之愿冷却",
+     "type": "cooldown"
+    },
+    {
+     "id": "pet_valid",
+     "label": "宠物存活",
+     "type": "validity"
+    },
+    {
+     "id": "pet_on_target",
+     "label": "宠物攻击当前目标",
+     "type": "validity"
+    },
+    {
+     "id": "stealthed",
+     "label": "潜行",
+     "type": "validity"
+    },
+    {
+     "id": "form",
+     "label": "形态",
+     "type": "number"
+    },
+    {
+     "id": "energy",
+     "label": "能量",
+     "type": "number"
+    },
+    {
+     "id": "combo_points",
+     "label": "连击点",
+     "type": "number"
+    },
+    {
+     "id": "mana_pct",
+     "label": "法力百分比",
+     "type": "number"
+    },
+    {
+     "id": "warrior_talents",
+     "label": "天赋",
+     "type": "talents"
+    },
+    {
+     "id": "pet_health",
+     "label": "宠物血量",
+     "type": "number"
+    },
+    {
+     "id": "fire_totem",
+     "label": "火焰图腾",
+     "type": "validity"
+    },
+    {
+     "id": "water_totem",
+     "label": "水之图腾",
+     "type": "validity"
+    },
+    {
+     "id": "known_871",
+     "label": "盾墙已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_871",
+     "label": "盾墙射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_12975",
+     "label": "破釜沉舟已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_12975",
+     "label": "破釜沉舟射程",
+     "type": "validity"
+    },
+    {
+     "id": "known_2565",
+     "label": "盾牌格挡已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_2565",
+     "label": "盾牌格挡射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_2565",
+     "label": "盾牌格挡可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_7386",
+     "label": "破甲攻击已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_7386",
+     "label": "破甲攻击射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_7386",
+     "label": "破甲攻击可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_1160",
+     "label": "挫志怒吼已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_1160",
+     "label": "挫志怒吼射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_1160",
+     "label": "挫志怒吼可用",
+     "type": "validity"
+    },
+    {
+     "id": "known_355",
+     "label": "嘲讽已学",
+     "type": "validity"
+    },
+    {
+     "id": "range_355",
+     "label": "嘲讽射程",
+     "type": "validity"
+    },
+    {
+     "id": "ready_355",
+     "label": "嘲讽可用",
+     "type": "validity"
+    }
+   ],
+   "presenceFields": [
+    {
+     "id": "battle_shout",
+     "label": "战斗怒吼",
+     "type": "presence"
+    },
+    {
+     "id": "rend",
+     "label": "撕裂",
+     "type": "presence"
+    },
+    {
+     "id": "sweeping_strikes",
+     "label": "横扫攻击",
+     "type": "presence"
+    },
+    {
+     "id": "death_wish",
+     "label": "死亡之愿",
+     "type": "presence"
+    },
+    {
+     "id": "shield_block",
+     "label": "盾牌格挡",
+     "type": "presence"
+    },
+    {
+     "id": "sunder_armor",
+     "label": "破甲攻击",
+     "type": "presence"
+    },
+    {
+     "id": "demoralizing_shout",
+     "label": "挫志怒吼",
+     "type": "presence"
+    }
+   ]
+  }
+ }
+}

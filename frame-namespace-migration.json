@@ -1,0 +1,25 @@
+{
+  "mapping": {
+    "PermesDebugDock": "WowBuddyDevDebugDock",
+    "PermesAuraDebugWindow": "WowBuddyDevAuraDebugWindow",
+    "PermesAuraDebugSMF": "WowBuddyDevAuraDebugSMF",
+    "PermesBindTestFrame1": "WowBuddyDevBindTestFrame1",
+    "PermesBindTestFrame2": "WowBuddyDevBindTestFrame2",
+    "PermesStateLogo": "WowBuddyDevStateLogo",
+    "PermesMinimapButton": "WowBuddyDevMinimapButton",
+    "PermesMain": "WowBuddyDevMain",
+    "PermesCVarEnvScroll": "WowBuddyDevCVarEnvScroll",
+    "PermesMacroEditorScroll": "WowBuddyDevMacroEditorScroll",
+    "MKL_OverrideOwner": "WowBuddyDevOverrideOwner",
+    "MKLScroll": "WowBuddyDevScroll"
+  },
+  "files": [
+    "addon\\WowBuddyDev\\Core.lua",
+    "addon\\WowBuddyDev\\DebugAuras.lua",
+    "addon\\WowBuddyDev\\DebugDock.lua",
+    "addon\\WowBuddyDev\\PanelV2.lua",
+    "addon\\WowBuddyDev\\PixelBar.lua",
+    "addon\\WowBuddyDev\\SettingsReset.lua",
+    "addon\\WowBuddyDev\\SettingsUI.lua"
+  ]
+}

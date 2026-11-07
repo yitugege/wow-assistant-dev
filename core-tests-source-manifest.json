@@ -1,0 +1,52 @@
+[
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_auto_target.py",
+    "target": "tests\\core\\test_auto_target.py",
+    "sha256": "cafe078d7f5910514baf1123868105efe1f2ea3cdce88e272bb91f783944dd28"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_candidates.py",
+    "target": "tests\\core\\test_candidates.py",
+    "sha256": "31d4a704c3a74b02a82d23ed1f0d3df577235c904ecd2552f77897baf96fc96a"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_dispatch.py",
+    "target": "tests\\core\\test_dispatch.py",
+    "sha256": "d2c02a544e60cbf656b0b9de2fb4d769dfa0b1bcf30e5d89b39a5cbc4df9fad1"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_expressions.py",
+    "target": "tests\\core\\test_expressions.py",
+    "sha256": "d99456bb031e03daa8f9aeb45d0ee071970e27cebb96ff3fd71658a3c1e3393f"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_old_protocol.py",
+    "target": "tests\\core\\test_old_protocol.py",
+    "sha256": "ab71c211d2e03dba93e637c71eee041ab26fbe3cd1718be96173e61618118051"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_pipeline.py",
+    "target": "tests\\core\\test_pipeline.py",
+    "sha256": "ad0f06518a29d986d875a8dd68ea73b3ff88189eab9b1991d1756208e80e23b9"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_pixel_geometry.py",
+    "target": "tests\\core\\test_pixel_geometry.py",
+    "sha256": "58a844eebe80ce5d4262aecbfd9b2197ee97c34ad9d490a9329896aa093eedea"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_readable_protocol.py",
+    "target": "tests\\core\\test_readable_protocol.py",
+    "sha256": "c4538f95f19e356e0cdd050101f1f4eb25d81ebf252155f9b08c7ce44264f7c0"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_scheduler.py",
+    "target": "tests\\core\\test_scheduler.py",
+    "sha256": "e1df52a3c5fb316a1fdb2ddb35392fd18cbcaa63ab279af368e60c545beb3c99"
+  },
+  {
+    "source": "D:\\reverse-analysis\\wow-assistant\\reconstruction\\tests\\test_windows_keys.py",
+    "target": "tests\\core\\test_windows_keys.py",
+    "sha256": "3b23f52288c3d839909fa763dc2914224b6a42e37e8a7749b739d476849edaf6"
+  }
+]

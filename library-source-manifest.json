@@ -1,0 +1,9 @@
+{
+  "source": "D:\\reverse-analysis\\wow-assistant\\local-test-runtime\\hub\\rotations.json",
+  "destination": "assets\\rotations.json",
+  "sha256": "3dcbdcdd07e0501999611aa83bd3d7860cf5b2475b0757857ee54bf3ce55f98a",
+  "source_bytes_equal": true,
+  "rotation_count": 41,
+  "generated_at": "2026-11-05T21:24:01+08:00",
+  "scope": "迁入已有本地测试快照，未逐方案验证游戏表现；原元数据保留"
+}

@@ -1,0 +1,3984 @@
+{
+ "_comment": "readable 插件键表（tools 提取）",
+ "specs": {
+  "1484": {
+   "title": "Druid",
+   "actions": [
+    {
+     "name": "focus_player",
+     "readableName": "focus_player",
+     "key": "ALT-CTRL-NUMPAD6",
+     "label": "焦点：自己",
+     "spellId": null
+    },
+    {
+     "name": "focus_party1",
+     "readableName": "focus_party1",
+     "key": "ALT-CTRL-NUMPAD7",
+     "label": "焦点：队友1",
+     "spellId": null
+    },
+    {
+     "name": "focus_party2",
+     "readableName": "focus_party2",
+     "key": "ALT-CTRL-NUMPAD8",
+     "label": "焦点：队友2",
+     "spellId": null
+    },
+    {
+     "name": "focus_party3",
+     "readableName": "focus_party3",
+     "key": "ALT-CTRL-NUMPAD9",
+     "label": "焦点：队友3",
+     "spellId": null
+    },
+    {
+     "name": "focus_party4",
+     "readableName": "focus_party4",
+     "key": "ALT-CTRL-NUMPAD0",
+     "label": "焦点：队友4",
+     "spellId": null
+    },
+    {
+     "name": "focus_mouseover",
+     "readableName": "focus_mouseover",
+     "key": "ALT-NUMPAD5",
+     "label": "焦点：鼠标指向",
+     "spellId": null
+    },
+    {
+     "name": "spell_5176",
+     "readableName": "spell_5176",
+     "key": "NUMPAD3",
+     "label": "愤怒",
+     "spellId": 5176
+    },
+    {
+     "name": "spell_2912",
+     "readableName": "spell_2912",
+     "key": "NUMPAD4",
+     "label": "星火术",
+     "spellId": 2912
+    },
+    {
+     "name": "spell_8921",
+     "readableName": "spell_8921",
+     "key": "NUMPAD5",
+     "label": "月火术",
+     "spellId": 8921
+    },
+    {
+     "name": "spell_5570",
+     "readableName": "spell_5570",
+     "key": "NUMPAD6",
+     "label": "虫群",
+     "spellId": 5570
+    },
+    {
+     "name": "spell_417157",
+     "readableName": "cd_417157",
+     "key": "ALT-NUMPAD7",
+     "label": "星涌术",
+     "spellId": 417157
+    },
+    {
+     "name": "spell_439748",
+     "readableName": "cd_439748",
+     "key": "ALT-NUMPAD9",
+     "label": "星辰坠落",
+     "spellId": 439748
+    },
+    {
+     "name": "spell_414684",
+     "readableName": "spell_414684",
+     "key": "SHIFT-NUMPAD1",
+     "label": "阳炎术（枭兽）",
+     "spellId": 414684
+    },
+    {
+     "name": "spell_16914",
+     "readableName": "spell_16914",
+     "key": "SHIFT-NUMPAD2",
+     "label": "飓风",
+     "spellId": 16914
+    },
+    {
+     "name": "spell_5221",
+     "readableName": "spell_5221",
+     "key": "CTRL-NUMPAD3",
+     "label": "撕碎",
+     "spellId": 5221
+    },
+    {
+     "name": "spell_1822",
+     "readableName": "spell_1822",
+     "key": "CTRL-NUMPAD4",
+     "label": "扫击",
+     "spellId": 1822
+    },
+    {
+     "name": "spell_1079",
+     "readableName": "spell_1079",
+     "key": "CTRL-NUMPAD5",
+     "label": "撕扯",
+     "spellId": 1079
+    },
+    {
+     "name": "spell_22568",
+     "readableName": "spell_22568",
+     "key": "CTRL-NUMPAD6",
+     "label": "凶猛撕咬",
+     "spellId": 22568
+    },
+    {
+     "name": "spell_1082",
+     "readableName": "spell_1082",
+     "key": "CTRL-NUMPAD2",
+     "label": "爪击",
+     "spellId": 1082
+    },
+    {
+     "name": "spell_411128",
+     "readableName": "spell_411128",
+     "key": "SHIFT-NUMPAD3",
+     "label": "横扫（猎豹）",
+     "spellId": 411128
+    },
+    {
+     "name": "spell_414644",
+     "readableName": "spell_414644",
+     "key": "CTRL-NUMPAD9",
+     "label": "割伤",
+     "spellId": 414644
+    },
+    {
+     "name": "spell_6807",
+     "readableName": "spell_6807",
+     "key": "CTRL-NUMPAD7",
+     "label": "槌击",
+     "spellId": 6807
+    },
+    {
+     "name": "spell_779",
+     "readableName": "spell_779",
+     "key": "CTRL-NUMPAD8",
+     "label": "挥击",
+     "spellId": 779
+    },
+    {
+     "name": "spell_5185",
+     "readableName": "spell_5185",
+     "key": "ALT-NUMPAD8",
+     "label": "治疗之触",
+     "spellId": 5185
+    },
+    {
+     "name": "spell_774",
+     "readableName": "spell_774",
+     "key": "ALT-NUMPAD6",
+     "label": "回春术",
+     "spellId": 774
+    },
+    {
+     "name": "spell_8936",
+     "readableName": "spell_8936",
+     "key": "ALT-NUMPAD4",
+     "label": "愈合",
+     "spellId": 8936
+    },
+    {
+     "name": "spell_408124",
+     "readableName": "spell_408124",
+     "key": "SHIFT-NUMPAD4",
+     "label": "生命绽放",
+     "spellId": 408124
+    },
+    {
+     "name": "spell_408247",
+     "readableName": "spell_408247",
+     "key": "SHIFT-NUMPAD5",
+     "label": "滋养",
+     "spellId": 408247
+    },
+    {
+     "name": "spell_408120",
+     "readableName": "cd_408120",
+     "key": "ALT-CTRL-NUMPAD2",
+     "label": "野性成长",
+     "spellId": 408120
+    },
+    {
+     "name": "spell_18562",
+     "readableName": "cd_18562",
+     "key": "ALT-NUMPAD0",
+     "label": "迅捷治愈",
+     "spellId": 18562
+    },
+    {
+     "name": "spell_410176",
+     "readableName": "cd_410176",
+     "key": "SHIFT-NUMPAD6",
+     "label": "迎头痛击",
+     "spellId": 410176
+    },
+    {
+     "name": "spell_417141",
+     "readableName": "cd_417141",
+     "key": "ALT-NUMPAD1",
+     "label": "狂暴",
+     "spellId": 417141
+    },
+    {
+     "name": "spell_5487",
+     "readableName": "spell_5487",
+     "key": "NUMPAD9",
+     "label": "熊形态",
+     "spellId": 5487
+    },
+    {
+     "name": "spell_9634",
+     "readableName": "spell_9634",
+     "key": "NUMPAD0",
+     "label": "巨熊形态",
+     "spellId": 9634
+    },
+    {
+     "name": "spell_768",
+     "readableName": "spell_768",
+     "key": "NUMPAD8",
+     "label": "猎豹形态",
+     "spellId": 768
+    },
+    {
+     "name": "spell_24858",
+     "readableName": "spell_24858",
+     "key": "NUMPAD7",
+     "label": "枭兽形态",
+     "spellId": 24858
+    },
+    {
+     "name": "spell_5211",
+     "readableName": "cd_5211",
+     "key": "SHIFT-NUMPAD7",
+     "label": "重击",
+     "spellId": 5211
+    },
+    {
+     "name": "spell_6795",
+     "readableName": "cd_6795",
+     "key": "SHIFT-NUMPAD8",
+     "label": "低吼",
+     "spellId": 6795
+    },
+    {
+     "name": "spell_99",
+     "readableName": "spell_99",
+     "key": "SHIFT-NUMPAD9",
+     "label": "挫志咆哮",
+     "spellId": 99
+    },
+    {
+     "name": "spell_5209",
+     "readableName": "cd_5209",
+     "key": "SHIFT-NUMPAD0",
+     "label": "挑战咆哮",
+     "spellId": 5209
+    },
+    {
+     "name": "spell_22842",
+     "readableName": "cd_22842",
+     "key": "CTRL-0",
+     "label": "狂暴回复",
+     "spellId": 22842
+    },
+    {
+     "name": "spell_5229",
+     "readableName": "cd_5229",
+     "key": "ALT-CTRL-NUMPAD5",
+     "label": "狂怒",
+     "spellId": 5229
+    },
+    {
+     "name": "spell_16979",
+     "readableName": "cd_16979",
+     "key": "CTRL-=",
+     "label": "野性冲锋（熊）",
+     "spellId": 16979
+    },
+    {
+     "name": "spell_22812",
+     "readableName": "cd_22812",
+     "key": "ALT-NUMPAD2",
+     "label": "树皮术",
+     "spellId": 22812
+    },
+    {
+     "name": "spell_9005",
+     "readableName": "spell_9005",
+     "key": "CTRL-]",
+     "label": "突袭",
+     "spellId": 9005
+    },
+    {
+     "name": "spell_6785",
+     "readableName": "spell_6785",
+     "key": "CTRL-;",
+     "label": "毁灭",
+     "spellId": 6785
+    },
+    {
+     "name": "spell_5217",
+     "readableName": "cd_5217",
+     "key": "CTRL-NUMPAD0",
+     "label": "猛虎之怒",
+     "spellId": 5217
+    },
+    {
+     "name": "spell_1850",
+     "readableName": "cd_1850",
+     "key": "ALT-NUMPAD3",
+     "label": "急奔",
+     "spellId": 1850
+    },
+    {
+     "name": "spell_5215",
+     "readableName": "cd_5215",
+     "key": "CTRL-.",
+     "label": "潜行",
+     "spellId": 5215
+    },
+    {
+     "name": "spell_8998",
+     "readableName": "cd_8998",
+     "key": "CTRL-\\\\\\\\",
+     "label": "畏缩",
+     "spellId": 8998
+    },
+    {
+     "name": "spell_770",
+     "readableName": "spell_770",
+     "key": "CTRL-UP",
+     "label": "精灵之火",
+     "spellId": 770
+    },
+    {
+     "name": "spell_16689",
+     "readableName": "cd_16689",
+     "key": "CTRL-DOWN",
+     "label": "自然之握",
+     "spellId": 16689
+    },
+    {
+     "name": "spell_339",
+     "readableName": "spell_339",
+     "key": "CTRL-LEFT",
+     "label": "纠缠根须",
+     "spellId": 339
+    },
+    {
+     "name": "spell_2637",
+     "readableName": "spell_2637",
+     "key": "CTRL-RIGHT",
+     "label": "休眠",
+     "spellId": 2637
+    },
+    {
+     "name": "spell_740",
+     "readableName": "cd_740",
+     "key": "CTRL-INSERT",
+     "label": "宁静",
+     "spellId": 740
+    },
+    {
+     "name": "spell_17116",
+     "readableName": "cd_17116",
+     "key": "ALT-CTRL-NUMPAD4",
+     "label": "自然迅捷",
+     "spellId": 17116
+    },
+    {
+     "name": "spell_20484",
+     "readableName": "cd_20484",
+     "key": "CTRL-HOME",
+     "label": "复生",
+     "spellId": 20484
+    },
+    {
+     "name": "spell_2782",
+     "readableName": "spell_2782",
+     "key": "CTRL-END",
+     "label": "解除诅咒",
+     "spellId": 2782
+    },
+    {
+     "name": "spell_2893",
+     "readableName": "spell_2893",
+     "key": "ALT-F6",
+     "label": "驱毒术",
+     "spellId": 2893
+    },
+    {
+     "name": "spell_8946",
+     "readableName": "spell_8946",
+     "key": "ALT-F7",
+     "label": "消毒术",
+     "spellId": 8946
+    },
+    {
+     "name": "spell_1126",
+     "readableName": "spell_1126",
+     "key": "NUMPAD1",
+     "label": "野性印记",
+     "spellId": 1126
+    },
+    {
+     "name": "spell_467",
+     "readableName": "spell_467",
+     "key": "NUMPAD2",
+     "label": "荆棘术",
+     "spellId": 467
+    },
+    {
+     "name": "spell_21849",
+     "readableName": "spell_21849",
+     "key": "ALT-F10",
+     "label": "野性赐福",
+     "spellId": 21849
+    },
+    {
+     "name": "spell_29166",
+     "readableName": "cd_29166",
+     "key": "ALT-F11",
+     "label": "激活",
+     "spellId": 29166
+    },
+    {
+     "name": "spell_437138",
+     "readableName": "spell_437138",
+     "key": "ALT-F12",
+     "label": "起死回生",
+     "spellId": 437138
+    },
+    {
+     "name": "spell_407995",
+     "readableName": "cd_407995",
+     "key": "CTRL-NUMPAD1",
+     "label": "Primal Bite",
+     "spellId": 407995
+    },
+    {
+     "name": "spell_408024",
+     "readableName": "cd_408024",
+     "key": "ALT-9",
+     "label": "生存本能",
+     "spellId": 408024
+    },
+    {
+     "name": "spell_1238122",
+     "readableName": "cd_1238122",
+     "key": "ALT-0",
+     "label": "野性冲锋（新分支）",
+     "spellId": 1238122
+    },
+    {
+     "name": "spell_410176_focus",
+     "readableName": "spell_410176_focus",
+     "key": "ALT--",
+     "label": "焦点迎头痛击",
+     "spellId": null
+    },
+    {
+     "name": "spell_410176_mouseover",
+     "readableName": "spell_410176_mouseover",
+     "key": "ALT-=",
+     "label": "指向迎头痛击",
+     "spellId": null
+    },
+    {
+     "name": "spell_17056",
+     "readableName": "spell_17056",
+     "key": "SHIFT-F2",
+     "label": "变换之力",
+     "spellId": 17056
+    },
+    {
+     "name": "start_attack",
+     "readableName": "start_attack",
+     "key": "SHIFT-F1",
+     "label": "自动攻击",
+     "spellId": null
+    }
+   ]
+  },
+  "1485": {
+   "title": "Hunter",
+   "actions": [
+    {
+     "name": "spell_3044",
+     "readableName": "spell_3044",
+     "key": "ALT-NUMPAD2",
+     "label": "奥术射击",
+     "spellId": 3044
+    },
+    {
+     "name": "spell_437123",
+     "readableName": "spell_437123",
+     "key": "F1",
+     "label": "稳固射击",
+     "spellId": 437123
+    },
+    {
+     "name": "spell_2643",
+     "readableName": "cd_2643",
+     "key": "NUMPAD6",
+     "label": "多重射击",
+     "spellId": 2643
+    },
+    {
+     "name": "spell_19434",
+     "readableName": "cd_19434",
+     "key": "NUMPAD4",
+     "label": "瞄准射击",
+     "spellId": 19434
+    },
+    {
+     "name": "spell_409433",
+     "readableName": "cd_409433",
+     "key": "F2",
+     "label": "奇美拉射击",
+     "spellId": 409433
+    },
+    {
+     "name": "spell_409593",
+     "readableName": "cd_409593",
+     "key": "CTRL-NUMPAD5",
+     "label": "夺命射击",
+     "spellId": 409593
+    },
+    {
+     "name": "spell_409379",
+     "readableName": "cd_409379",
+     "key": "CTRL-NUMPAD6",
+     "label": "杀戮命令",
+     "spellId": 409379
+    },
+    {
+     "name": "spell_1978",
+     "readableName": "spell_1978",
+     "key": "ALT-CTRL-NUMPAD7",
+     "label": "毒蛇钉刺",
+     "spellId": 1978
+    },
+    {
+     "name": "spell_3674",
+     "readableName": "spell_3674",
+     "key": "CTRL-NUMPAD7",
+     "label": "黑箭",
+     "spellId": 3674
+    },
+    {
+     "name": "spell_415320",
+     "readableName": "cd_415320",
+     "key": "CTRL-NUMPAD8",
+     "label": "侧翼打击",
+     "spellId": 415320
+    },
+    {
+     "name": "spell_425711",
+     "readableName": "cd_425711",
+     "key": "CTRL-NUMPAD9",
+     "label": "削凿",
+     "spellId": 425711
+    },
+    {
+     "name": "spell_2973",
+     "readableName": "spell_2973",
+     "key": "ALT-NUMPAD5",
+     "label": "猛禽一击",
+     "spellId": 2973
+    },
+    {
+     "name": "spell_1495",
+     "readableName": "spell_1495",
+     "key": "CTRL-NUMPAD0",
+     "label": "猫鼬撕咬",
+     "spellId": 1495
+    },
+    {
+     "name": "spell_458436",
+     "readableName": "cd_458436",
+     "key": "ALT-NUMPAD1",
+     "label": "翼龙打击",
+     "spellId": 458436
+    },
+    {
+     "name": "spell_75",
+     "readableName": "spell_75",
+     "key": "ALT-CTRL-NUMPAD8",
+     "label": "自动射击",
+     "spellId": 75
+    },
+    {
+     "name": "spell_1510",
+     "readableName": "spell_1510",
+     "key": "NUMPAD7",
+     "label": "乱射",
+     "spellId": 1510
+    },
+    {
+     "name": "spell_1317257",
+     "readableName": "cd_1317257",
+     "key": "CTRL-NUMPAD3",
+     "label": "陆行鸟踢击",
+     "spellId": 1317257
+    },
+    {
+     "name": "spell_3045",
+     "readableName": "cd_3045",
+     "key": "NUMPAD8",
+     "label": "急速射击",
+     "spellId": 3045
+    },
+    {
+     "name": "spell_19574",
+     "readableName": "cd_19574",
+     "key": "NUMPAD1",
+     "label": "狂野怒火",
+     "spellId": 19574
+    },
+    {
+     "name": "spell_428726",
+     "readableName": "cd_428726",
+     "key": "ALT-NUMPAD3",
+     "label": "集中火力",
+     "spellId": 428726
+    },
+    {
+     "name": "spell_1293241",
+     "readableName": "cd_1293241",
+     "key": "NUMPAD2",
+     "label": "召唤雄鹰",
+     "spellId": 1293241
+    },
+    {
+     "name": "pet_attack",
+     "readableName": "pet_attack",
+     "key": "SHIFT-F3",
+     "label": "宠物攻击",
+     "spellId": null
+    },
+    {
+     "name": "spell_136",
+     "readableName": "cd_136",
+     "key": "CTRL-NUMPAD2",
+     "label": "治疗宠物",
+     "spellId": 136
+    },
+    {
+     "name": "spell_5384",
+     "readableName": "cd_5384",
+     "key": "ALT-NUMPAD4",
+     "label": "假死",
+     "spellId": 5384
+    },
+    {
+     "name": "spell_19263",
+     "readableName": "cd_19263",
+     "key": "NUMPAD0",
+     "label": "威慑",
+     "spellId": 19263
+    },
+    {
+     "name": "spell_415423",
+     "readableName": "spell_415423",
+     "key": "ALT-NUMPAD6",
+     "label": "蝰蛇守护",
+     "spellId": 415423
+    },
+    {
+     "name": "spell_3034",
+     "readableName": "spell_3034",
+     "key": "ALT-NUMPAD7",
+     "label": "蝰蛇钉刺",
+     "spellId": 3034
+    },
+    {
+     "name": "spell_3043",
+     "readableName": "spell_3043",
+     "key": "ALT-NUMPAD8",
+     "label": "毒蝎钉刺",
+     "spellId": 3043
+    },
+    {
+     "name": "spell_1130",
+     "readableName": "spell_1130",
+     "key": "NUMPAD5",
+     "label": "猎人印记",
+     "spellId": 1130
+    },
+    {
+     "name": "spell_19306",
+     "readableName": "cd_19306",
+     "key": "NUMPAD9",
+     "label": "反击",
+     "spellId": 19306
+    },
+    {
+     "name": "spell_1499",
+     "readableName": "cd_1499",
+     "key": "ALT-NUMPAD9",
+     "label": "冰冻陷阱",
+     "spellId": 1499
+    },
+    {
+     "name": "spell_13795",
+     "readableName": "cd_13795",
+     "key": "ALT-NUMPAD0",
+     "label": "献祭陷阱",
+     "spellId": 13795
+    },
+    {
+     "name": "spell_13809",
+     "readableName": "cd_13809",
+     "key": "SHIFT-NUMPAD1",
+     "label": "冰霜陷阱",
+     "spellId": 13809
+    },
+    {
+     "name": "spell_13813",
+     "readableName": "cd_13813",
+     "key": "SHIFT-NUMPAD2",
+     "label": "爆炸陷阱",
+     "spellId": 13813
+    },
+    {
+     "name": "spell_5116",
+     "readableName": "cd_5116",
+     "key": "ALT-CTRL-NUMPAD9",
+     "label": "震荡射击",
+     "spellId": 5116
+    },
+    {
+     "name": "spell_19801",
+     "readableName": "cd_19801",
+     "key": "SHIFT-NUMPAD3",
+     "label": "宁神射击",
+     "spellId": 19801
+    },
+    {
+     "name": "spell_20736",
+     "readableName": "cd_20736",
+     "key": "SHIFT-NUMPAD4",
+     "label": "扰乱射击",
+     "spellId": 20736
+    },
+    {
+     "name": "spell_1543",
+     "readableName": "cd_1543",
+     "key": "SHIFT-NUMPAD5",
+     "label": "照明弹",
+     "spellId": 1543
+    },
+    {
+     "name": "spell_19503",
+     "readableName": "cd_19503",
+     "key": "SHIFT-NUMPAD6",
+     "label": "驱散射击",
+     "spellId": 19503
+    },
+    {
+     "name": "spell_19577",
+     "readableName": "cd_19577",
+     "key": "CTRL-NUMPAD1",
+     "label": "胁迫",
+     "spellId": 19577
+    },
+    {
+     "name": "spell_23989",
+     "readableName": "cd_23989",
+     "key": "SHIFT-NUMPAD7",
+     "label": "准备就绪",
+     "spellId": 23989
+    },
+    {
+     "name": "spell_781",
+     "readableName": "cd_781",
+     "key": "SHIFT-NUMPAD8",
+     "label": "逃脱",
+     "spellId": 781
+    },
+    {
+     "name": "spell_883",
+     "readableName": "cd_883",
+     "key": "SHIFT-NUMPAD9",
+     "label": "召唤宠物",
+     "spellId": 883
+    },
+    {
+     "name": "spell_982",
+     "readableName": "cd_982",
+     "key": "SHIFT-NUMPAD0",
+     "label": "复活宠物",
+     "spellId": 982
+    },
+    {
+     "name": "spell_2641",
+     "readableName": "cd_2641",
+     "key": "CTRL-UP",
+     "label": "解散野兽",
+     "spellId": 2641
+    },
+    {
+     "name": "spell_13165",
+     "readableName": "spell_13165",
+     "key": "SHIFT-F2",
+     "label": "雄鹰守护",
+     "spellId": 13165
+    },
+    {
+     "name": "spell_13159",
+     "readableName": "spell_13159",
+     "key": "CTRL-LEFT",
+     "label": "豹群守护",
+     "spellId": 13159
+    },
+    {
+     "name": "spell_5118",
+     "readableName": "spell_5118",
+     "key": "CTRL-RIGHT",
+     "label": "猎豹守护",
+     "spellId": 5118
+    },
+    {
+     "name": "spell_13161",
+     "readableName": "spell_13161",
+     "key": "CTRL-INSERT",
+     "label": "野兽守护",
+     "spellId": 13161
+    },
+    {
+     "name": "spell_13163",
+     "readableName": "spell_13163",
+     "key": "ALT-CTRL-NUMPAD0",
+     "label": "灵猴守护",
+     "spellId": 13163
+    },
+    {
+     "name": "spell_20043",
+     "readableName": "spell_20043",
+     "key": "CTRL-HOME",
+     "label": "野性守护",
+     "spellId": 20043
+    },
+    {
+     "name": "spell_469145",
+     "readableName": "spell_469145",
+     "key": "CTRL-END",
+     "label": "猎鹰守护",
+     "spellId": 469145
+    },
+    {
+     "name": "spell_409580",
+     "readableName": "spell_409580",
+     "key": "ALT-F6",
+     "label": "雄狮之心",
+     "spellId": 409580
+    },
+    {
+     "name": "spell_2974",
+     "readableName": "spell_2974",
+     "key": "ALT-F7",
+     "label": "摔绊",
+     "spellId": 2974
+    },
+    {
+     "name": "spell_1221404",
+     "readableName": "cd_1221404",
+     "key": "ALT-F8",
+     "label": "魔化照明弹",
+     "spellId": 1221404
+    },
+    {
+     "name": "spell_1513",
+     "readableName": "spell_1513",
+     "key": "ALT-F9",
+     "label": "恐吓野兽",
+     "spellId": 1513
+    },
+    {
+     "name": "pet_follow",
+     "readableName": "pet_follow",
+     "key": "ALT-F10",
+     "label": "宠物跟随",
+     "spellId": null
+    },
+    {
+     "name": "pet_stay",
+     "readableName": "pet_stay",
+     "key": "ALT-F11",
+     "label": "宠物停留",
+     "spellId": null
+    },
+    {
+     "name": "spell_19506",
+     "readableName": "spell_19506",
+     "key": "ALT-F12",
+     "label": "强击光环",
+     "spellId": 19506
+    },
+    {
+     "name": "spell_2649",
+     "readableName": "cd_2649",
+     "key": "ALT-8",
+     "label": "宠物·低吼",
+     "spellId": 2649
+    },
+    {
+     "name": "spell_16827",
+     "readableName": "spell_16827",
+     "key": "ALT-9",
+     "label": "宠物·爪击",
+     "spellId": 16827
+    },
+    {
+     "name": "spell_17253",
+     "readableName": "spell_17253",
+     "key": "ALT-0",
+     "label": "宠物·撕咬",
+     "spellId": 17253
+    },
+    {
+     "name": "spell_23099",
+     "readableName": "cd_23099",
+     "key": "ALT--",
+     "label": "宠物·突进",
+     "spellId": 23099
+    },
+    {
+     "name": "spell_23145",
+     "readableName": "cd_23145",
+     "key": "ALT-=",
+     "label": "宠物·俯冲",
+     "spellId": 23145
+    },
+    {
+     "name": "spell_1742",
+     "readableName": "cd_1742",
+     "key": "ALT-[",
+     "label": "宠物·畏缩",
+     "spellId": 1742
+    },
+    {
+     "name": "spell_24450",
+     "readableName": "cd_24450",
+     "key": "ALT-]",
+     "label": "宠物·潜伏",
+     "spellId": 24450
+    },
+    {
+     "name": "spell_24640",
+     "readableName": "spell_24640",
+     "key": "ALT-;",
+     "label": "宠物·蝎毒",
+     "spellId": 24640
+    },
+    {
+     "name": "spell_24844",
+     "readableName": "spell_24844",
+     "key": "ALT-'",
+     "label": "宠物·闪电吐息",
+     "spellId": 24844
+    },
+    {
+     "name": "spell_24604",
+     "readableName": "cd_24604",
+     "key": "ALT-,",
+     "label": "宠物·狂怒之嚎",
+     "spellId": 24604
+    },
+    {
+     "name": "spell_26090",
+     "readableName": "cd_26090",
+     "key": "ALT-.",
+     "label": "宠物·雷霆践踏",
+     "spellId": 26090
+    },
+    {
+     "name": "spell_26064",
+     "readableName": "cd_26064",
+     "key": "ALT-\\\\\\\\",
+     "label": "宠物·甲壳护盾",
+     "spellId": 26064
+    },
+    {
+     "name": "spell_1494",
+     "readableName": "spell_1494",
+     "key": "SHIFT-F1",
+     "label": "追踪野兽",
+     "spellId": 1494
+    },
+    {
+     "name": "spell_1310687",
+     "readableName": "spell_1310687",
+     "key": "NUMPAD3",
+     "label": "狙击",
+     "spellId": 1310687
+    },
+    {
+     "name": "spell_1299346",
+     "readableName": "spell_1299346",
+     "key": "CTRL-NUMPAD4",
+     "label": "强击光环",
+     "spellId": 1299346
+    }
+   ]
+  },
+  "1482": {
+   "title": "Mage",
+   "actions": [
+    {
+     "name": "spell_116",
+     "readableName": "spell_116",
+     "key": "NUMPAD5",
+     "label": "寒冰箭",
+     "spellId": 116
+    },
+    {
+     "name": "spell_133",
+     "readableName": "spell_133",
+     "key": "NUMPAD6",
+     "label": "火球术",
+     "spellId": 133
+    },
+    {
+     "name": "spell_5143",
+     "readableName": "spell_5143",
+     "key": "NUMPAD8",
+     "label": "奥术飞弹",
+     "spellId": 5143
+    },
+    {
+     "name": "spell_400574",
+     "readableName": "spell_400574",
+     "key": "CTRL-NUMPAD2",
+     "label": "奥术冲击",
+     "spellId": 400574
+    },
+    {
+     "name": "spell_400610",
+     "readableName": "spell_400610",
+     "key": "F1",
+     "label": "奥术弹幕",
+     "spellId": 400610
+    },
+    {
+     "name": "spell_400613",
+     "readableName": "spell_400613",
+     "key": "ALT-NUMPAD2",
+     "label": "活动炸弹",
+     "spellId": 400613
+    },
+    {
+     "name": "spell_1312002",
+     "readableName": "spell_1312002",
+     "key": "CTRL-NUMPAD3",
+     "label": "冰枪术",
+     "spellId": 1312002
+    },
+    {
+     "name": "spell_401502",
+     "readableName": "spell_401502",
+     "key": "ALT-NUMPAD3",
+     "label": "霜火之箭",
+     "spellId": 401502
+    },
+    {
+     "name": "spell_428878",
+     "readableName": "spell_428878",
+     "key": "ALT-NUMPAD4",
+     "label": "怨火之箭",
+     "spellId": 428878
+    },
+    {
+     "name": "spell_2948",
+     "readableName": "spell_2948",
+     "key": "NUMPAD0",
+     "label": "灼烧",
+     "spellId": 2948
+    },
+    {
+     "name": "spell_2136",
+     "readableName": "spell_2136",
+     "key": "NUMPAD7",
+     "label": "火焰冲击",
+     "spellId": 2136
+    },
+    {
+     "name": "spell_11366",
+     "readableName": "spell_11366",
+     "key": "CTRL-NUMPAD1",
+     "label": "炎爆术",
+     "spellId": 11366
+    },
+    {
+     "name": "spell_120",
+     "readableName": "spell_120",
+     "key": "ALT-NUMPAD5",
+     "label": "冰锥术",
+     "spellId": 120
+    },
+    {
+     "name": "spell_1449",
+     "readableName": "spell_1449",
+     "key": "NUMPAD9",
+     "label": "魔爆术",
+     "spellId": 1449
+    },
+    {
+     "name": "spell_2120",
+     "readableName": "spell_2120",
+     "key": "ALT-NUMPAD6",
+     "label": "烈焰风暴",
+     "spellId": 2120
+    },
+    {
+     "name": "spell_10",
+     "readableName": "spell_10",
+     "key": "ALT-NUMPAD7",
+     "label": "暴风雪",
+     "spellId": 10
+    },
+    {
+     "name": "spell_440802",
+     "readableName": "spell_440802",
+     "key": "ALT-NUMPAD8",
+     "label": "寒冰宝珠",
+     "spellId": 440802
+    },
+    {
+     "name": "spell_401556",
+     "readableName": "spell_401556",
+     "key": "ALT-NUMPAD9",
+     "label": "活体烈焰",
+     "spellId": 401556
+    },
+    {
+     "name": "spell_412532",
+     "readableName": "spell_412532",
+     "key": "ALT-NUMPAD0",
+     "label": "法术冰霜箭",
+     "spellId": 412532
+    },
+    {
+     "name": "spell_401417",
+     "readableName": "spell_401417",
+     "key": "SHIFT-NUMPAD1",
+     "label": "再生",
+     "spellId": 401417
+    },
+    {
+     "name": "spell_412510",
+     "readableName": "spell_412510",
+     "key": "SHIFT-NUMPAD2",
+     "label": "群体再生",
+     "spellId": 412510
+    },
+    {
+     "name": "spell_2139",
+     "readableName": "cd_2139",
+     "key": "CTRL-NUMPAD4",
+     "label": "法术反制",
+     "spellId": 2139
+    },
+    {
+     "name": "spell_11129",
+     "readableName": "cd_11129",
+     "key": "CTRL-NUMPAD8",
+     "label": "燃烧",
+     "spellId": 11129
+    },
+    {
+     "name": "spell_12042",
+     "readableName": "cd_12042",
+     "key": "CTRL-NUMPAD7",
+     "label": "奥术强化",
+     "spellId": 12042
+    },
+    {
+     "name": "spell_425121",
+     "readableName": "cd_425121",
+     "key": "SHIFT-NUMPAD3",
+     "label": "冰冷血脉",
+     "spellId": 425121
+    },
+    {
+     "name": "spell_425124",
+     "readableName": "cd_425124",
+     "key": "SHIFT-NUMPAD4",
+     "label": "奥术涌动",
+     "spellId": 425124
+    },
+    {
+     "name": "spell_401462",
+     "readableName": "cd_401462",
+     "key": "SHIFT-NUMPAD5",
+     "label": "时光倒转",
+     "spellId": 401462
+    },
+    {
+     "name": "spell_11113",
+     "readableName": "cd_11113",
+     "key": "ALT-NUMPAD1",
+     "label": "冲击波",
+     "spellId": 11113
+    },
+    {
+     "name": "spell_12043",
+     "readableName": "cd_12043",
+     "key": "CTRL-NUMPAD0",
+     "label": "气定神闲",
+     "spellId": 12043
+    },
+    {
+     "name": "spell_11426",
+     "readableName": "cd_11426",
+     "key": "CTRL-NUMPAD9",
+     "label": "寒冰护体",
+     "spellId": 11426
+    },
+    {
+     "name": "spell_11958",
+     "readableName": "cd_11958",
+     "key": "SHIFT-NUMPAD6",
+     "label": "寒冰屏障",
+     "spellId": 11958
+    },
+    {
+     "name": "spell_12472",
+     "readableName": "cd_12472",
+     "key": "SHIFT-NUMPAD7",
+     "label": "急速冷却",
+     "spellId": 12472
+    },
+    {
+     "name": "spell_1953",
+     "readableName": "cd_1953",
+     "key": "SHIFT-NUMPAD8",
+     "label": "闪现术",
+     "spellId": 1953
+    },
+    {
+     "name": "spell_122",
+     "readableName": "cd_122",
+     "key": "CTRL-NUMPAD5",
+     "label": "冰霜新星",
+     "spellId": 122
+    },
+    {
+     "name": "spell_428739",
+     "readableName": "cd_428739",
+     "key": "SHIFT-NUMPAD9",
+     "label": "深度冻结",
+     "spellId": 428739
+    },
+    {
+     "name": "spell_118",
+     "readableName": "cd_118",
+     "key": "SHIFT-NUMPAD0",
+     "label": "变形术",
+     "spellId": 118
+    },
+    {
+     "name": "spell_475",
+     "readableName": "cd_475",
+     "key": "CTRL-=",
+     "label": "解除次级诅咒",
+     "spellId": 475
+    },
+    {
+     "name": "spell_1459",
+     "readableName": "spell_1459",
+     "key": "NUMPAD1",
+     "label": "奥术智慧",
+     "spellId": 1459
+    },
+    {
+     "name": "spell_23028",
+     "readableName": "spell_23028",
+     "key": "CTRL-]",
+     "label": "奥术光辉",
+     "spellId": 23028
+    },
+    {
+     "name": "spell_1463",
+     "readableName": "spell_1463",
+     "key": "CTRL-;",
+     "label": "法力护盾",
+     "spellId": 1463
+    },
+    {
+     "name": "spell_6117",
+     "readableName": "spell_6117",
+     "key": "NUMPAD4",
+     "label": "魔甲术",
+     "spellId": 6117
+    },
+    {
+     "name": "spell_168",
+     "readableName": "spell_168",
+     "key": "NUMPAD2",
+     "label": "霜甲术",
+     "spellId": 168
+    },
+    {
+     "name": "spell_7302",
+     "readableName": "spell_7302",
+     "key": "NUMPAD3",
+     "label": "冰甲术",
+     "spellId": 7302
+    },
+    {
+     "name": "spell_543",
+     "readableName": "cd_543",
+     "key": "CTRL-\\\\\\\\",
+     "label": "防护火焰结界",
+     "spellId": 543
+    },
+    {
+     "name": "spell_6143",
+     "readableName": "cd_6143",
+     "key": "CTRL-UP",
+     "label": "防护冰霜结界",
+     "spellId": 6143
+    },
+    {
+     "name": "spell_130",
+     "readableName": "spell_130",
+     "key": "CTRL-DOWN",
+     "label": "缓落术",
+     "spellId": 130
+    },
+    {
+     "name": "spell_428885",
+     "readableName": "cd_428885",
+     "key": "CTRL-LEFT",
+     "label": "时空畸体",
+     "spellId": 428885
+    },
+    {
+     "name": "spell_428861",
+     "readableName": "cd_428861",
+     "key": "CTRL-RIGHT",
+     "label": "闪回",
+     "spellId": 428861
+    },
+    {
+     "name": "spell_428741",
+     "readableName": "spell_428741",
+     "key": "CTRL-INSERT",
+     "label": "熔岩护甲",
+     "spellId": 428741
+    },
+    {
+     "name": "spell_436516",
+     "readableName": "spell_436516",
+     "key": "CTRL-DELETE",
+     "label": "凝时恩护",
+     "spellId": 436516
+    },
+    {
+     "name": "spell_2139_focus",
+     "readableName": "spell_2139_focus",
+     "key": "CTRL-HOME",
+     "label": "焦点法术反制",
+     "spellId": null
+    },
+    {
+     "name": "spell_2139_mouseover",
+     "readableName": "spell_2139_mouseover",
+     "key": "CTRL-END",
+     "label": "指向法术反制",
+     "spellId": null
+    },
+    {
+     "name": "spell_12051",
+     "readableName": "spell_12051",
+     "key": "CTRL-NUMPAD6",
+     "label": "唤醒",
+     "spellId": 12051
+    }
+   ]
+  },
+  "1486": {
+   "title": "Paladin",
+   "actions": [
+    {
+     "name": "focus_player",
+     "readableName": "focus_player",
+     "key": "ALT-NUMPAD4",
+     "label": "焦点：自己",
+     "spellId": null
+    },
+    {
+     "name": "focus_party1",
+     "readableName": "focus_party1",
+     "key": "ALT-NUMPAD5",
+     "label": "焦点：队友1",
+     "spellId": null
+    },
+    {
+     "name": "focus_party2",
+     "readableName": "focus_party2",
+     "key": "ALT-NUMPAD6",
+     "label": "焦点：队友2",
+     "spellId": null
+    },
+    {
+     "name": "focus_party3",
+     "readableName": "focus_party3",
+     "key": "ALT-NUMPAD7",
+     "label": "焦点：队友3",
+     "spellId": null
+    },
+    {
+     "name": "focus_party4",
+     "readableName": "focus_party4",
+     "key": "ALT-NUMPAD8",
+     "label": "焦点：队友4",
+     "spellId": null
+    },
+    {
+     "name": "focus_mouseover",
+     "readableName": "focus_mouseover",
+     "key": "F1",
+     "label": "焦点：鼠标指向",
+     "spellId": null
+    },
+    {
+     "name": "spell_20271",
+     "readableName": "cd_20271",
+     "key": "NUMPAD7",
+     "label": "审判",
+     "spellId": 20271
+    },
+    {
+     "name": "spell_407632",
+     "readableName": "cd_407632",
+     "key": "F2",
+     "label": "正义之锤",
+     "spellId": 407632
+    },
+    {
+     "name": "spell_407778",
+     "readableName": "cd_407778",
+     "key": "F3",
+     "label": "神圣风暴",
+     "spellId": 407778
+    },
+    {
+     "name": "spell_440658",
+     "readableName": "cd_440658",
+     "key": "CTRL-NUMPAD4",
+     "label": "正义盾击",
+     "spellId": 440658
+    },
+    {
+     "name": "spell_20116",
+     "readableName": "cd_20116",
+     "key": "CTRL-NUMPAD8",
+     "label": "奉献",
+     "spellId": 20116
+    },
+    {
+     "name": "spell_879",
+     "readableName": "cd_879",
+     "key": "NUMPAD9",
+     "label": "驱邪术",
+     "spellId": 879
+    },
+    {
+     "name": "spell_24239",
+     "readableName": "cd_24239",
+     "key": "CTRL-NUMPAD0",
+     "label": "愤怒之锤",
+     "spellId": 24239
+    },
+    {
+     "name": "spell_20473",
+     "readableName": "cd_20473",
+     "key": "F4",
+     "label": "神圣震击",
+     "spellId": 20473
+    },
+    {
+     "name": "spell_635",
+     "readableName": "spell_635",
+     "key": "CTRL-NUMPAD7",
+     "label": "圣光术",
+     "spellId": 635
+    },
+    {
+     "name": "spell_19750",
+     "readableName": "spell_19750",
+     "key": "CTRL-NUMPAD9",
+     "label": "圣光闪现",
+     "spellId": 19750
+    },
+    {
+     "name": "spell_458856",
+     "readableName": "cd_458856",
+     "key": "ALT-NUMPAD2",
+     "label": "神圣之光",
+     "spellId": 458856
+    },
+    {
+     "name": "spell_20925",
+     "readableName": "cd_20925",
+     "key": "CTRL-NUMPAD2",
+     "label": "神圣之盾",
+     "spellId": 20925
+    },
+    {
+     "name": "spell_20154",
+     "readableName": "spell_20154",
+     "key": "NUMPAD5",
+     "label": "正义圣印",
+     "spellId": 20154
+    },
+    {
+     "name": "spell_20375",
+     "readableName": "spell_20375",
+     "key": "NUMPAD6",
+     "label": "命令圣印",
+     "spellId": 20375
+    },
+    {
+     "name": "spell_407798",
+     "readableName": "spell_407798",
+     "key": "F5",
+     "label": "殉道圣印",
+     "spellId": 407798
+    },
+    {
+     "name": "spell_20166",
+     "readableName": "spell_20166",
+     "key": "ALT-NUMPAD0",
+     "label": "智慧圣印",
+     "spellId": 20166
+    },
+    {
+     "name": "spell_20165",
+     "readableName": "spell_20165",
+     "key": "SHIFT-NUMPAD1",
+     "label": "光明圣印",
+     "spellId": 20165
+    },
+    {
+     "name": "spell_20162",
+     "readableName": "spell_20162",
+     "key": "SHIFT-NUMPAD2",
+     "label": "十字军圣印",
+     "spellId": 20162
+    },
+    {
+     "name": "spell_20163",
+     "readableName": "spell_20163",
+     "key": "NUMPAD4",
+     "label": "愤怒圣印",
+     "spellId": 20163
+    },
+    {
+     "name": "spell_425609",
+     "readableName": "cd_425609",
+     "key": "SHIFT-NUMPAD3",
+     "label": "责难",
+     "spellId": 425609
+    },
+    {
+     "name": "spell_4987",
+     "readableName": "spell_4987",
+     "key": "SHIFT-NUMPAD4",
+     "label": "清洁术",
+     "spellId": 4987
+    },
+    {
+     "name": "spell_407788",
+     "readableName": "cd_407788",
+     "key": "SHIFT-NUMPAD5",
+     "label": "复仇之怒",
+     "spellId": 407788
+    },
+    {
+     "name": "spell_642",
+     "readableName": "cd_642",
+     "key": "SHIFT-NUMPAD6",
+     "label": "圣盾术",
+     "spellId": 642
+    },
+    {
+     "name": "spell_498",
+     "readableName": "cd_498",
+     "key": "CTRL-NUMPAD5",
+     "label": "圣佑术",
+     "spellId": 498
+    },
+    {
+     "name": "spell_633",
+     "readableName": "cd_633",
+     "key": "CTRL-NUMPAD3",
+     "label": "圣疗术",
+     "spellId": 633
+    },
+    {
+     "name": "spell_1022",
+     "readableName": "cd_1022",
+     "key": "SHIFT-NUMPAD7",
+     "label": "保护祝福",
+     "spellId": 1022
+    },
+    {
+     "name": "spell_2812",
+     "readableName": "cd_2812",
+     "key": "SHIFT-NUMPAD8",
+     "label": "神圣愤怒",
+     "spellId": 2812
+    },
+    {
+     "name": "spell_853",
+     "readableName": "cd_853",
+     "key": "CTRL-NUMPAD6",
+     "label": "制裁之锤",
+     "spellId": 853
+    },
+    {
+     "name": "spell_20066",
+     "readableName": "cd_20066",
+     "key": "SHIFT-NUMPAD9",
+     "label": "忏悔",
+     "spellId": 20066
+    },
+    {
+     "name": "spell_1044",
+     "readableName": "cd_1044",
+     "key": "SHIFT-NUMPAD0",
+     "label": "自由祝福",
+     "spellId": 1044
+    },
+    {
+     "name": "spell_6940",
+     "readableName": "spell_6940",
+     "key": "CTRL-F11",
+     "label": "牺牲祝福",
+     "spellId": 6940
+    },
+    {
+     "name": "spell_1152",
+     "readableName": "spell_1152",
+     "key": "CTRL-F12",
+     "label": "纯净术",
+     "spellId": 1152
+    },
+    {
+     "name": "spell_25780",
+     "readableName": "spell_25780",
+     "key": "CTRL-8",
+     "label": "正义之怒",
+     "spellId": 25780
+    },
+    {
+     "name": "spell_19740",
+     "readableName": "spell_19740",
+     "key": "NUMPAD1",
+     "label": "力量祝福",
+     "spellId": 19740
+    },
+    {
+     "name": "spell_19742",
+     "readableName": "spell_19742",
+     "key": "CTRL-0",
+     "label": "智慧祝福",
+     "spellId": 19742
+    },
+    {
+     "name": "spell_20217",
+     "readableName": "spell_20217",
+     "key": "CTRL--",
+     "label": "王者祝福",
+     "spellId": 20217
+    },
+    {
+     "name": "spell_465",
+     "readableName": "spell_465",
+     "key": "NUMPAD2",
+     "label": "虔诚光环",
+     "spellId": 465
+    },
+    {
+     "name": "spell_7294",
+     "readableName": "spell_7294",
+     "key": "NUMPAD3",
+     "label": "惩罚光环",
+     "spellId": 7294
+    },
+    {
+     "name": "spell_19746",
+     "readableName": "spell_19746",
+     "key": "CTRL-]",
+     "label": "专注光环",
+     "spellId": 19746
+    },
+    {
+     "name": "spell_2878",
+     "readableName": "cd_2878",
+     "key": "CTRL-;",
+     "label": "超度亡灵",
+     "spellId": 2878
+    },
+    {
+     "name": "spell_20216",
+     "readableName": "cd_20216",
+     "key": "ALT-NUMPAD3",
+     "label": "神恩术",
+     "spellId": 20216
+    },
+    {
+     "name": "spell_1038",
+     "readableName": "spell_1038",
+     "key": "CTRL-,",
+     "label": "拯救祝福",
+     "spellId": 1038
+    },
+    {
+     "name": "spell_407804",
+     "readableName": "cd_407804",
+     "key": "CTRL-.",
+     "label": "神圣牺牲",
+     "spellId": 407804
+    },
+    {
+     "name": "spell_412019",
+     "readableName": "spell_412019",
+     "key": "CTRL-\\\\\\\\",
+     "label": "圣洁护盾",
+     "spellId": 412019
+    },
+    {
+     "name": "spell_425600",
+     "readableName": "cd_425600",
+     "key": "CTRL-UP",
+     "label": "洛丹伦号角",
+     "spellId": 425600
+    },
+    {
+     "name": "spell_1310911",
+     "readableName": "cd_1310911",
+     "key": "CTRL-DOWN",
+     "label": "圣光守望",
+     "spellId": 1310911
+    },
+    {
+     "name": "spell_1311015",
+     "readableName": "cd_1311015",
+     "key": "CTRL-LEFT",
+     "label": "圣殿骑士壁垒",
+     "spellId": 1311015
+    },
+    {
+     "name": "spell_1310897",
+     "readableName": "cd_1310897",
+     "key": "CTRL-RIGHT",
+     "label": "真理之音",
+     "spellId": 1310897
+    },
+    {
+     "name": "spell_1310994",
+     "readableName": "cd_1310994",
+     "key": "CTRL-INSERT",
+     "label": "迅捷审判",
+     "spellId": 1310994
+    },
+    {
+     "name": "spell_425609_focus",
+     "readableName": "spell_425609_focus",
+     "key": "CTRL-DELETE",
+     "label": "焦点责难",
+     "spellId": null
+    },
+    {
+     "name": "spell_425609_mouseover",
+     "readableName": "spell_425609_mouseover",
+     "key": "CTRL-HOME",
+     "label": "指向责难",
+     "spellId": null
+    },
+    {
+     "name": "spell_678",
+     "readableName": "spell_678",
+     "key": "NUMPAD8",
+     "label": "神圣打击",
+     "spellId": 678
+    },
+    {
+     "name": "spell_24275",
+     "readableName": "spell_24275",
+     "key": "NUMPAD0",
+     "label": "愤怒之锤",
+     "spellId": 24275
+    },
+    {
+     "name": "spell_26573",
+     "readableName": "spell_26573",
+     "key": "CTRL-NUMPAD1",
+     "label": "奉献",
+     "spellId": 26573
+    },
+    {
+     "name": "spell_1311606",
+     "readableName": "spell_1311606",
+     "key": "ALT-NUMPAD1",
+     "label": "神圣震击",
+     "spellId": 1311606
+    },
+    {
+     "name": "start_attack",
+     "readableName": "start_attack",
+     "key": "ALT-NUMPAD9",
+     "label": "自动攻击",
+     "spellId": null
+    }
+   ]
+  },
+  "1487": {
+   "title": "Priest",
+   "actions": [
+    {
+     "name": "focus_player",
+     "readableName": "focus_player",
+     "key": "ALT-NUMPAD8",
+     "label": "焦点：自己",
+     "spellId": null
+    },
+    {
+     "name": "focus_party1",
+     "readableName": "focus_party1",
+     "key": "ALT-NUMPAD9",
+     "label": "焦点：队友1",
+     "spellId": null
+    },
+    {
+     "name": "focus_party2",
+     "readableName": "focus_party2",
+     "key": "ALT-NUMPAD0",
+     "label": "焦点：队友2",
+     "spellId": null
+    },
+    {
+     "name": "focus_party3",
+     "readableName": "focus_party3",
+     "key": "ALT-CTRL-NUMPAD1",
+     "label": "焦点：队友3",
+     "spellId": null
+    },
+    {
+     "name": "focus_party4",
+     "readableName": "focus_party4",
+     "key": "ALT-CTRL-NUMPAD2",
+     "label": "焦点：队友4",
+     "spellId": null
+    },
+    {
+     "name": "focus_mouseover",
+     "readableName": "focus_mouseover",
+     "key": "CTRL-NUMPAD2",
+     "label": "焦点：鼠标指向",
+     "spellId": null
+    },
+    {
+     "name": "spell_585",
+     "readableName": "spell_585",
+     "key": "NUMPAD4",
+     "label": "惩击",
+     "spellId": 585
+    },
+    {
+     "name": "spell_8092",
+     "readableName": "cd_8092",
+     "key": "NUMPAD5",
+     "label": "心灵震爆",
+     "spellId": 8092
+    },
+    {
+     "name": "spell_589",
+     "readableName": "spell_589",
+     "key": "NUMPAD3",
+     "label": "暗言术：痛",
+     "spellId": 589
+    },
+    {
+     "name": "spell_15407",
+     "readableName": "spell_15407",
+     "key": "NUMPAD7",
+     "label": "精神鞭笞",
+     "spellId": 15407
+    },
+    {
+     "name": "spell_14914",
+     "readableName": "spell_14914",
+     "key": "CTRL-NUMPAD4",
+     "label": "神圣之火",
+     "spellId": 14914
+    },
+    {
+     "name": "spell_2944",
+     "readableName": "cd_2944",
+     "key": "NUMPAD6",
+     "label": "噬灵瘟疫",
+     "spellId": 2944
+    },
+    {
+     "name": "spell_431655",
+     "readableName": "spell_431655",
+     "key": "F1",
+     "label": "心灵尖刺",
+     "spellId": 431655
+    },
+    {
+     "name": "spell_402668",
+     "readableName": "spell_402668",
+     "key": "CTRL-NUMPAD6",
+     "label": "吸血鬼之触",
+     "spellId": 402668
+    },
+    {
+     "name": "spell_413259",
+     "readableName": "spell_413259",
+     "key": "CTRL-NUMPAD8",
+     "label": "精神灼烧",
+     "spellId": 413259
+    },
+    {
+     "name": "spell_401955",
+     "readableName": "cd_401955",
+     "key": "CTRL-NUMPAD0",
+     "label": "暗言术：灭（符文）",
+     "spellId": 401955
+    },
+    {
+     "name": "spell_425204",
+     "readableName": "cd_425204",
+     "key": "ALT-NUMPAD2",
+     "label": "虚空疫病",
+     "spellId": 425204
+    },
+    {
+     "name": "spell_139",
+     "readableName": "spell_139",
+     "key": "CTRL-NUMPAD3",
+     "label": "恢复",
+     "spellId": 139
+    },
+    {
+     "name": "spell_17",
+     "readableName": "cd_17",
+     "key": "CTRL-NUMPAD1",
+     "label": "真言术：盾",
+     "spellId": 17
+    },
+    {
+     "name": "spell_2061",
+     "readableName": "spell_2061",
+     "key": "CTRL-NUMPAD9",
+     "label": "快速治疗",
+     "spellId": 2061
+    },
+    {
+     "name": "spell_2054",
+     "readableName": "spell_2054",
+     "key": "ALT-NUMPAD4",
+     "label": "治疗术",
+     "spellId": 2054
+    },
+    {
+     "name": "spell_2060",
+     "readableName": "spell_2060",
+     "key": "CTRL-NUMPAD7",
+     "label": "强效治疗术",
+     "spellId": 2060
+    },
+    {
+     "name": "spell_596",
+     "readableName": "spell_596",
+     "key": "SHIFT-NUMPAD1",
+     "label": "治疗祷言",
+     "spellId": 596
+    },
+    {
+     "name": "spell_401937",
+     "readableName": "spell_401937",
+     "key": "SHIFT-NUMPAD2",
+     "label": "联结治疗",
+     "spellId": 401937
+    },
+    {
+     "name": "spell_401859",
+     "readableName": "cd_401859",
+     "key": "ALT-NUMPAD3",
+     "label": "愈合祷言",
+     "spellId": 401859
+    },
+    {
+     "name": "spell_402174",
+     "readableName": "cd_402174",
+     "key": "ALT-NUMPAD1",
+     "label": "苦修",
+     "spellId": 402174
+    },
+    {
+     "name": "spell_401946",
+     "readableName": "cd_401946",
+     "key": "SHIFT-NUMPAD3",
+     "label": "治疗之环",
+     "spellId": 401946
+    },
+    {
+     "name": "spell_15237",
+     "readableName": "spell_15237",
+     "key": "ALT-NUMPAD5",
+     "label": "神圣新星",
+     "spellId": 15237
+    },
+    {
+     "name": "spell_15487",
+     "readableName": "cd_15487",
+     "key": "NUMPAD9",
+     "label": "沉默",
+     "spellId": 15487
+    },
+    {
+     "name": "spell_527",
+     "readableName": "spell_527",
+     "key": "SHIFT-NUMPAD4",
+     "label": "驱散魔法",
+     "spellId": 527
+    },
+    {
+     "name": "spell_10060",
+     "readableName": "cd_10060",
+     "key": "ALT-NUMPAD6",
+     "label": "能量灌注",
+     "spellId": 10060
+    },
+    {
+     "name": "spell_402004",
+     "readableName": "cd_402004",
+     "key": "SHIFT-NUMPAD5",
+     "label": "痛苦压制",
+     "spellId": 402004
+    },
+    {
+     "name": "spell_15286",
+     "readableName": "cd_15286",
+     "key": "NUMPAD0",
+     "label": "吸血鬼的拥抱",
+     "spellId": 15286
+    },
+    {
+     "name": "spell_15473",
+     "readableName": "spell_15473",
+     "key": "NUMPAD8",
+     "label": "暗影形态",
+     "spellId": 15473
+    },
+    {
+     "name": "spell_8122",
+     "readableName": "cd_8122",
+     "key": "SHIFT-NUMPAD6",
+     "label": "心灵尖啸",
+     "spellId": 8122
+    },
+    {
+     "name": "spell_14751",
+     "readableName": "cd_14751",
+     "key": "ALT-NUMPAD7",
+     "label": "心灵专注",
+     "spellId": 14751
+    },
+    {
+     "name": "spell_401977",
+     "readableName": "cd_401977",
+     "key": "SHIFT-NUMPAD7",
+     "label": "暗影魔",
+     "spellId": 401977
+    },
+    {
+     "name": "spell_586",
+     "readableName": "cd_586",
+     "key": "SHIFT-NUMPAD8",
+     "label": "渐隐术",
+     "spellId": 586
+    },
+    {
+     "name": "spell_724",
+     "readableName": "cd_724",
+     "key": "SHIFT-NUMPAD9",
+     "label": "光明之泉",
+     "spellId": 724
+    },
+    {
+     "name": "spell_13908",
+     "readableName": "cd_13908",
+     "key": "SHIFT-NUMPAD0",
+     "label": "绝望祷言",
+     "spellId": 13908
+    },
+    {
+     "name": "spell_528",
+     "readableName": "spell_528",
+     "key": "CTRL-0",
+     "label": "祛病术",
+     "spellId": 528
+    },
+    {
+     "name": "spell_552",
+     "readableName": "spell_552",
+     "key": "CTRL--",
+     "label": "驱除疾病",
+     "spellId": 552
+    },
+    {
+     "name": "spell_6346",
+     "readableName": "cd_6346",
+     "key": "CTRL-=",
+     "label": "防护恐惧结界",
+     "spellId": 6346
+    },
+    {
+     "name": "spell_976",
+     "readableName": "spell_976",
+     "key": "CTRL-[",
+     "label": "防护暗影",
+     "spellId": 976
+    },
+    {
+     "name": "spell_1243",
+     "readableName": "spell_1243",
+     "key": "NUMPAD1",
+     "label": "真言术：韧",
+     "spellId": 1243
+    },
+    {
+     "name": "spell_588",
+     "readableName": "spell_588",
+     "key": "NUMPAD2",
+     "label": "心灵之火",
+     "spellId": 588
+    },
+    {
+     "name": "spell_14752",
+     "readableName": "spell_14752",
+     "key": "CTRL-'",
+     "label": "神圣之灵",
+     "spellId": 14752
+    },
+    {
+     "name": "spell_27681",
+     "readableName": "spell_27681",
+     "key": "CTRL-,",
+     "label": "精神祷言",
+     "spellId": 27681
+    },
+    {
+     "name": "spell_27683",
+     "readableName": "spell_27683",
+     "key": "CTRL-.",
+     "label": "暗影防护祷言",
+     "spellId": 27683
+    },
+    {
+     "name": "spell_402789",
+     "readableName": "cd_402789",
+     "key": "CTRL-\\\\\\\\",
+     "label": "虚空之眼",
+     "spellId": 402789
+    },
+    {
+     "name": "spell_402799",
+     "readableName": "cd_402799",
+     "key": "CTRL-UP",
+     "label": "裂魂魔",
+     "spellId": 402799
+    },
+    {
+     "name": "spell_425207",
+     "readableName": "cd_425207",
+     "key": "CTRL-DOWN",
+     "label": "真言术：障",
+     "spellId": 425207
+    },
+    {
+     "name": "spell_425294",
+     "readableName": "cd_425294",
+     "key": "CTRL-LEFT",
+     "label": "消散",
+     "spellId": 425294
+    },
+    {
+     "name": "spell_1277324",
+     "readableName": "cd_1277324",
+     "key": "CTRL-RIGHT",
+     "label": "黑暗献祭",
+     "spellId": 1277324
+    },
+    {
+     "name": "spell_1277370",
+     "readableName": "cd_1277370",
+     "key": "CTRL-INSERT",
+     "label": "神圣恩典",
+     "spellId": 1277370
+    },
+    {
+     "name": "spell_1277455",
+     "readableName": "cd_1277455",
+     "key": "CTRL-DELETE",
+     "label": "迷惑闪光",
+     "spellId": 1277455
+    },
+    {
+     "name": "spell_1277462",
+     "readableName": "cd_1277462",
+     "key": "CTRL-HOME",
+     "label": "应急方案",
+     "spellId": 1277462
+    },
+    {
+     "name": "spell_15487_focus",
+     "readableName": "spell_15487_focus",
+     "key": "CTRL-END",
+     "label": "焦点沉默",
+     "spellId": null
+    },
+    {
+     "name": "spell_15487_mouseover",
+     "readableName": "spell_15487_mouseover",
+     "key": "ALT-F6",
+     "label": "指向沉默",
+     "spellId": null
+    },
+    {
+     "name": "spell_2050",
+     "readableName": "spell_2050",
+     "key": "CTRL-NUMPAD5",
+     "label": "次级治疗术",
+     "spellId": 2050
+    }
+   ]
+  },
+  "1488": {
+   "title": "Rogue",
+   "actions": [
+    {
+     "name": "spell_1752",
+     "readableName": "spell_1752",
+     "key": "NUMPAD1",
+     "label": "邪恶攻击",
+     "spellId": 1752
+    },
+    {
+     "name": "spell_53",
+     "readableName": "spell_53",
+     "key": "NUMPAD6",
+     "label": "背刺",
+     "spellId": 53
+    },
+    {
+     "name": "spell_1329",
+     "readableName": "spell_1329",
+     "key": "F1",
+     "label": "毁伤",
+     "spellId": 1329
+    },
+    {
+     "name": "spell_2098",
+     "readableName": "spell_2098",
+     "key": "NUMPAD2",
+     "label": "刺骨",
+     "spellId": 2098
+    },
+    {
+     "name": "spell_1943",
+     "readableName": "spell_1943",
+     "key": "NUMPAD5",
+     "label": "割裂",
+     "spellId": 1943
+    },
+    {
+     "name": "spell_5171",
+     "readableName": "spell_5171",
+     "key": "NUMPAD3",
+     "label": "切割",
+     "spellId": 5171
+    },
+    {
+     "name": "spell_703",
+     "readableName": "spell_703",
+     "key": "NUMPAD4",
+     "label": "绞喉",
+     "spellId": 703
+    },
+    {
+     "name": "spell_424785",
+     "readableName": "spell_424785",
+     "key": "F2",
+     "label": "军刀猛刺",
+     "spellId": 424785
+    },
+    {
+     "name": "spell_425012",
+     "readableName": "spell_425012",
+     "key": "CTRL-NUMPAD9",
+     "label": "剧毒之刃",
+     "spellId": 425012
+    },
+    {
+     "name": "spell_409240",
+     "readableName": "spell_409240",
+     "key": "CTRL-NUMPAD0",
+     "label": "刀扇",
+     "spellId": 409240
+    },
+    {
+     "name": "spell_412096",
+     "readableName": "spell_412096",
+     "key": "ALT-NUMPAD1",
+     "label": "猩红风暴",
+     "spellId": 412096
+    },
+    {
+     "name": "spell_399985",
+     "readableName": "cd_399985",
+     "key": "ALT-NUMPAD2",
+     "label": "暗影打击",
+     "spellId": 399985
+    },
+    {
+     "name": "spell_8676",
+     "readableName": "cd_8676",
+     "key": "NUMPAD7",
+     "label": "伏击",
+     "spellId": 8676
+    },
+    {
+     "name": "spell_16511",
+     "readableName": "spell_16511",
+     "key": "NUMPAD8",
+     "label": "出血",
+     "spellId": 16511
+    },
+    {
+     "name": "spell_14278",
+     "readableName": "cd_14278",
+     "key": "NUMPAD0",
+     "label": "鬼魅攻击",
+     "spellId": 14278
+    },
+    {
+     "name": "spell_14251",
+     "readableName": "cd_14251",
+     "key": "ALT-NUMPAD3",
+     "label": "还击",
+     "spellId": 14251
+    },
+    {
+     "name": "spell_1310703",
+     "readableName": "spell_1310703",
+     "key": "ALT-NUMPAD4",
+     "label": "毒针",
+     "spellId": 1310703
+    },
+    {
+     "name": "spell_424799",
+     "readableName": "cd_424799",
+     "key": "ALT-NUMPAD5",
+     "label": "毒刃",
+     "spellId": 424799
+    },
+    {
+     "name": "spell_1766",
+     "readableName": "cd_1766",
+     "key": "CTRL-NUMPAD1",
+     "label": "脚踢",
+     "spellId": 1766
+    },
+    {
+     "name": "spell_13750",
+     "readableName": "cd_13750",
+     "key": "CTRL-NUMPAD4",
+     "label": "冲动",
+     "spellId": 13750
+    },
+    {
+     "name": "spell_13877",
+     "readableName": "cd_13877",
+     "key": "CTRL-NUMPAD3",
+     "label": "剑刃乱舞",
+     "spellId": 13877
+    },
+    {
+     "name": "spell_14177",
+     "readableName": "cd_14177",
+     "key": "CTRL-NUMPAD5",
+     "label": "冷血",
+     "spellId": 14177
+    },
+    {
+     "name": "spell_398196",
+     "readableName": "cd_398196",
+     "key": "ALT-NUMPAD6",
+     "label": "速射",
+     "spellId": 398196
+    },
+    {
+     "name": "spell_424919",
+     "readableName": "cd_424919",
+     "key": "ALT-NUMPAD7",
+     "label": "左右开弓",
+     "spellId": 424919
+    },
+    {
+     "name": "spell_400009",
+     "readableName": "cd_400009",
+     "key": "ALT-NUMPAD8",
+     "label": "正中眉心",
+     "spellId": 400009
+    },
+    {
+     "name": "spell_400012",
+     "readableName": "cd_400012",
+     "key": "ALT-NUMPAD9",
+     "label": "刃舞",
+     "spellId": 400012
+    },
+    {
+     "name": "spell_408",
+     "readableName": "cd_408",
+     "key": "ALT-NUMPAD0",
+     "label": "肾击",
+     "spellId": 408
+    },
+    {
+     "name": "spell_1833",
+     "readableName": "cd_1833",
+     "key": "SHIFT-NUMPAD1",
+     "label": "偷袭",
+     "spellId": 1833
+    },
+    {
+     "name": "spell_1776",
+     "readableName": "cd_1776",
+     "key": "CTRL-NUMPAD7",
+     "label": "凿击",
+     "spellId": 1776
+    },
+    {
+     "name": "spell_1784",
+     "readableName": "cd_1784",
+     "key": "SHIFT-NUMPAD2",
+     "label": "潜行",
+     "spellId": 1784
+    },
+    {
+     "name": "spell_1856",
+     "readableName": "cd_1856",
+     "key": "SHIFT-NUMPAD3",
+     "label": "消失",
+     "spellId": 1856
+    },
+    {
+     "name": "spell_2983",
+     "readableName": "cd_2983",
+     "key": "SHIFT-NUMPAD4",
+     "label": "疾跑",
+     "spellId": 2983
+    },
+    {
+     "name": "spell_5277",
+     "readableName": "cd_5277",
+     "key": "CTRL-NUMPAD2",
+     "label": "闪避",
+     "spellId": 5277
+    },
+    {
+     "name": "spell_1966",
+     "readableName": "cd_1966",
+     "key": "SHIFT-NUMPAD5",
+     "label": "佯攻",
+     "spellId": 1966
+    },
+    {
+     "name": "spell_2094",
+     "readableName": "cd_2094",
+     "key": "SHIFT-NUMPAD6",
+     "label": "致盲",
+     "spellId": 2094
+    },
+    {
+     "name": "spell_6770",
+     "readableName": "cd_6770",
+     "key": "SHIFT-NUMPAD7",
+     "label": "闷棍",
+     "spellId": 6770
+    },
+    {
+     "name": "spell_8647",
+     "readableName": "spell_8647",
+     "key": "SHIFT-NUMPAD8",
+     "label": "破甲",
+     "spellId": 8647
+    },
+    {
+     "name": "spell_399986",
+     "readableName": "spell_399986",
+     "key": "SHIFT-NUMPAD9",
+     "label": "飞镖投掷",
+     "spellId": 399986
+    },
+    {
+     "name": "spell_400029",
+     "readableName": "cd_400029",
+     "key": "SHIFT-NUMPAD0",
+     "label": "暗影步",
+     "spellId": 400029
+    },
+    {
+     "name": "spell_436564",
+     "readableName": "cd_436564",
+     "key": "CTRL-;",
+     "label": "短枪射击",
+     "spellId": 436564
+    },
+    {
+     "name": "spell_438040",
+     "readableName": "cd_438040",
+     "key": "CTRL-'",
+     "label": "转嫁",
+     "spellId": 438040
+    },
+    {
+     "name": "spell_14183",
+     "readableName": "cd_14183",
+     "key": "CTRL-NUMPAD6",
+     "label": "预谋",
+     "spellId": 14183
+    },
+    {
+     "name": "spell_14185",
+     "readableName": "cd_14185",
+     "key": "CTRL-.",
+     "label": "伺机待发",
+     "spellId": 14185
+    },
+    {
+     "name": "spell_1725",
+     "readableName": "cd_1725",
+     "key": "CTRL-\\\\\\\\",
+     "label": "扰乱",
+     "spellId": 1725
+    },
+    {
+     "name": "spell_1766_focus",
+     "readableName": "spell_1766_focus",
+     "key": "CTRL-UP",
+     "label": "焦点脚踢",
+     "spellId": null
+    },
+    {
+     "name": "spell_1766_mouseover",
+     "readableName": "spell_1766_mouseover",
+     "key": "CTRL-DOWN",
+     "label": "指向脚踢",
+     "spellId": null
+    },
+    {
+     "name": "spell_1310707",
+     "readableName": "spell_1310707",
+     "key": "NUMPAD9",
+     "label": "毁伤",
+     "spellId": 1310707
+    },
+    {
+     "name": "start_attack",
+     "readableName": "start_attack",
+     "key": "CTRL-NUMPAD8",
+     "label": "自动攻击",
+     "spellId": null
+    }
+   ]
+  },
+  "1489": {
+   "title": "Shaman",
+   "actions": [
+    {
+     "name": "focus_player",
+     "readableName": "focus_player",
+     "key": "ALT-NUMPAD3",
+     "label": "焦点：自己",
+     "spellId": null
+    },
+    {
+     "name": "focus_party1",
+     "readableName": "focus_party1",
+     "key": "ALT-NUMPAD4",
+     "label": "焦点：队友1",
+     "spellId": null
+    },
+    {
+     "name": "focus_party2",
+     "readableName": "focus_party2",
+     "key": "ALT-NUMPAD5",
+     "label": "焦点：队友2",
+     "spellId": null
+    },
+    {
+     "name": "focus_party3",
+     "readableName": "focus_party3",
+     "key": "ALT-NUMPAD6",
+     "label": "焦点：队友3",
+     "spellId": null
+    },
+    {
+     "name": "focus_party4",
+     "readableName": "focus_party4",
+     "key": "ALT-NUMPAD7",
+     "label": "焦点：队友4",
+     "spellId": null
+    },
+    {
+     "name": "focus_mouseover",
+     "readableName": "focus_mouseover",
+     "key": "CTRL-NUMPAD2",
+     "label": "焦点：鼠标指向",
+     "spellId": null
+    },
+    {
+     "name": "spell_403",
+     "readableName": "spell_403",
+     "key": "NUMPAD3",
+     "label": "闪电箭",
+     "spellId": 403
+    },
+    {
+     "name": "spell_8042",
+     "readableName": "cd_8042",
+     "key": "NUMPAD5",
+     "label": "地震术",
+     "spellId": 8042
+    },
+    {
+     "name": "spell_8050",
+     "readableName": "cd_8050",
+     "key": "NUMPAD6",
+     "label": "烈焰震击",
+     "spellId": 8050
+    },
+    {
+     "name": "spell_8056",
+     "readableName": "cd_8056",
+     "key": "NUMPAD7",
+     "label": "冰霜震击",
+     "spellId": 8056
+    },
+    {
+     "name": "spell_17364",
+     "readableName": "cd_17364",
+     "key": "NUMPAD8",
+     "label": "风暴打击",
+     "spellId": 17364
+    },
+    {
+     "name": "spell_408490",
+     "readableName": "cd_408490",
+     "key": "NUMPAD9",
+     "label": "熔岩爆裂",
+     "spellId": 408490
+    },
+    {
+     "name": "spell_425339",
+     "readableName": "cd_425339",
+     "key": "CTRL-NUMPAD4",
+     "label": "熔火爆裂",
+     "spellId": 425339
+    },
+    {
+     "name": "spell_408341",
+     "readableName": "cd_408341",
+     "key": "CTRL-NUMPAD6",
+     "label": "火焰新星",
+     "spellId": 408341
+    },
+    {
+     "name": "spell_324",
+     "readableName": "spell_324",
+     "key": "NUMPAD1",
+     "label": "闪电之盾",
+     "spellId": 324
+    },
+    {
+     "name": "spell_408510",
+     "readableName": "spell_408510",
+     "key": "NUMPAD2",
+     "label": "水之护盾",
+     "spellId": 408510
+    },
+    {
+     "name": "spell_331",
+     "readableName": "spell_331",
+     "key": "CTRL-NUMPAD1",
+     "label": "治疗波",
+     "spellId": 331
+    },
+    {
+     "name": "spell_8004",
+     "readableName": "spell_8004",
+     "key": "CTRL-NUMPAD3",
+     "label": "次级治疗波",
+     "spellId": 8004
+    },
+    {
+     "name": "spell_1064",
+     "readableName": "spell_1064",
+     "key": "CTRL-NUMPAD5",
+     "label": "治疗链",
+     "spellId": 1064
+    },
+    {
+     "name": "spell_408521",
+     "readableName": "cd_408521",
+     "key": "CTRL-NUMPAD7",
+     "label": "激流",
+     "spellId": 408521
+    },
+    {
+     "name": "spell_408514",
+     "readableName": "spell_408514",
+     "key": "CTRL-NUMPAD8",
+     "label": "大地之盾",
+     "spellId": 408514
+    },
+    {
+     "name": "spell_415236",
+     "readableName": "cd_415236",
+     "key": "F1",
+     "label": "治疗之雨",
+     "spellId": 415236
+    },
+    {
+     "name": "spell_8232",
+     "readableName": "spell_8232",
+     "key": "ALT-NUMPAD9",
+     "label": "风怒武器",
+     "spellId": 8232
+    },
+    {
+     "name": "spell_8024",
+     "readableName": "spell_8024",
+     "key": "ALT-NUMPAD0",
+     "label": "火舌武器",
+     "spellId": 8024
+    },
+    {
+     "name": "spell_8512",
+     "readableName": "spell_8512",
+     "key": "SHIFT-NUMPAD1",
+     "label": "风怒图腾",
+     "spellId": 8512
+    },
+    {
+     "name": "spell_3599",
+     "readableName": "spell_3599",
+     "key": "ALT-NUMPAD1",
+     "label": "灼热图腾",
+     "spellId": 3599
+    },
+    {
+     "name": "spell_425336",
+     "readableName": "cd_425336",
+     "key": "NUMPAD0",
+     "label": "先知之怒",
+     "spellId": 425336
+    },
+    {
+     "name": "spell_409324",
+     "readableName": "cd_409324",
+     "key": "SHIFT-NUMPAD2",
+     "label": "先祖指引",
+     "spellId": 409324
+    },
+    {
+     "name": "spell_16188",
+     "readableName": "cd_16188",
+     "key": "CTRL-NUMPAD9",
+     "label": "自然迅捷",
+     "spellId": 16188
+    },
+    {
+     "name": "spell_421",
+     "readableName": "cd_421",
+     "key": "NUMPAD4",
+     "label": "闪电链",
+     "spellId": 421
+    },
+    {
+     "name": "spell_408507",
+     "readableName": "cd_408507",
+     "key": "SHIFT-NUMPAD3",
+     "label": "熔岩猛击",
+     "spellId": 408507
+    },
+    {
+     "name": "spell_370",
+     "readableName": "spell_370",
+     "key": "SHIFT-NUMPAD4",
+     "label": "净化术",
+     "spellId": 370
+    },
+    {
+     "name": "spell_526",
+     "readableName": "spell_526",
+     "key": "SHIFT-NUMPAD5",
+     "label": "消毒术",
+     "spellId": 526
+    },
+    {
+     "name": "spell_2870",
+     "readableName": "spell_2870",
+     "key": "SHIFT-NUMPAD6",
+     "label": "祛病术",
+     "spellId": 2870
+    },
+    {
+     "name": "spell_8033",
+     "readableName": "spell_8033",
+     "key": "SHIFT-NUMPAD7",
+     "label": "冰封武器",
+     "spellId": 8033
+    },
+    {
+     "name": "spell_2484",
+     "readableName": "cd_2484",
+     "key": "SHIFT-NUMPAD8",
+     "label": "地缚图腾",
+     "spellId": 2484
+    },
+    {
+     "name": "spell_5394",
+     "readableName": "spell_5394",
+     "key": "SHIFT-NUMPAD9",
+     "label": "治疗之泉图腾",
+     "spellId": 5394
+    },
+    {
+     "name": "spell_5675",
+     "readableName": "spell_5675",
+     "key": "ALT-NUMPAD2",
+     "label": "法力之泉图腾",
+     "spellId": 5675
+    },
+    {
+     "name": "spell_5730",
+     "readableName": "cd_5730",
+     "key": "SHIFT-NUMPAD0",
+     "label": "石爪图腾",
+     "spellId": 5730
+    },
+    {
+     "name": "spell_8071",
+     "readableName": "spell_8071",
+     "key": "CTRL-9",
+     "label": "石肤图腾",
+     "spellId": 8071
+    },
+    {
+     "name": "spell_8075",
+     "readableName": "spell_8075",
+     "key": "CTRL-0",
+     "label": "大地之力图腾",
+     "spellId": 8075
+    },
+    {
+     "name": "spell_8143",
+     "readableName": "spell_8143",
+     "key": "CTRL--",
+     "label": "战栗图腾",
+     "spellId": 8143
+    },
+    {
+     "name": "spell_8166",
+     "readableName": "spell_8166",
+     "key": "CTRL-=",
+     "label": "清毒图腾",
+     "spellId": 8166
+    },
+    {
+     "name": "spell_8170",
+     "readableName": "spell_8170",
+     "key": "CTRL-[",
+     "label": "祛病图腾",
+     "spellId": 8170
+    },
+    {
+     "name": "spell_8177",
+     "readableName": "cd_8177",
+     "key": "CTRL-]",
+     "label": "根基图腾",
+     "spellId": 8177
+    },
+    {
+     "name": "spell_8190",
+     "readableName": "spell_8190",
+     "key": "CTRL-;",
+     "label": "熔岩图腾",
+     "spellId": 8190
+    },
+    {
+     "name": "spell_8835",
+     "readableName": "spell_8835",
+     "key": "CTRL-'",
+     "label": "风之优雅图腾",
+     "spellId": 8835
+    },
+    {
+     "name": "spell_16190",
+     "readableName": "cd_16190",
+     "key": "CTRL-NUMPAD0",
+     "label": "法力之潮图腾",
+     "spellId": 16190
+    },
+    {
+     "name": "spell_36936",
+     "readableName": "spell_36936",
+     "key": "CTRL-.",
+     "label": "收回图腾",
+     "spellId": 36936
+    },
+    {
+     "name": "spell_66842",
+     "readableName": "spell_66842",
+     "key": "CTRL-\\\\\\\\",
+     "label": "元素的召唤",
+     "spellId": 66842
+    },
+    {
+     "name": "spell_66843",
+     "readableName": "spell_66843",
+     "key": "CTRL-UP",
+     "label": "先祖的召唤",
+     "spellId": 66843
+    },
+    {
+     "name": "spell_66844",
+     "readableName": "spell_66844",
+     "key": "CTRL-DOWN",
+     "label": "灵魂的召唤",
+     "spellId": 66844
+    },
+    {
+     "name": "spell_2645",
+     "readableName": "spell_2645",
+     "key": "CTRL-LEFT",
+     "label": "幽魂之狼",
+     "spellId": 2645
+    },
+    {
+     "name": "spell_425874",
+     "readableName": "cd_425874",
+     "key": "CTRL-RIGHT",
+     "label": "诱饵图腾",
+     "spellId": 425874
+    },
+    {
+     "name": "spell_437009",
+     "readableName": "cd_437009",
+     "key": "CTRL-INSERT",
+     "label": "图腾投射",
+     "spellId": 437009
+    },
+    {
+     "name": "spell_408696",
+     "readableName": "spell_408696",
+     "key": "CTRL-DELETE",
+     "label": "头狼之魂",
+     "spellId": 408696
+    },
+    {
+     "name": "spell_8042_focus",
+     "readableName": "spell_8042_focus",
+     "key": "CTRL-HOME",
+     "label": "焦点地震术",
+     "spellId": null
+    },
+    {
+     "name": "spell_8042_mouseover",
+     "readableName": "spell_8042_mouseover",
+     "key": "CTRL-END",
+     "label": "指向地震术",
+     "spellId": null
+    },
+    {
+     "name": "start_attack",
+     "readableName": "start_attack",
+     "key": "ALT-NUMPAD8",
+     "label": "自动攻击",
+     "spellId": null
+    }
+   ]
+  },
+  "1490": {
+   "title": "Warlock",
+   "actions": [
+    {
+     "name": "spell_686",
+     "readableName": "spell_686",
+     "key": "NUMPAD7",
+     "label": "暗影箭",
+     "spellId": 686
+    },
+    {
+     "name": "spell_172",
+     "readableName": "spell_172",
+     "key": "NUMPAD5",
+     "label": "腐蚀术",
+     "spellId": 172
+    },
+    {
+     "name": "spell_348",
+     "readableName": "spell_348",
+     "key": "NUMPAD6",
+     "label": "献祭",
+     "spellId": 348
+    },
+    {
+     "name": "spell_980",
+     "readableName": "spell_980",
+     "key": "NUMPAD4",
+     "label": "痛苦灾祸",
+     "spellId": 980
+    },
+    {
+     "name": "spell_412758",
+     "readableName": "spell_412758",
+     "key": "CTRL-NUMPAD2",
+     "label": "烧尽",
+     "spellId": 412758
+    },
+    {
+     "name": "spell_403629",
+     "readableName": "spell_403629",
+     "key": "F1",
+     "label": "混乱之箭",
+     "spellId": 403629
+    },
+    {
+     "name": "spell_426320",
+     "readableName": "spell_426320",
+     "key": "ALT-NUMPAD1",
+     "label": "暗影烈焰",
+     "spellId": 426320
+    },
+    {
+     "name": "spell_1316697",
+     "readableName": "spell_1316697",
+     "key": "CTRL-NUMPAD1",
+     "label": "折磨",
+     "spellId": 1316697
+    },
+    {
+     "name": "spell_6353",
+     "readableName": "spell_6353",
+     "key": "CTRL-NUMPAD4",
+     "label": "灵魂之火",
+     "spellId": 6353
+    },
+    {
+     "name": "spell_5676",
+     "readableName": "spell_5676",
+     "key": "ALT-NUMPAD2",
+     "label": "灼热之痛",
+     "spellId": 5676
+    },
+    {
+     "name": "spell_17877",
+     "readableName": "spell_17877",
+     "key": "CTRL-NUMPAD5",
+     "label": "暗影灼烧",
+     "spellId": 17877
+    },
+    {
+     "name": "spell_1293817",
+     "readableName": "spell_1293817",
+     "key": "CTRL-NUMPAD3",
+     "label": "燃烧",
+     "spellId": 1293817
+    },
+    {
+     "name": "spell_18265",
+     "readableName": "spell_18265",
+     "key": "NUMPAD0",
+     "label": "生命虹吸",
+     "spellId": 18265
+    },
+    {
+     "name": "spell_689",
+     "readableName": "spell_689",
+     "key": "NUMPAD8",
+     "label": "吸取生命",
+     "spellId": 689
+    },
+    {
+     "name": "spell_1120",
+     "readableName": "spell_1120",
+     "key": "ALT-NUMPAD3",
+     "label": "吸取灵魂",
+     "spellId": 1120
+    },
+    {
+     "name": "spell_1454",
+     "readableName": "spell_1454",
+     "key": "NUMPAD9",
+     "label": "生命分流",
+     "spellId": 1454
+    },
+    {
+     "name": "spell_5740",
+     "readableName": "spell_5740",
+     "key": "ALT-NUMPAD4",
+     "label": "火焰之雨",
+     "spellId": 5740
+    },
+    {
+     "name": "spell_1949",
+     "readableName": "spell_1949",
+     "key": "ALT-NUMPAD5",
+     "label": "地狱烈焰",
+     "spellId": 1949
+    },
+    {
+     "name": "spell_1225228",
+     "readableName": "spell_1225228",
+     "key": "ALT-NUMPAD6",
+     "label": "浩劫灾祸",
+     "spellId": 1225228
+    },
+    {
+     "name": "spell_427717",
+     "readableName": "spell_427717",
+     "key": "ALT-NUMPAD7",
+     "label": "痛苦无常",
+     "spellId": 427717
+    },
+    {
+     "name": "spell_427726",
+     "readableName": "spell_427726",
+     "key": "ALT-NUMPAD8",
+     "label": "献祭光环",
+     "spellId": 427726
+    },
+    {
+     "name": "spell_403501",
+     "readableName": "cd_403501",
+     "key": "ALT-NUMPAD9",
+     "label": "鬼影缠身",
+     "spellId": 403501
+    },
+    {
+     "name": "spell_403789",
+     "readableName": "cd_403789",
+     "key": "ALT-NUMPAD0",
+     "label": "恶魔变形",
+     "spellId": 403789
+    },
+    {
+     "name": "spell_403835",
+     "readableName": "cd_403835",
+     "key": "SHIFT-NUMPAD1",
+     "label": "暗影顺劈",
+     "spellId": 403835
+    },
+    {
+     "name": "spell_19244",
+     "readableName": "cd_19244",
+     "key": "SHIFT-NUMPAD2",
+     "label": "宠物·法术封锁",
+     "spellId": 19244
+    },
+    {
+     "name": "pet_attack",
+     "readableName": "pet_attack",
+     "key": "CTRL-NUMPAD0",
+     "label": "宠物攻击",
+     "spellId": null
+    },
+    {
+     "name": "spell_603",
+     "readableName": "spell_603",
+     "key": "SHIFT-NUMPAD3",
+     "label": "末日灾祸",
+     "spellId": 603
+    },
+    {
+     "name": "spell_5138",
+     "readableName": "spell_5138",
+     "key": "SHIFT-NUMPAD4",
+     "label": "吸取法力",
+     "spellId": 5138
+    },
+    {
+     "name": "spell_6789",
+     "readableName": "cd_6789",
+     "key": "CTRL-NUMPAD8",
+     "label": "死亡缠绕",
+     "spellId": 6789
+    },
+    {
+     "name": "spell_5782",
+     "readableName": "spell_5782",
+     "key": "SHIFT-NUMPAD5",
+     "label": "恐惧术",
+     "spellId": 5782
+    },
+    {
+     "name": "spell_5484",
+     "readableName": "cd_5484",
+     "key": "SHIFT-NUMPAD6",
+     "label": "恐惧嚎叫",
+     "spellId": 5484
+    },
+    {
+     "name": "spell_710",
+     "readableName": "spell_710",
+     "key": "SHIFT-NUMPAD7",
+     "label": "放逐术",
+     "spellId": 710
+    },
+    {
+     "name": "spell_18223",
+     "readableName": "spell_18223",
+     "key": "SHIFT-NUMPAD8",
+     "label": "疲劳诅咒",
+     "spellId": 18223
+    },
+    {
+     "name": "spell_702",
+     "readableName": "spell_702",
+     "key": "SHIFT-NUMPAD9",
+     "label": "虚弱诅咒",
+     "spellId": 702
+    },
+    {
+     "name": "spell_704",
+     "readableName": "spell_704",
+     "key": "SHIFT-NUMPAD0",
+     "label": "鲁莽诅咒",
+     "spellId": 704
+    },
+    {
+     "name": "spell_1714",
+     "readableName": "spell_1714",
+     "key": "CTRL--",
+     "label": "语言诅咒",
+     "spellId": 1714
+    },
+    {
+     "name": "spell_1010",
+     "readableName": "spell_1010",
+     "key": "CTRL-=",
+     "label": "痴呆诅咒",
+     "spellId": 1010
+    },
+    {
+     "name": "spell_412788",
+     "readableName": "cd_412788",
+     "key": "CTRL-[",
+     "label": "恶魔冲锋",
+     "spellId": 412788
+    },
+    {
+     "name": "spell_412789",
+     "readableName": "cd_412789",
+     "key": "CTRL-]",
+     "label": "恶魔嚎叫",
+     "spellId": 412789
+    },
+    {
+     "name": "spell_425463",
+     "readableName": "cd_425463",
+     "key": "CTRL-;",
+     "label": "恶魔优雅",
+     "spellId": 425463
+    },
+    {
+     "name": "spell_426195",
+     "readableName": "cd_426195",
+     "key": "CTRL-'",
+     "label": "复仇",
+     "spellId": 426195
+    },
+    {
+     "name": "spell_688",
+     "readableName": "spell_688",
+     "key": "NUMPAD3",
+     "label": "召唤小鬼",
+     "spellId": 688
+    },
+    {
+     "name": "spell_697",
+     "readableName": "spell_697",
+     "key": "CTRL-.",
+     "label": "召唤虚空行者",
+     "spellId": 697
+    },
+    {
+     "name": "spell_712",
+     "readableName": "spell_712",
+     "key": "CTRL-\\\\\\\\",
+     "label": "召唤魅魔",
+     "spellId": 712
+    },
+    {
+     "name": "spell_691",
+     "readableName": "spell_691",
+     "key": "CTRL-UP",
+     "label": "召唤地狱猎犬",
+     "spellId": 691
+    },
+    {
+     "name": "spell_713",
+     "readableName": "spell_713",
+     "key": "CTRL-DOWN",
+     "label": "召唤夜魔",
+     "spellId": 713
+    },
+    {
+     "name": "spell_1122",
+     "readableName": "cd_1122",
+     "key": "CTRL-LEFT",
+     "label": "地狱火",
+     "spellId": 1122
+    },
+    {
+     "name": "spell_1098",
+     "readableName": "spell_1098",
+     "key": "CTRL-RIGHT",
+     "label": "征服恶魔",
+     "spellId": 1098
+    },
+    {
+     "name": "spell_19028",
+     "readableName": "cd_19028",
+     "key": "CTRL-NUMPAD6",
+     "label": "灵魂链接",
+     "spellId": 19028
+    },
+    {
+     "name": "spell_18708",
+     "readableName": "cd_18708",
+     "key": "CTRL-DELETE",
+     "label": "恶魔支配",
+     "spellId": 18708
+    },
+    {
+     "name": "spell_18288",
+     "readableName": "cd_18288",
+     "key": "CTRL-NUMPAD9",
+     "label": "诅咒增幅",
+     "spellId": 18288
+    },
+    {
+     "name": "spell_403619",
+     "readableName": "spell_403619",
+     "key": "CTRL-END",
+     "label": "邪甲术",
+     "spellId": 403619
+    },
+    {
+     "name": "spell_687",
+     "readableName": "spell_687",
+     "key": "NUMPAD1",
+     "label": "恶魔皮肤",
+     "spellId": 687
+    },
+    {
+     "name": "spell_706",
+     "readableName": "spell_706",
+     "key": "NUMPAD2",
+     "label": "魔甲术",
+     "spellId": 706
+    },
+    {
+     "name": "spell_427733",
+     "readableName": "spell_427733",
+     "key": "ALT-F8",
+     "label": "召唤恶魔卫士",
+     "spellId": 427733
+    },
+    {
+     "name": "spell_440892",
+     "readableName": "spell_440892",
+     "key": "ALT-F9",
+     "label": "元素诅咒",
+     "spellId": 440892
+    },
+    {
+     "name": "spell_440882",
+     "readableName": "cd_440882",
+     "key": "ALT-F10",
+     "label": "地狱火护甲",
+     "spellId": 440882
+    },
+    {
+     "name": "spell_18788",
+     "readableName": "cd_18788",
+     "key": "ALT-F11",
+     "label": "恶魔牺牲",
+     "spellId": 18788
+    },
+    {
+     "name": "spell_403828",
+     "readableName": "cd_403828",
+     "key": "ALT-F12",
+     "label": "威吓",
+     "spellId": 403828
+    },
+    {
+     "name": "pet_follow",
+     "readableName": "pet_follow",
+     "key": "ALT-8",
+     "label": "宠物跟随",
+     "spellId": null
+    },
+    {
+     "name": "pet_stay",
+     "readableName": "pet_stay",
+     "key": "ALT-9",
+     "label": "宠物停留",
+     "spellId": null
+    },
+    {
+     "name": "spell_6229",
+     "readableName": "cd_6229",
+     "key": "ALT-0",
+     "label": "防护暗影结界",
+     "spellId": 6229
+    },
+    {
+     "name": "spell_755",
+     "readableName": "spell_755",
+     "key": "ALT--",
+     "label": "生命通道",
+     "spellId": 755
+    },
+    {
+     "name": "spell_19505",
+     "readableName": "cd_19505",
+     "key": "ALT-=",
+     "label": "宠物·吞噬魔法",
+     "spellId": 19505
+    },
+    {
+     "name": "spell_7812",
+     "readableName": "cd_7812",
+     "key": "ALT-[",
+     "label": "宠物·牺牲",
+     "spellId": 7812
+    },
+    {
+     "name": "spell_17735",
+     "readableName": "cd_17735",
+     "key": "ALT-]",
+     "label": "宠物·受难",
+     "spellId": 17735
+    },
+    {
+     "name": "spell_3110",
+     "readableName": "spell_3110",
+     "key": "ALT-;",
+     "label": "宠物·火焰箭",
+     "spellId": 3110
+    },
+    {
+     "name": "spell_7814",
+     "readableName": "spell_7814",
+     "key": "ALT-'",
+     "label": "宠物·剧痛鞭笞",
+     "spellId": 7814
+    },
+    {
+     "name": "spell_6358",
+     "readableName": "cd_6358",
+     "key": "ALT-,",
+     "label": "宠物·诱惑",
+     "spellId": 6358
+    },
+    {
+     "name": "spell_2947",
+     "readableName": "spell_2947",
+     "key": "ALT-.",
+     "label": "宠物·火焰之盾",
+     "spellId": 2947
+    },
+    {
+     "name": "spell_4511",
+     "readableName": "cd_4511",
+     "key": "ALT-\\\\\\\\",
+     "label": "宠物·相位变换",
+     "spellId": 4511
+    },
+    {
+     "name": "spell_427744",
+     "readableName": "spell_427744",
+     "key": "ALT-UP",
+     "label": "宠物·顺劈斩",
+     "spellId": 427744
+    },
+    {
+     "name": "spell_427745",
+     "readableName": "cd_427745",
+     "key": "ALT-DOWN",
+     "label": "宠物·拦截",
+     "spellId": 427745
+    },
+    {
+     "name": "spell_19244_focus",
+     "readableName": "spell_19244_focus",
+     "key": "ALT-LEFT",
+     "label": "焦点法术封锁",
+     "spellId": null
+    },
+    {
+     "name": "spell_19244_mouseover",
+     "readableName": "spell_19244_mouseover",
+     "key": "ALT-RIGHT",
+     "label": "指向法术封锁",
+     "spellId": null
+    },
+    {
+     "name": "spell_1293695",
+     "readableName": "spell_1293695",
+     "key": "CTRL-NUMPAD7",
+     "label": "恶魔印记",
+     "spellId": 1293695
+    }
+   ]
+  },
+  "1491": {
+   "title": "Warrior",
+   "actions": [
+    {
+     "name": "spell_78",
+     "readableName": "spell_78",
+     "key": "ALT-NUMPAD2",
+     "label": "英勇打击",
+     "spellId": 78
+    },
+    {
+     "name": "spell_6673",
+     "readableName": "spell_6673",
+     "key": "NUMPAD3",
+     "label": "战斗怒吼",
+     "spellId": 6673
+    },
+    {
+     "name": "spell_12294",
+     "readableName": "spell_12294",
+     "key": "CTRL-NUMPAD1",
+     "label": "致死打击",
+     "spellId": 12294
+    },
+    {
+     "name": "spell_23881",
+     "readableName": "spell_23881",
+     "key": "CTRL-NUMPAD2",
+     "label": "嗜血",
+     "spellId": 23881
+    },
+    {
+     "name": "spell_5308",
+     "readableName": "spell_5308",
+     "key": "NUMPAD7",
+     "label": "斩杀",
+     "spellId": 5308
+    },
+    {
+     "name": "spell_7384",
+     "readableName": "spell_7384",
+     "key": "NUMPAD8",
+     "label": "压制",
+     "spellId": 7384
+    },
+    {
+     "name": "spell_1680",
+     "readableName": "spell_1680",
+     "key": "CTRL-NUMPAD8",
+     "label": "旋风斩",
+     "spellId": 1680
+    },
+    {
+     "name": "spell_845",
+     "readableName": "spell_845",
+     "key": "ALT-NUMPAD1",
+     "label": "顺劈斩",
+     "spellId": 845
+    },
+    {
+     "name": "spell_1464",
+     "readableName": "spell_1464",
+     "key": "F1",
+     "label": "猛击",
+     "spellId": 1464
+    },
+    {
+     "name": "spell_772",
+     "readableName": "spell_772",
+     "key": "CTRL-NUMPAD7",
+     "label": "撕裂",
+     "spellId": 772
+    },
+    {
+     "name": "spell_23922",
+     "readableName": "spell_23922",
+     "key": "CTRL-NUMPAD3",
+     "label": "盾牌猛击",
+     "spellId": 23922
+    },
+    {
+     "name": "spell_6572",
+     "readableName": "spell_6572",
+     "key": "NUMPAD9",
+     "label": "复仇",
+     "spellId": 6572
+    },
+    {
+     "name": "spell_6343",
+     "readableName": "spell_6343",
+     "key": "CTRL-NUMPAD9",
+     "label": "雷霆一击",
+     "spellId": 6343
+    },
+    {
+     "name": "spell_7386",
+     "readableName": "spell_7386",
+     "key": "ALT-NUMPAD6",
+     "label": "破甲攻击",
+     "spellId": 7386
+    },
+    {
+     "name": "spell_6552",
+     "readableName": "spell_6552",
+     "key": "NUMPAD5",
+     "label": "拳击",
+     "spellId": 6552
+    },
+    {
+     "name": "spell_72",
+     "readableName": "spell_72",
+     "key": "NUMPAD6",
+     "label": "盾击",
+     "spellId": 72
+    },
+    {
+     "name": "spell_2565",
+     "readableName": "spell_2565",
+     "key": "ALT-NUMPAD5",
+     "label": "盾牌格挡",
+     "spellId": 2565
+    },
+    {
+     "name": "spell_2687",
+     "readableName": "spell_2687",
+     "key": "NUMPAD4",
+     "label": "血性狂暴",
+     "spellId": 2687
+    },
+    {
+     "name": "spell_12292",
+     "readableName": "spell_12292",
+     "key": "CTRL-NUMPAD5",
+     "label": "横扫攻击",
+     "spellId": 12292
+    },
+    {
+     "name": "spell_12328",
+     "readableName": "spell_12328",
+     "key": "CTRL-NUMPAD6",
+     "label": "死亡之愿",
+     "spellId": 12328
+    },
+    {
+     "name": "spell_1719",
+     "readableName": "spell_1719",
+     "key": "F2",
+     "label": "鲁莽",
+     "spellId": 1719
+    },
+    {
+     "name": "spell_18499",
+     "readableName": "spell_18499",
+     "key": "ALT-NUMPAD9",
+     "label": "狂暴之怒",
+     "spellId": 18499
+    },
+    {
+     "name": "spell_12975",
+     "readableName": "spell_12975",
+     "key": "ALT-NUMPAD4",
+     "label": "破釜沉舟",
+     "spellId": 12975
+    },
+    {
+     "name": "spell_871",
+     "readableName": "spell_871",
+     "key": "ALT-NUMPAD3",
+     "label": "盾墙",
+     "spellId": 871
+    },
+    {
+     "name": "spell_402913",
+     "readableName": "spell_402913",
+     "key": "ALT-NUMPAD0",
+     "label": "狂怒回复",
+     "spellId": 402913
+    },
+    {
+     "name": "spell_402911",
+     "readableName": "spell_402911",
+     "key": "SHIFT-NUMPAD1",
+     "label": "怒击",
+     "spellId": 402911
+    },
+    {
+     "name": "spell_2457",
+     "readableName": "spell_2457",
+     "key": "SHIFT-NUMPAD2",
+     "label": "战斗姿态",
+     "spellId": 2457
+    },
+    {
+     "name": "spell_71",
+     "readableName": "spell_71",
+     "key": "SHIFT-NUMPAD3",
+     "label": "防御姿态",
+     "spellId": 71
+    },
+    {
+     "name": "spell_2458",
+     "readableName": "spell_2458",
+     "key": "SHIFT-NUMPAD4",
+     "label": "狂暴姿态",
+     "spellId": 2458
+    },
+    {
+     "name": "spell_412513",
+     "readableName": "spell_412513",
+     "key": "SHIFT-NUMPAD5",
+     "label": "角斗姿态",
+     "spellId": 412513
+    },
+    {
+     "name": "spell_1715",
+     "readableName": "spell_1715",
+     "key": "SHIFT-NUMPAD6",
+     "label": "断筋",
+     "spellId": 1715
+    },
+    {
+     "name": "spell_402927",
+     "readableName": "spell_402927",
+     "key": "NUMPAD0",
+     "label": "乘胜追击",
+     "spellId": 402927
+    },
+    {
+     "name": "spell_429765",
+     "readableName": "spell_429765",
+     "key": "SHIFT-NUMPAD7",
+     "label": "迅捷打击",
+     "spellId": 429765
+    },
+    {
+     "name": "spell_1310222",
+     "readableName": "spell_1310222",
+     "key": "CTRL-NUMPAD4",
+     "label": "穿刺打击",
+     "spellId": 1310222
+    },
+    {
+     "name": "spell_100",
+     "readableName": "spell_100",
+     "key": "NUMPAD2",
+     "label": "冲锋",
+     "spellId": 100
+    },
+    {
+     "name": "spell_20252",
+     "readableName": "spell_20252",
+     "key": "SHIFT-NUMPAD8",
+     "label": "拦截",
+     "spellId": 20252
+    },
+    {
+     "name": "spell_676",
+     "readableName": "spell_676",
+     "key": "SHIFT-NUMPAD9",
+     "label": "缴械",
+     "spellId": 676
+    },
+    {
+     "name": "spell_355",
+     "readableName": "spell_355",
+     "key": "ALT-NUMPAD8",
+     "label": "嘲讽",
+     "spellId": 355
+    },
+    {
+     "name": "spell_694",
+     "readableName": "spell_694",
+     "key": "SHIFT-NUMPAD0",
+     "label": "惩戒痛击",
+     "spellId": 694
+    },
+    {
+     "name": "spell_1161",
+     "readableName": "spell_1161",
+     "key": "CTRL-;",
+     "label": "挑战怒吼",
+     "spellId": 1161
+    },
+    {
+     "name": "spell_1160",
+     "readableName": "spell_1160",
+     "key": "ALT-NUMPAD7",
+     "label": "挫志怒吼",
+     "spellId": 1160
+    },
+    {
+     "name": "spell_5246",
+     "readableName": "spell_5246",
+     "key": "CTRL-,",
+     "label": "破胆怒吼",
+     "spellId": 5246
+    },
+    {
+     "name": "spell_403228",
+     "readableName": "spell_403228",
+     "key": "CTRL-.",
+     "label": "肉钩",
+     "spellId": 403228
+    },
+    {
+     "name": "spell_440488",
+     "readableName": "spell_440488",
+     "key": "CTRL-\\\\\\\\",
+     "label": "震荡波",
+     "spellId": 440488
+    },
+    {
+     "name": "spell_20230",
+     "readableName": "spell_20230",
+     "key": "CTRL-UP",
+     "label": "反击风暴",
+     "spellId": 20230
+    },
+    {
+     "name": "spell_403215",
+     "readableName": "spell_403215",
+     "key": "CTRL-DOWN",
+     "label": "命令怒吼",
+     "spellId": 403215
+    },
+    {
+     "name": "spell_426490",
+     "readableName": "spell_426490",
+     "key": "CTRL-LEFT",
+     "label": "集结呐喊",
+     "spellId": 426490
+    },
+    {
+     "name": "spell_426972",
+     "readableName": "spell_426972",
+     "key": "CTRL-RIGHT",
+     "label": "警戒",
+     "spellId": 426972
+    },
+    {
+     "name": "spell_461475",
+     "readableName": "spell_461475",
+     "key": "CTRL-INSERT",
+     "label": "艾泽拉斯之勇",
+     "spellId": 461475
+    },
+    {
+     "name": "spell_2480",
+     "readableName": "spell_2480",
+     "key": "CTRL-DELETE",
+     "label": "远程武器攻击",
+     "spellId": 2480
+    },
+    {
+     "name": "spell_12809",
+     "readableName": "spell_12809",
+     "key": "CTRL-HOME",
+     "label": "震荡猛击",
+     "spellId": 12809
+    },
+    {
+     "name": "spell_12323",
+     "readableName": "spell_12323",
+     "key": "CTRL-END",
+     "label": "刺耳怒吼",
+     "spellId": 12323
+    },
+    {
+     "name": "spell_6552_focus",
+     "readableName": "spell_6552_focus",
+     "key": "ALT-F6",
+     "label": "焦点拳击",
+     "spellId": null
+    },
+    {
+     "name": "spell_6552_mouseover",
+     "readableName": "spell_6552_mouseover",
+     "key": "ALT-F7",
+     "label": "指向拳击",
+     "spellId": null
+    },
+    {
+     "name": "spell_72_focus",
+     "readableName": "spell_72_focus",
+     "key": "ALT-F8",
+     "label": "焦点盾击",
+     "spellId": null
+    },
+    {
+     "name": "spell_72_mouseover",
+     "readableName": "spell_72_mouseover",
+     "key": "ALT-F9",
+     "label": "指向盾击",
+     "spellId": null
+    },
+    {
+     "name": "start_attack",
+     "readableName": "start_attack",
+     "key": "NUMPAD1",
+     "label": "自动攻击",
+     "spellId": null
+    },
+    {
+     "name": "spell_1240193",
+     "readableName": "spell_1240193",
+     "key": "CTRL-NUMPAD0",
+     "label": "猛击",
+     "spellId": 1240193
+    }
+   ]
+  }
+ }
+}
