@@ -1,4 +1,4 @@
-import sys,tempfile,unittest
+import json,sys,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
@@ -7,6 +7,19 @@ import run_dev
 from wowbuddy.dev_native_selftest import run_native_selftest
 
 class NativeSelftestTests(unittest.TestCase):
+    def test_non_object_specs_reports_empty_rules_instead_of_raising(self):
+        from PySide6.QtCore import QJsonValue
+        for specs in (None,42,'1482',['1482'],True):
+            with self.subTest(specs=specs),tempfile.TemporaryDirectory() as tmp:
+                self.assertEqual(QJsonValue.fromVariant(specs).toObject(),{})
+                root=Path(tmp);assets=root/'assets';assets.mkdir()
+                (assets/'rules.json').write_text(json.dumps({'specs':specs}),'utf8')
+                (assets/'contract.json').write_bytes((ROOT/'assets/contract.json').read_bytes())
+                self.assertEqual(run_native_selftest(assets,root,['app','--selftest']),0)
+                report=(root/'_selftest.txt').read_text('utf8')
+                self.assertIn('rules 加载失败: 规则内容为空',report)
+                self.assertIn('C++ 引擎自检',report)
+
     def test_engine_report_appends_and_does_not_create_gui_report(self):
         with tempfile.TemporaryDirectory() as tmp:
             output=Path(tmp)

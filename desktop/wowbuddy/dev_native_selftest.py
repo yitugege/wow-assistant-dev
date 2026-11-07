@@ -9,6 +9,8 @@ def run_native_selftest(assets_dir,output_dir,arguments):
     # 资源键顺序用于确定性输出，不冒充原Qt进程的QHash遍历顺序。
     rules=read_qt_json(str(assets_dir/'rules.json')).document
     if not isinstance(rules,dict):rules={}
-    order=tuple(rules.get('specs',{}))
+    # 041e00使用QJsonValue::toObject；非对象specs是空对象，不可直接迭代。
+    specs=rules.get('specs')
+    order=tuple(specs) if isinstance(specs,dict) else ()
     return run_local_selftest_command(arguments,application_dir=output_dir,
         current_dir=Path.cwd(),resource_dir=assets_dir,spec_order=order).exit_code
