@@ -6,6 +6,14 @@
 
 结果为dist/win32-printwindow-movement-check.json，日志.local/printwindow-movement.log。窗口仍为本进程无激活测试窗口，结束后关闭销毁；未抓取用户游戏窗口或保存整屏图像。此项扩展原18场景证据，不覆盖移动过程中的每一个中间帧、遮挡、超屏、高DPI或DXGI。原默认检查仍为18场景，移动报告独立保存。
 
+## 补充：带边框窗口客户区裁剪
+
+`--decorated --move-window`在带真实标题栏和边框的自有Qt窗口重复九专精×两协议×三位置，54场景全部逐像素一致且解码成功。实测客户区相对GetWindowRect原点偏移均为(8,31)，确认PrintWindow完整窗口图像中的边框和标题栏未混入客户端左48列。
+
+首轮测试因Windows将窄标题栏窗口扩到最小宽度，客户区大于原24像素画布，尺寸断言失败；该失败属于测试夹具前提错误，未计入通过。工具现以160像素完整画布承载原色条，右侧填充已知背景；业务抓屏代码未改变。增加失败时尺寸及矩形诊断，避免空白错误提示。
+
+成功报告dist/win32-printwindow-decorated-movement-check.json，日志.local/printwindow-decorated.log，首轮定位日志.local/printwindow-decorated-detail.log。工具仍要求1倍缩放、窗口完整位于屏幕内；未将此结果外推至实际游戏、特殊边框、DPI虚拟化或DXGI。
+
 ## 结果与范围
 
 在当前 Windows 桌面、100% 缩放、自有测试窗口完整处于屏幕内的条件下，真实 `Win32PrintWindow` 抓屏通过 9 个专精 × 两种协议，共 18 个场景：输出条带逐像素等于输入图像，随后原有解码管线正确识别协议和专精。

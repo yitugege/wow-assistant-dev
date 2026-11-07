@@ -11,7 +11,7 @@ sys.path.insert(0,str(ROOT/'desktop'))
 sys.path.insert(0,str(ROOT/'tests/core'))
 
 
-def check(*, backend='printwindow', move_window=False):
+def check(*, backend='printwindow', move_window=False, decorated=False):
     if backend not in ('printwindow','dxgi'):raise ValueError(backend)
     if os.name!='nt':raise RuntimeError('需要 Windows')
     from PySide6.QtCore import Qt
@@ -26,7 +26,7 @@ def check(*, backend='printwindow', move_window=False):
     if app.platformName()!='windows':raise RuntimeError('此检查需要原生 Windows Qt 平台')
     class Receiver(QWidget):
         def __init__(self):
-            flags=Qt.FramelessWindowHint|Qt.Tool
+            flags=Qt.Tool if decorated else Qt.FramelessWindowHint|Qt.Tool
             if backend=='dxgi':flags|=Qt.WindowStaysOnTopHint
             super().__init__(None,flags)
             self.setAttribute(Qt.WA_ShowWithoutActivating)
@@ -58,21 +58,33 @@ def check(*, backend='printwindow', move_window=False):
                     definition=assets.readable_contract['specs'][str(spec)]
                     last_row=max(definition['classicRows']+[p['row'] for p in definition['presenceFields']])
                     frame=RGBImage(frame.rows[:2+4*(last_row+1)+8])
+                if decorated:
+                    # Windows有标题栏窗口有最小宽度；提供完整客户画布，避免
+                    # 将系统自动扩宽后的背景误认为24像素协议图像本身。
+                    frame=RGBImage([list(row)+[0x0d0d0d]*(160-frame.width) for row in frame.rows])
                 available=app.primaryScreen().availableGeometry()
                 if frame.height>available.height() or window.devicePixelRatioF()!=1:
                     raise RuntimeError('此像素级检查需要1倍缩放且测试色条完整位于屏幕内')
                 window.set_frame(frame)
-                factor={'top_left':0,'center':0.5,'bottom_right':1}[position]
-                x=available.left()+int((available.width()-frame.width)*factor)
-                y=available.top()+int((available.height()-frame.height)*factor)
-                window.move(x,y)
                 window.show()
+                app.processEvents()
+                outer_size=window.frameGeometry().size()
+                if outer_size.height()>available.height():
+                    raise RuntimeError('含边框的测试窗口必须完整位于屏幕内')
+                factor={'top_left':0,'center':0.5,'bottom_right':1}[position]
+                x=available.left()+int((available.width()-outer_size.width())*factor)
+                y=available.top()+int((available.height()-outer_size.height())*factor)
+                window.move(x,y)
                 app.processEvents()
                 hwnd=int(window.winId())
                 rect=windows.window_rect(hwnd);client=windows.client_rect(hwnd)
                 origin=windows.client_to_screen(hwnd)
                 assert rect is not None and client is not None and origin is not None
-                assert origin==(x,y),(position,origin,(x,y))
+                if not decorated:assert origin==(x,y),(position,origin,(x,y))
+                else:
+                    assert origin[1]>rect.top,(rect,origin)
+                    assert origin[0]>=rect.left and origin[0]+client.width<=rect.right,(rect,client,origin)
+                    assert origin[1]+client.height<=rect.bottom,(rect,client,origin)
                 attempts=0
                 if dxgi is None:
                     image=capture.capture(hwnd,rect,origin,client.width,client.height)
@@ -88,7 +100,8 @@ def check(*, backend='printwindow', move_window=False):
                             raise RuntimeError(f'DXGI未取得匹配帧: {spec}/{protocol}, error={dxgi.last_error}, attempts={attempts}')
                         time.sleep(0.03)
                 assert image is not None,(spec,protocol)
-                assert (image.width,image.height)==(min(48,frame.width),frame.height)
+                assert (image.width,image.height)==(min(48,frame.width),frame.height),(
+                    spec,protocol,'抓屏尺寸不符',image.width,image.height,frame.width,frame.height,client)
                 differences=[(x,y,image.rows[y][x],frame.rows[y][x])
                              for y in range(image.height) for x in range(image.width)
                              if image.rows[y][x]!=frame.rows[y][x]]
@@ -99,9 +112,10 @@ def check(*, backend='printwindow', move_window=False):
                 assert decoded.protocol==protocol,(spec,protocol,decoded.protocol)
                 results.append({'spec':spec,'protocol':protocol,'width':image.width,
                                 'height':image.height,'pixels_exact':True,'decoded':True,'attempts':attempts,
-                                'position':position,'client_origin':origin})
+                                'position':position,'client_origin':origin,
+                                'client_offset':[origin[0]-rect.left,origin[1]-rect.top]})
         return {'passed':True,'backend':'Win32DxgiBackend' if dxgi else 'Win32PrintWindow','receiver':'本进程无激活 Qt 测试窗口',
-                'cases':results,'window_movement_checked':move_window,
+                'cases':results,'window_movement_checked':move_window,'decorated_window':decorated,
                 'dxgi_verified':dxgi is not None,'game_capture_verified':False}
     finally:
         if gpu is not None:gpu.close()
@@ -113,12 +127,14 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--backend',choices=('printwindow','dxgi'),default='printwindow')
     parser.add_argument('--move-window',action='store_true',help='在屏幕内三个位置重复真实抓屏')
+    parser.add_argument('--decorated',action='store_true',help='使用真实标题栏及边框验证客户区裁剪')
     args=parser.parse_args()
     try:
-        result=check(backend=args.backend,move_window=args.move_window)
+        result=check(backend=args.backend,move_window=args.move_window,decorated=args.decorated)
     except Exception as error:
         result={'passed':False,'backend':args.backend,'error':str(error),'game_capture_verified':False}
     suffix='movement-check' if args.move_window else 'check'
+    if args.decorated:suffix='decorated-'+suffix
     output=ROOT/f'dist/win32-{args.backend}-{suffix}.json'
     output.parent.mkdir(exist_ok=True)
     output.write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')
