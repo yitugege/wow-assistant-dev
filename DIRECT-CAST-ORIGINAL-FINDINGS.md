@@ -44,3 +44,13 @@ c943f73后将原模块的`/dcbind`命令及已有槽位查找迁入`addon/WowBud
 `tests/test_direct_cast_slots.py`加载SHA校验后的原addon.bin完整模块，对照12条命令后的内存表和提示文字，以及重复槽、查询异常、非空缓存行为；另验证空索引可发现随后出现的技能。完整TOC及随机包测试确认`/dcbind`入口已实际装入。没有复制原按钮布尔值挂钩错误或自动施法调用；自动占槽、Cast、光环闸、移动意图、续挂、开关及环境直调等仍未接入。
 
 本次产品源码有变化，旧EXE内嵌插件与公开附件均不含本子模块；需后续成套构建与游戏验证，不将子模块完成当作DirectCast完成。
+
+## 后续迁入：宏解析与光环判断
+
+7e69dcd后加入DirectCastGuards.lua，在槽位模块之后加载，提供ResolveMacro、SpellIDForName、GuardBlocked、KeeperAuraPresent。前两者及KeeperAuraPresent是将原私有函数作为后续模块共享入口；GuardBlocked保留原公开接口。加载时不查询光环，不注册施法计时器，不改按钮属性。
+
+测试直接从经过摘要校验的原addon.bin执行完整DirectCast，再通过debug.getupvalue取得实际resolveMacro、nameToID和KeeperAuraPresent闭包，不另写预期算法。17种宏输入的解析输出、25组光环状态与API缺失组合、失败查询重试/成功缓存、空光环契约缓存后不重建等行为与原实现一致。完整TOC及随机包检查也确认入口已装入。
+
+必须保留的原行为局限：`/use [@player] 13`也被解析成法术文本13；`[@focus]`仍返回target；多行`/cast Frostbolt`后接`/startattack`会得到`Frostbolt /startattack`；分号宏取最后匹配文本，并不根据实际目标选择条件分支。本轮不将这些文本解析结果作为正确施法目标或法术的证明。
+
+GuardBlocked只在确认找到光环时返回true；KeeperAuraPresent在扫描报错、无名字API、40项扫描未结束等未知情况也返回true。首次建立空guardInfo后不重新建表，保留原已知缓存缺陷。续挂调度、施法与移动意图仍未接入，两个子模块也尚未进入EXE/公开发布包。

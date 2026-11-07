@@ -33,6 +33,8 @@
 
 尚未在游戏中验证弹窗已消失，不宣称已修复所有受保护操作。独立入口已停用旧更新来源和原安装流程；自有插件更新使用本仓库 GitHub Releases。
 
+DirectCastGuards.lua另已恢复原宏文本解析与光环防重复判断。它尚无施法消费者，且保留原解析器不能完整解释条件宏的限制；具体对照与未完成范围见DIRECT-CAST-ORIGINAL-FINDINGS.md。
+
 ## 独立插件打包
 
 在项目根目录运行 `python tools/build_addon.py`，生成 `dist/WowBuddyDev-dev.zip` 及成员SHA256清单。仅使用此工程内的插件源码，不调用旧EXE或原安装器；此离线包内固定为WowBuddyDev目录；公开发布请使用 build_github_release.py 生成随机命名包。

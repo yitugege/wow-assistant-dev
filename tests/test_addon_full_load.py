@@ -49,6 +49,10 @@ class AddonFullLoadTests(unittest.TestCase):
         self.assertEqual(lua.globals().SLASH_DCBIND1, '/dcbind')
         lua.globals().SlashCmdList.DCBIND('spell_116 61')
         self.assertEqual(addon.DirectCast.slots.spell_116, 61)
+        for name in ('ResolveMacro', 'SpellIDForName', 'GuardBlocked', 'KeeperAuraPresent'):
+            self.assertEqual(lua.eval('type')(addon.DirectCast[name]), 'function', name)
+        self.assertEqual(addon.DirectCast.ResolveMacro('/cast [@player] Frostbolt'),
+                         ('Frostbolt', 'player'))
         self.assertIsNone(lua.globals().WowBuddyDevDiagnostics)
         return lua, loaded
 
