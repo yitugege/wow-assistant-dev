@@ -2,6 +2,8 @@
 
 ## 现场记录：1.60.1 / build 70862
 
+随后现场单发测试：第一次准备命令时目标已被其他角色击杀，命令取消，未计为施法。重新选中存活敌对目标后，实际提交一次`/dc test class_NUMPAD5`，插件输出`nil no-slot-绑槽位: /dcbind class_numpad5 <动作条槽位号>`，没有观察到读条。对应已安装源码的castFallback分支，这表明未得到可用spellID且无成功手工槽位调用，尚不能据此判定受保护施法被拒绝。进一步只读查询`/dump type(GetSpellInfo)`触发游戏自定义脚本确认，等待用户处理；没有点击确认、修改权限或声称已取得查询结果。
+
 2026-11-07用户回复“已记录”后，读取游戏自行写出的WowBuddyDevHookProbe保存变量；未执行保存文件中的Lua代码，只提取诊断字段。脱敏后的结构记录见`evidence/hook-order-70862.json`，不包含账号路径、其他设置或聊天内容。Interface为16001，诊断范围为自有按钮点击顺序。
 
 共25条记录、7组PreClick序列；四次按下（序列1、2、4、6）均为`pre → default-marker → hook → post`，三次抬起（3、5、7）均为`pre → hook → post`。全部处于非战斗，LeftButton；被委托记录按钮的down=false不改变它在原按钮按下序列中的位置。序列1没有对应抬起记录，不能补造或推断丢失原因。
