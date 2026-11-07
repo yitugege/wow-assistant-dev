@@ -17,6 +17,7 @@ from .send_gates import invalidate_local_gcd, local_gcd_allows
 
 
 SEAL_FIELDS = ("seal_fury", "seal_righteousness", "seal_command")
+# 原0x1400a0cf0构造21项表，供0a2d70回执分支查询；见audit_native_seal_table.py。
 SEAL_IDS = {
     **dict.fromkeys((0x4eba, 0x4f3f, 0x4f40, 0x4f41, 0x4f42, 0x4f43, 0x4f44, 0x4f45, 0x525c), "seal_righteousness"),
     **dict.fromkeys((0x4f97, 0x51b3, 0x51b6, 0x51b7, 0x51b8), "seal_command"),

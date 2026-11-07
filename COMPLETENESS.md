@@ -4,14 +4,18 @@
 
 ## 当前交付与源码身份
 
-最新可测试单文件为 `dist/local-random-embedded/WowBuddyDev-Outer.exe`，SHA256 `78f1561ae8feefb19734b8dd0dba820ffff4508a8a412771632a0bf095bb449a`。包含诊断上下文及随机命名内附插件修复；85个插件文件内容核对通过。实际冻结安装10场景、缓存3场景、普通GUI两次启动/退出及设置保留通过，详见EMBEDDED-RANDOM-ADDON.md。此前各构建与安装描述保存在COMPLETENESS-HISTORY.md和对应专项记录，不作为当前版本证明。
+源码新增随机身份扫描的编码兼容修复：无法按UTF-8读取的其他插件TOC不再中断本产品安装。已先复现失败再修复，相关22项检查通过；下列现有EXE未包含此最新改动，需重新构建后才能用于该场景。
+
+最新本地构建更新为手动随机插件身份修复版：`dist/local-manual-identity/WowBuddyDev-Outer.exe`，SHA256 `70f5d0ac0bdde1921674a1abec62e2c2e4e9fa65fbd055b216d763f456ea0358`；实际冻结安装12场景、缓存3场景通过。见MANUAL-RANDOM-INSTALL-IDENTITY.md。下列local-random-embedded为前一构建及其验证范围；公开附件与本机游戏安装未改变。
+
+前一轮可测试单文件为 `dist/local-random-embedded/WowBuddyDev-Outer.exe`，SHA256 `78f1561ae8feefb19734b8dd0dba820ffff4508a8a412771632a0bf095bb449a`。包含诊断上下文及随机命名内附插件修复；85个插件文件内容核对通过。实际冻结安装10场景、缓存3场景、普通GUI两次启动/退出及设置保留通过，详见EMBEDDED-RANDOM-ADDON.md。此前各构建与安装描述保存在COMPLETENESS-HISTORY.md和对应专项记录，不作为当前版本证明。
 
 |对象|当前状态|证据|
 |---|---|---|
 |公开下载|仍为v0.2.8，提交11b9837；未替换附件|RELEASE-0.2.8.md|
 |本机游戏插件|诊断上下文包SHA256 a9cb27a3537f35f0f8ff330670457b15a923047b7dd3db0221e9db5a34069de6；保留WowBuddyDev身份|INSTALLED-SPELL-COMPAT-VALIDATION.md，85文件核对、备份一致、72个WTF文件未变|
-|目录客户端|dist/desktop/WowBuddyDev/WowBuddyDev.exe，SHA256 f291acf1d4d0e922b00cec9d5c0d21498f2b42ead744ca226f8630d23db99c8a|目录冻结启动及系统后端初始化自检通过|
-|单文件客户端|dist/local-random-embedded/WowBuddyDev-Outer.exe，摘要见上|EMBEDDED-RANDOM-ADDON.md|
+|目录客户端|dist/desktop/WowBuddyDev/WowBuddyDev.exe，SHA256 1ccba374324ceb5353a1c08cca17dcb09d4e3f4939734ab89aa7f5adbd9b818b|手动随机身份修复版；摘要已重新核对|
+|单文件客户端|dist/local-manual-identity/WowBuddyDev-Outer.exe，摘要见上|MANUAL-RANDOM-INSTALL-IDENTITY.md；本轮重新核对磁盘SHA256|
 |真实施法|此前单发命令识别spellID=837，但非战斗时CastSpellByID被拦截；正常安全宏按键仍未完成实测|evidence/directcast-forbidden-20261107.json|
 
 最近完整顶层回归为b7213a6的372项，371通过、1项因4像素readable完整图像高于屏幕失败。后续核心156项通过，此后pipeline专项9项通过；不合并计作全量回归。显式3像素下18组GDI与54组带边框/移动窗口检查通过，未删协议行，默认4像素限制仍在，见PRINTWINDOW-PITCH-VALIDATION.md。
@@ -27,6 +31,8 @@
 - 原外层历史导出只覆盖0x1000至0x6000；当前包含初始化、短跳板与静态终止表的图有251个可达展开范围，其中166个在旧范围外。跳板新增61项已有56项直接审读记录、5项经链式展开关联已读正文，首轮阅读完成；仍有反编译删除块、ABI和动态行为未验证。终止表另引出13个范围，已首轮审读并复核三段机器码。不能把阅读完成当作功能还原完成，见OUTER-REACHABILITY-AUDIT.md。
 
 ## 最近新增证据及其范围
+
+低地址区域的直接调用调查已覆盖2647份函数导出，跨区14个调用点来自登录、解绑、错误说明、后台授权循环和退出五个应用函数。进一步确认SDK对象0xcc参与请求响应状态，与应用授权对象的到期时间不同；009400已识别为错误说明生成入口。此为静态边界调查，不涵盖间接调用，也不能据此认定所有SDK副作用仅属授权，详见SDK-DIRECT-BOUNDARY.md。
 
 原包与独立版九职业实际注册均无持久化技能/充能表，仅猎人登记三项会话冷却。完整独立猎人事件计时在复制保存变量到新Lua运行时后不恢复（服务器仅过2秒）；此前持久化函数测试是显式测试配置，不代表职业实际启用。3项相关测试通过，未改原配置，见SHIPPED-COOLDOWN-CONFIGURATION.md。
 

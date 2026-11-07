@@ -146,6 +146,7 @@ def part_file_path(target_path):
 
 
 def version_segments(version):
+    # 0x1400b6b50：逐 UTF-16 字元积累数字段，分隔或结尾时 toLongLong。
     # QChar iterates UTF-16 units: supplementary-plane digit codepoints are NOT digits here.
     normalized = "".join(c if ord(c) <= 0xffff and c.isdecimal() else "." for c in version)
     result = []
@@ -183,6 +184,7 @@ def _string(value, default=""):
 
 
 def parse_manifest(body, manifest_url, current_version=CURRENT_VERSION):
+    # 0x1400b5340：app 默认项、首个 infinite 覆盖项及清单字段/错误优先级。
     # The installed Qt parser preserves native parse errors and object/array distinction.
     from PySide6.QtCore import QJsonDocument, QJsonParseError, QLocale
     error = QJsonParseError()
@@ -225,6 +227,7 @@ def format_size(value):
 
 
 def checked_ui(info, previous=None, *, manual, auto_update, blocker="", now_ms=None, time_text=""):
+    """0x1400912f0：完成检查后的按钮、状态、时间及自动下载分支。"""
     state = previous or UpdateUIState()
     state = replace(state, check_enabled=True, progress_visible=False,
                     auto_download_requested=False, logs=())

@@ -114,6 +114,7 @@ def widget_report(window: QWidget, spec_id: str) -> str:
 def showall_report(window: QWidget, checkbox: QCheckBox | None, enabled: bool,
                    current_field_cells: Callable[[], Sequence[FieldCell]], *,
                    warning: Callable[[str], None] = qWarning) -> str:
+    # 0x140088990：切换前统计、同步 setChecked、区分本轮与旧格并输出警告。
     if checkbox is None:
         return "--toggle-showall：chkShowAll_ 为空，跳过\n"
     before = sum(not widget.isHidden() for widget in window.findChildren(FieldCell))

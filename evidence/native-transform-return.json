@@ -1,0 +1,169 @@
+{
+  "target_sha256": "7b3c05fdbc2369f7a8fb7bb870fb0341ba1891223212e3a02b54d5c62fb9d488",
+  "passed": true,
+  "thunk": [
+    {
+      "address": "0x140006e50",
+      "bytes": "4883ec28",
+      "mnemonic": "sub",
+      "operands": "rsp, 0x28"
+    },
+    {
+      "address": "0x140006e54",
+      "bytes": "e8f73f0000",
+      "mnemonic": "call",
+      "operands": "0x14000ae50"
+    },
+    {
+      "address": "0x140006e59",
+      "bytes": "90",
+      "mnemonic": "nop",
+      "operands": ""
+    },
+    {
+      "address": "0x140006e5a",
+      "bytes": "4883c428",
+      "mnemonic": "add",
+      "operands": "rsp, 0x28"
+    },
+    {
+      "address": "0x140006e5e",
+      "bytes": "c3",
+      "mnemonic": "ret",
+      "operands": ""
+    }
+  ],
+  "transform_return": [
+    {
+      "address": "0x14000d015",
+      "bytes": "8b442428",
+      "mnemonic": "mov",
+      "operands": "eax, dword ptr [rsp + 0x28]"
+    },
+    {
+      "address": "0x14000d019",
+      "bytes": "4883c438",
+      "mnemonic": "add",
+      "operands": "rsp, 0x38"
+    },
+    {
+      "address": "0x14000d01d",
+      "bytes": "c3",
+      "mnemonic": "ret",
+      "operands": ""
+    }
+  ],
+  "callers": [
+    {
+      "function": "0x140005ef0",
+      "call_and_following": [
+        {
+          "address": "0x140006a49",
+          "bytes": "e802040000",
+          "mnemonic": "call",
+          "operands": "0x140006e50"
+        },
+        {
+          "address": "0x140006a4e",
+          "bytes": "41898424cc000000",
+          "mnemonic": "mov",
+          "operands": "dword ptr [r12 + 0xcc], eax"
+        },
+        {
+          "address": "0x140006a56",
+          "bytes": "488b8c2418010000",
+          "mnemonic": "mov",
+          "operands": "rcx, qword ptr [rsp + 0x118]"
+        },
+        {
+          "address": "0x140006a5e",
+          "bytes": "ff15749d0c00",
+          "mnemonic": "call",
+          "operands": "qword ptr [rip + 0xc9d74]"
+        },
+        {
+          "address": "0x140006a64",
+          "bytes": "c644243f01",
+          "mnemonic": "mov",
+          "operands": "byte ptr [rsp + 0x3f], 1"
+        }
+      ]
+    },
+    {
+      "function": "0x140006e80",
+      "call_and_following": [
+        {
+          "address": "0x140007754",
+          "bytes": "e8f7f6ffff",
+          "mnemonic": "call",
+          "operands": "0x140006e50"
+        },
+        {
+          "address": "0x140007759",
+          "bytes": "03442460",
+          "mnemonic": "add",
+          "operands": "eax, dword ptr [rsp + 0x60]"
+        },
+        {
+          "address": "0x14000775d",
+          "bytes": "89442460",
+          "mnemonic": "mov",
+          "operands": "dword ptr [rsp + 0x60], eax"
+        },
+        {
+          "address": "0x140007761",
+          "bytes": "488b442468",
+          "mnemonic": "mov",
+          "operands": "rax, qword ptr [rsp + 0x68]"
+        },
+        {
+          "address": "0x140007766",
+          "bytes": "4883c001",
+          "mnemonic": "add",
+          "operands": "rax, 1"
+        }
+      ]
+    },
+    {
+      "function": "0x140006e80",
+      "call_and_following": [
+        {
+          "address": "0x1400077f5",
+          "bytes": "e856f6ffff",
+          "mnemonic": "call",
+          "operands": "0x140006e50"
+        },
+        {
+          "address": "0x1400077fa",
+          "bytes": "418986cc000000",
+          "mnemonic": "mov",
+          "operands": "dword ptr [r14 + 0xcc], eax"
+        },
+        {
+          "address": "0x140007801",
+          "bytes": "8b442448",
+          "mnemonic": "mov",
+          "operands": "eax, dword ptr [rsp + 0x48]"
+        },
+        {
+          "address": "0x140007805",
+          "bytes": "83c005",
+          "mnemonic": "add",
+          "operands": "eax, 5"
+        },
+        {
+          "address": "0x140007808",
+          "bytes": "89442448",
+          "mnemonic": "mov",
+          "operands": "dword ptr [rsp + 0x48], eax"
+        }
+      ]
+    }
+  ],
+  "conclusion": "006e50不改写被调用方EAX返回值；三个调用点随后读取EAX，伪代码void签名不可采用。",
+  "limitations": [
+    "静态机器码核对，不执行原程序、不调用SDK、不请求远端",
+    "不证明128分支所有算术行为或响应字段业务含义",
+    "线性反汇编仅用于所列函数内的直接调用点，不排除间接调用"
+  ]
+}

@@ -91,6 +91,27 @@ def _install_package(package, addons, backup_root, record_path):
         if record.get('product')!='wowbuddy-dev' or (prior!=NAME and not re.fullmatch(r'w[0-9a-f]{12}',prior)):
             raise ValueError('上次安装记录无效；不修改无法识别的目录')
         previous=addons/prior
+    elif not previous.exists() and addons.is_dir():
+        # 手动解压的随机发布包没有安装记录；用包内产品标记恢复唯一身份。
+        matches=[]
+        for candidate in addons.iterdir():
+            if not re.fullmatch(r'w[0-9a-f]{12}',candidate.name):
+                continue
+            _plain_path(candidate)
+            toc=candidate/(candidate.name+'.toc')
+            if candidate.is_dir() and toc.is_file():
+                _plain_path(toc)
+                try:
+                    lines=toc.read_text('utf-8-sig').splitlines()
+                except UnicodeDecodeError:
+                    # 本产品发布TOC固定UTF-8；其他插件的旧编码不是安装错误。
+                    continue
+                if '## X-WowBuddy-Product: wowbuddy-dev' in {line.strip() for line in lines}:
+                    matches.append(candidate)
+        if len(matches)>1:
+            raise ValueError('发现多个本产品随机插件目录，无法确定更新身份；未修改目录')
+        if matches:
+            previous=matches[0]
     # 首次安装采用发布包随机目录；已有安装（包括固定名开发版）保持本机身份。
     # 不改目录名，才能延续游戏启用状态及按插件名关联的存档文件。
     installed_name=previous.name if record_path.exists() or previous.exists() else addon_name

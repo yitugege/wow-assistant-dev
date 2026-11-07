@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import zipfile
 import ctypes as C
 from contextlib import contextmanager
 from check_frozen_outer import ROOT, run, file_sha256
@@ -147,6 +148,33 @@ def check():
         assert occupied.read_bytes()==b'unchanged'
         assert snapshot(addons)==installed_before and len(list(backup_root.iterdir()))==2
         cases.append({'mode':mode,'scenario':'occupied_target','passed':True,**outcome})
+
+        # 没有安装记录的手动解压包，必须沿用旧随机身份。
+        manual_root=home/'manual-client'
+        manual_addons=manual_root/'Interface/AddOns';manual_addons.mkdir(parents=True)
+        manual_package=home/'manual-original.zip'
+        manual_manifest=build(ROOT/'addon/WowBuddyDev',manual_package,random_names=True)
+        manual_name=manual_manifest['addon_directory']
+        with zipfile.ZipFile(manual_package) as archive:archive.extractall(manual_addons)
+        manual_target=manual_addons/manual_name
+        (manual_target/'custom.lua').write_bytes(b'original manual installation')
+        manual_before=snapshot(manual_target)
+        saved=manual_root/'WTF/SavedVariables'/f'{manual_name}.lua'
+        saved.parent.mkdir(parents=True);saved.write_bytes(b'identity must survive')
+        assert not (manual_root/'.wowbuddy-install.json').exists()
+        outcome=invoke(manual_addons,0)
+        manual_record=json.loads((manual_root/'.wowbuddy-install.json').read_text('utf8'))
+        assert manual_record=={'product':'wowbuddy-dev','addon_directory':manual_name}
+        current_name,current_payload=read_package(package,with_metadata=True)
+        current_payload[Path(manual_name+'.toc')]=current_payload.pop(Path(current_name+'.toc'))
+        from hashlib import sha256
+        assert snapshot(manual_target)=={p.as_posix():sha256(v).hexdigest() for p,v in current_payload.items()}
+        assert not (manual_addons/current_name).exists()
+        manual_backups=list((manual_root/'WowBuddyDev-backups').iterdir())
+        assert len(manual_backups)==1 and snapshot(manual_backups[0])==manual_before
+        assert saved.read_bytes()==b'identity must survive'
+        cases.append({'mode':mode,'scenario':'manual_random_without_record','passed':True,
+                      'identity_preserved':True,'backup_exact':True,'saved_variables_unchanged':True,**outcome})
     return {'passed':True,'test_root':str(root),'cases':cases,
             'business_sha256':directory_build['executable_sha256'],'outer_sha256':outer_build['sha256'],
             'game_installation_modified':False,'game_verified':False,

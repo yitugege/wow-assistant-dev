@@ -154,6 +154,7 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
     root_layout.setContentsMargins(0, 0, 0, 0)
     root_layout.setSpacing(0)
 
+    # 0x1400871d0；事件过滤与按钮连接在 qt_app/window_shell 中完成。
     title_bar = QWidget()
     title_bar.setObjectName('TitleBar')
     title_bar.setFixedHeight(48)
@@ -353,6 +354,7 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
     body_layout.addWidget(left_scroll)
 
     center_panel, center_layout = _column()
+    # 原0x140081c50构造实时字段/阈值区域；显示全部回调为08cfe0。
     fields_card, layout = _card('实时字段')
     cards['fields'] = fields_card
     row = QHBoxLayout()

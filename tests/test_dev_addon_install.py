@@ -136,3 +136,43 @@ class InstallTests(unittest.TestCase):
         self.assertTrue((self.target/'WowBuddyDev.toc').is_file())
         record=json.loads((self.client/'.wowbuddy-install.json').read_text('utf8'))
         self.assertEqual(record['addon_directory'],'WowBuddyDev')
+
+    def test_manual_random_install_without_record_keeps_identity(self):
+        manifest=build(self.source,self.package,random_names=True)
+        self.package.with_suffix('.manifest.json').write_text(json.dumps(manifest),'utf8')
+        addons=self.client/'Interface/AddOns';addons.mkdir(parents=True)
+        with zipfile.ZipFile(self.package) as archive:archive.extractall(addons)
+        old_name=manifest['addon_directory']
+        old=addons/old_name
+        foreign=addons/'w000000000000';foreign.mkdir()
+        (foreign/(foreign.name+'.toc')).write_text('## Title: Other addon\n','utf8')
+        legacy=addons/'w111111111111';legacy.mkdir()
+        legacy_toc=legacy/(legacy.name+'.toc')
+        legacy_bytes='## Title: 其他插件\n'.encode('gbk')
+        legacy_toc.write_bytes(legacy_bytes)
+        before={p.relative_to(old):p.read_bytes() for p in old.rglob('*') if p.is_file()}
+        saved=self.client/'WTF/SavedVariables'/f'{old_name}.lua'
+        saved.parent.mkdir(parents=True);saved.write_bytes(b'preserve identity')
+        replacement=build(self.source,self.package,random_names=True)
+        self.assertNotEqual(old_name,replacement['addon_directory'])
+        self.package.with_suffix('.manifest.json').write_text(json.dumps(replacement),'utf8')
+        result=install_package(self.package,self.client)
+        self.assertEqual(result['addon_directory'],old_name)
+        self.assertTrue((old/(old_name+'.toc')).is_file())
+        self.assertFalse((addons/replacement['addon_directory']).exists())
+        backup=Path(result['backup'])
+        self.assertEqual(before,{p.relative_to(backup):p.read_bytes() for p in backup.rglob('*') if p.is_file()})
+        self.assertEqual(saved.read_bytes(),b'preserve identity')
+        self.assertEqual((foreign/(foreign.name+'.toc')).read_text('utf8'),'## Title: Other addon\n')
+        self.assertEqual(legacy_toc.read_bytes(),legacy_bytes)
+
+    def test_multiple_manual_random_identities_fail_without_mutation(self):
+        addons=self.client/'Interface/AddOns';addons.mkdir(parents=True)
+        for _ in range(2):
+            manifest=build(self.source,self.package,random_names=True)
+            self.package.with_suffix('.manifest.json').write_text(json.dumps(manifest),'utf8')
+            with zipfile.ZipFile(self.package) as archive:archive.extractall(addons)
+        before={p.relative_to(self.client):p.read_bytes() for p in self.client.rglob('*') if p.is_file()}
+        with self.assertRaisesRegex(ValueError,'多个本产品'):
+            install_package(self.package,self.client)
+        self.assertEqual(before,{p.relative_to(self.client):p.read_bytes() for p in self.client.rglob('*') if p.is_file()})

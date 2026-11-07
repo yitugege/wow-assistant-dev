@@ -1,0 +1,94 @@
+{
+  "function": "0x1400a0cf0",
+  "pseudocode_sha256": "258cb62f19f41956cc5c863914ea44b1d47d17dc36fd6e248506c2155deede15",
+  "implementation": "desktop/wowbuddy/scheduler.py:SEAL_IDS",
+  "entries": [
+    {
+      "spell_id": 20154,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 20287,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 20288,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 20289,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 20290,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 20291,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 20292,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 20293,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 21084,
+      "field": "seal_righteousness"
+    },
+    {
+      "spell_id": 20375,
+      "field": "seal_command"
+    },
+    {
+      "spell_id": 20915,
+      "field": "seal_command"
+    },
+    {
+      "spell_id": 20918,
+      "field": "seal_command"
+    },
+    {
+      "spell_id": 20919,
+      "field": "seal_command"
+    },
+    {
+      "spell_id": 20920,
+      "field": "seal_command"
+    },
+    {
+      "spell_id": 20163,
+      "field": "seal_fury"
+    },
+    {
+      "spell_id": 20419,
+      "field": "seal_fury"
+    },
+    {
+      "spell_id": 20421,
+      "field": "seal_fury"
+    },
+    {
+      "spell_id": 20422,
+      "field": "seal_fury"
+    },
+    {
+      "spell_id": 20423,
+      "field": "seal_fury"
+    },
+    {
+      "spell_id": 1311649,
+      "field": "seal_fury"
+    },
+    {
+      "spell_id": 1311656,
+      "field": "seal_fury"
+    }
+  ],
+  "equal": true,
+  "native_execution": false,
+  "scope": "已导出静态表常量逐项对照，不证明游戏回执或有效持续时间"
+}

@@ -102,6 +102,7 @@ class SwatchStrip(QWidget):
         self._resize_height()
 
     def paintEvent(self, event):
+        # 0x1400b1390：暗色且未知使用虚线占位，暗色有效值使用实线深底。
         painter = QPainter(self)
         try:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)

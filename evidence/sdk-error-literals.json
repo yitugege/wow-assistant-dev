@@ -1,0 +1,603 @@
+{
+  "target_sha256": "7b3c05fdbc2369f7a8fb7bb870fb0341ba1891223212e3a02b54d5c62fb9d488",
+  "passed": true,
+  "comparison_thresholds": [
+    -121,
+    -120,
+    -119,
+    -118,
+    -117,
+    -116,
+    -115,
+    -114,
+    -113,
+    -112,
+    -111,
+    -110,
+    -109,
+    -108,
+    -107,
+    -106,
+    -105,
+    -104,
+    -103,
+    -102,
+    -101,
+    -100,
+    -37,
+    -36,
+    -35,
+    -34,
+    -33,
+    -32,
+    -31,
+    -30,
+    -29,
+    -28,
+    -27,
+    -26,
+    -25,
+    -24,
+    -23,
+    -22,
+    -21,
+    -18,
+    -17,
+    -16,
+    -15,
+    -7,
+    -6,
+    -5,
+    -4,
+    -3,
+    -2,
+    -1
+  ],
+  "samples": [
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -2147483648,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -122,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c358c6c6dec05faccd905ecd8962892052771a0c5c3d60c1ef580de52b87f3fb350b5e8c412cb64c3e",
+      "steps": 41,
+      "code": -121,
+      "decoded_hex": "b4edcef3c2eb3a2d3132310abdfbd6b9d5d2bbd8d5cbbac5d0c5cfa2212028b7fecef1b6cbceb4bfaac6f4b4cbb9a6c4dc29",
+      "text_gbk": "错误码:-121\n禁止找回账号信息! (服务端未开启此功能)",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c359c6c48dd53acdf2e5753962f0802841000ae3b6e801ef946d08ca3386f3f9dc4632865235dab9",
+      "steps": 43,
+      "code": -120,
+      "decoded_hex": "b4edcef3c2eb3a2d3132300abfa8c3dcb4edcef3212028ccd8d6b8b2cecafdd6d0b5c4b3e4d6b5bfa82fb9d8c1aabfa829",
+      "text_gbk": "错误码:-120\n卡密错误! (特指参数中的充值卡/关联卡)",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c050c6abe7d53abbf4e558c8e5f96cd8505372c9b4fe04eff10e0eea35f18f8d3114c3",
+      "steps": 44,
+      "code": -119,
+      "decoded_hex": "b4edcef3c2eb3a2d3131390ad0c2c3dcc2ebceded0a7212028c7ebcae4c8ebd3d0d0a7b5c4d0c2c3dcc2eb29",
+      "text_gbk": "错误码:-119\n新密码无效! (请输入有效的新密码)",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c051c6c48dd53aabce9a3da5b90b8fd1",
+      "steps": 35,
+      "code": -118,
+      "decoded_hex": "b4edcef3c2eb3a2d3131380abfa8c3dcd2d1b1bbbdfbd3c321",
+      "text_gbk": "错误码:-118\n卡密已被禁用!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c05ec6c8c1c053c6b7f957a9f912f5235499",
+      "steps": 37,
+      "code": -117,
+      "decoded_hex": "b4edcef3c2eb3a2d3131370ab3e4d6b5bfa8d2d1b1bbcab9d3c321",
+      "text_gbk": "错误码:-117\n充值卡已被使用!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c05fc6c2fdd74cc6b7e558afea0b8f234d0b5cfbc934",
+      "steps": 41,
+      "code": -116,
+      "decoded_hex": "b4edcef3c2eb3a2d3131360ab9d8c1aabfa8cedeb7a8d3c3d3dab3e4d6b521",
+      "text_gbk": "错误码:-116\n关联卡无法用于充值!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c05cc6ce94d156b1f29778d6f916f84f3d7e4c76a8df07d29a0c08cab8f4a799444e49f41c5cc725d3d65c885e7b827859d28f9aad4afef450cfa83ea4dc797a334c3efac7d8bec2fb3995",
+      "steps": 34,
+      "code": -115,
+      "decoded_hex": "b4edcef3c2eb3a2d3131350ab5b1c7b0c8edbcfecebbceb4bfaac6f45bd4cad0edbba5b3e45dc7ebc8b7b1a3b3e4d6b5b5c4bfa8c3dcd3ebb1bbb3e4d6b5b5c4bfa8c3dccac7d3c9cfe0cdacb4fac0edb4b4bda8",
+      "text_gbk": "错误码:-115\n当前软件位未开启[允许互充]请确保充值的卡密与被充值的卡密是由相同代理创建",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c05dc6ce94d156b1f29778d6f916f84f3d7e4c76a8df07d29a4508cab8f4a799444e49f41c5cc725d3d65c885e7b827859d28f9aad4afef450cfa83483df7d67685750",
+      "steps": 36,
+      "code": -114,
+      "decoded_hex": "b4edcef3c2eb3a2d3131340ab5b1c7b0c8edbcfecebbceb4bfaac6f45bd4cad0edbbecb3e45dc7ebc8b7b1a3b3e4d6b5b5c4bfa8c3dcd3ebb1bbb3e4d6b5b5c4bfa8c3dcc0e0d0cdd2bbd6c2",
+      "text_gbk": "错误码:-114\n当前软件位未开启[允许混充]请确保充值的卡密与被充值的卡密类型一致",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c05ac6b1f1c525c6b7e558afea0b8f234d0b5cfbc934",
+      "steps": 41,
+      "code": -113,
+      "decoded_hex": "b4edcef3c2eb3a2d3131330acad4d3c3bfa8cedeb7a8d3c3d3dab3e4d6b521",
+      "text_gbk": "错误码:-113\n试用卡无法用于充值!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c05bc6c6dec05fcafbfd3339",
+      "steps": 34,
+      "code": -112,
+      "decoded_hex": "b4edcef3c2eb3a2d3131320abdfbd6b9b3e4d6b521",
+      "text_gbk": "错误码:-112\n禁止充值!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c058c6c8c1c053c6b7e558c8e5f9",
+      "steps": 36,
+      "code": -111,
+      "decoded_hex": "b4edcef3c2eb3a2d3131310ab3e4d6b5bfa8ceded0a721",
+      "text_gbk": "错误码:-111\n充值卡无效!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c059c6b8f9d40dc2ed982aa4f41b90327c7666fddb34",
+      "steps": 41,
+      "code": -110,
+      "decoded_hex": "b4edcef3c2eb3a2d3131300ac3dcc2ebbbf2b3acbcb6c3dcc2ebceded0a721",
+      "text_gbk": "错误码:-110\n密码或超级密码无效!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c150c6aeeeac23c2ed982aa4f41b90327c7666fddb34",
+      "steps": 37,
+      "code": -109,
+      "decoded_hex": "b4edcef3c2eb3a2d3130390ad5cbbac5bbf2b3acbcb6c3dcc2ebceded0a721",
+      "text_gbk": "错误码:-109\n账号或超级密码无效!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c151c6c6dec05faebd996739",
+      "steps": 37,
+      "code": -108,
+      "decoded_hex": "b4edcef3c2eb3a2d3130380abdfbd6b9d7a2b2e121",
+      "text_gbk": "错误码:-108\n禁止注册!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c15ec6ce94d156c2e5ed71daa90a9d397d7f53e7a8c61480891c10e431e08fee5b2d3bfe054ca8b8a0dc4f93487cba0a5dc942",
+      "steps": 48,
+      "code": -107,
+      "decoded_hex": "b4edcef3c2eb3a2d3130370ab5b1c7b0bbfac6f7c2ebd2d1c9eac7ebcad4d3c3bfa8b5abcad4d3c3bfa8d2d1b9fdc6da28b7b5bbd8cad4d3c3bfa829",
+      "text_gbk": "错误码:-107\n当前机器码已申请试用卡但试用卡已过期(返回试用卡)",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c15fc6ce94d156c2e5ed71daa90a9d4e3a7152ea97ac2af5f57a78914d1bfbe4482720932b49cd383e48",
+      "steps": 41,
+      "code": -106,
+      "decoded_hex": "b4edcef3c2eb3a2d3130360ab5b1c7b0bbfac6f7c2ebd2d1beadc9eac7ebb9fdcad4d3c3bfa828b7b5bbd8cad4d3c3bfa82921",
+      "text_gbk": "错误码:-106\n当前机器码已经申请过试用卡(返回试用卡)!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c15cc6c99ec22ca9f2f845a3e50a8a436a6c62e2a3aa1a84861f700f",
+      "steps": 40,
+      "code": -105,
+      "decoded_hex": "b4edcef3c2eb3a2d3130350ab2bbd4cad0edd3c3bba7d2c6b3fdd4dacfdfbfcdbba7b6cb21",
+      "text_gbk": "错误码:-105\n不允许用户移除在线客户端!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c15dc6cfcaa35baef19f75a5a068bf445972450c",
+      "steps": 41,
+      "code": -104,
+      "decoded_hex": "b4edcef3c2eb3a2d3130340ab4efb5bdd7eeb4f3bde2b0f3b4cecafd21",
+      "text_gbk": "错误码:-104\n达到最大解绑次数!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c15ac6b186c506b3ae9762aaf90fafd1",
+      "steps": 36,
+      "code": -103,
+      "decoded_hex": "b4edcef3c2eb3a2d3130330acaa3d3e0cab1bce4b2bbd7e321",
+      "text_gbk": "错误码:-103\n剩余时间不足!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c15bc6a9f4a209cca2fc68acb163f740640c76e78134",
+      "steps": 38,
+      "code": -102,
+      "decoded_hex": "b4edcef3c2eb3a2d3130320ad2d1b4efb5bdd7eeb4f3bbbbb0f3b4cecafd21",
+      "text_gbk": "错误码:-102\n已达到最大换绑次数!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c158c6c9fcc111abf3982539",
+      "steps": 39,
+      "code": -101,
+      "decoded_hex": "b4edcef3c2eb3a2d3130310ab2d9d7f7d2ecb3a321",
+      "text_gbk": "错误码:-101\n操作异常!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c159c6a9f4c23cb8f2f93dd1aa69f440640e100c5c3d07d7f30374e658d1fca2dfdf3e9e4572a240a2ae36f73760db10359642",
+      "steps": 43,
+      "code": -100,
+      "decoded_hex": "b4edcef3c2eb3a2d3130300ad2d1d4dac1edd2bbc9e8b1b8b0f3b6a8212028d0e8d2aacfc8bde2b0f32c20d4d9bdf8d0d0b5c7c2bcb5c8b2d9d7f729",
+      "text_gbk": "错误码:-100\n已在另一设备绑定! (需要先解绑, 再进行登录等操作)",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -99,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -38,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176c663bc384a78921c675f34a38604825ad9edf461",
+      "steps": 38,
+      "code": -37,
+      "decoded_hex": "b4edcef3c2eb3a2d33370a70436f6e74657874b2bbc4dcceaa4e554c4c",
+      "text_gbk": "错误码:-37\npContext不能为NULL",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176c7631eaa94ad5187d1da30d385679a36575377f25d",
+      "steps": 40,
+      "code": -36,
+      "decoded_hex": "b4edcef3c2eb3a2d33360ad2d1b1bbb7fecef1b6cbc7bfd6c6c0ebcfdf21",
+      "text_gbk": "错误码:-36\n已被服务端强制离线!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176c4637f9ff3a32cdeaff7a7",
+      "steps": 34,
+      "code": -35,
+      "decoded_hex": "b4edcef3c2eb3a2d33350ab3e4d6b5caa7b0dc21",
+      "text_gbk": "错误码:-35\n充值失败!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176c56319b09fd35294d1d8a9d69c08ebd1",
+      "steps": 38,
+      "code": -34,
+      "decoded_hex": "b4edcef3c2eb3a2d33340ad5cbbac5b4edcef32fceded0a721",
+      "text_gbk": "错误码:-34\n账号错误/无效!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176c263049699e82cadcce83fbe86049e212e6009f85d",
+      "steps": 41,
+      "code": -33,
+      "decoded_hex": "b4edcef3c2eb3a2d33330ac8edbcfecad4d3c3b9a6c4dcd2d1b9d8b1d521",
+      "text_gbk": "错误码:-33\n软件试用功能已关闭!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176c36306d8f6f6539ad5d634a3953b6d",
+      "steps": 35,
+      "code": -32,
+      "decoded_hex": "b4edcef3c2eb3a2d33320acaa3d3e0b5e3cafdb2bbd7e321",
+      "text_gbk": "错误码:-32\n剩余点数不足!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176c06378d0eff254b7d5d632f58c2b6d",
+      "steps": 37,
+      "code": -31,
+      "decoded_hex": "b4edcef3c2eb3a2d33310ab4abcae4b2cecafdb4edcef321",
+      "text_gbk": "错误码:-31\n传输参数错误!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176c1637881e5fb2fb5cdc735bb63",
+      "steps": 39,
+      "code": -30,
+      "decoded_hex": "b4edcef3c2eb3a2d33300ab4fac0edc9ccd2ecb3a321",
+      "text_gbk": "错误码:-30\n代理商异常!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c86373d3e6ca22d5d7e43abcf9368657276499",
+      "steps": 35,
+      "code": -29,
+      "decoded_hex": "b4edcef3c2eb3a2d32390abfa8c3dcc4acc8cfbca4bbeecaa7b0dc21",
+      "text_gbk": "错误码:-29\n卡密默认激活失败!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c9631eaa9ead568aaa9640fc892385182600940dc9a4108f946e799337e286f62358cb",
+      "steps": 41,
+      "code": -28,
+      "decoded_hex": "b4edcef3c2eb3a2d32380ad2d1bbbbb0f3b5bdc6e4cbfbc9e8b1b82c20b5b1c7b0b5c7c2bdd2d1caa7d0a721",
+      "text_gbk": "错误码:-28\n已换绑到其他设备, 当前登陆已失效!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c6637dc099a129bbd0f4a7",
+      "steps": 38,
+      "code": -27,
+      "decoded_hex": "b4edcef3c2eb3a2d32370ab1bbbcb7cfc2cfdf21",
+      "text_gbk": "错误码:-27\n被挤下线!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c7631eaa91f953c4c8c532eb9602832f5d4579925035628ee6190ee9278ef1fa481e20e0485653",
+      "steps": 40,
+      "code": -26,
+      "decoded_hex": "b4edcef3c2eb3a2d32360ad2d1b4efb5bdd7eeb4f3d4dacfdfcafdc1bf2c20b5b1c7b0b5c7c2bdbdabbbe1caa7b0dc21",
+      "text_gbk": "错误码:-26\n已达到最大在线数量, 当前登陆将会失败!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c4637881e5fb2fb5ae904bbb911b6d",
+      "steps": 36,
+      "code": -25,
+      "decoded_hex": "b4edcef3c2eb3a2d32350ab4fac0edc9ccb1bbcda3d3c321",
+      "text_gbk": "错误码:-25\n代理商被停用!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c5637881e5fb2fb5d1f556bf63",
+      "steps": 38,
+      "code": -24,
+      "decoded_hex": "b4edcef3c2eb3a2d32340ab4fac0edc9ccceded0a721",
+      "text_gbk": "错误码:-24\n代理商无效!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c26373d3e6cac9acd49143a9f96fae3d3499",
+      "steps": 36,
+      "code": -23,
+      "decoded_hex": "b4edcef3c2eb3a2d32330abfa8c3dc2fd5cbbac5b1bbb7e2cda321",
+      "text_gbk": "错误码:-23\n卡密/账号被封停!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c36373d3e6cac9acd49143ca9361b1364d99",
+      "steps": 38,
+      "code": -22,
+      "decoded_hex": "b4edcef3c2eb3a2d32320abfa8c3dc2fd5cbbac5d2d1b9fdc6da21",
+      "text_gbk": "错误码:-22\n卡密/账号已过期!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177c06373d3e6ca28a7cf8ca9cd896289334b7a539991db241e",
+      "steps": 41,
+      "code": -21,
+      "decoded_hex": "b4edcef3c2eb3a2d32310abfa8c3dcceded0a72fd5cbbac5c3dcc2ebb4edcef321",
+      "text_gbk": "错误码:-21\n卡密无效/账号密码错误!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -20,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -19,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -18,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c6637881e5fb2fb5c89f4ab48c6c9a5ab6",
+      "steps": 35,
+      "code": -17,
+      "decoded_hex": "b4edcef3c2eb3a2d31370ab4fac0edc9ccd7b4ccacceb4d6aa21",
+      "text_gbk": "错误码:-17\n代理商状态未知!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c76302cff3bc5294d1d8a7",
+      "steps": 35,
+      "code": -16,
+      "decoded_hex": "b4edcef3c2eb3a2d31360aceb4d6aab4edcef321",
+      "text_gbk": "错误码:-16\n未知错误!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174c463059692cb2eb6c98f56dd8d7a9e212e457ef75d3510d4f7716bec249ff182d2",
+      "steps": 43,
+      "code": -15,
+      "decoded_hex": "b4edcef3c2eb3a2d31350ac9edb7ddc8cfd6a4d0c5cfa2d2d1b9fdc6da2120c7ebd6d8d0c2c1acbdd321",
+      "text_gbk": "错误码:-15\n身份认证信息已过期! 请重新连接!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -14,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -8,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": -7,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577173fba331c5f8a61aa9bcfa6fd2e56890d1",
+      "steps": 36,
+      "code": -6,
+      "decoded_hex": "b4edcef3c2eb3a2d360acafdbeddb0fcd0a3d1e9caa7b0dc21",
+      "text_gbk": "错误码:-6\n数据包校验失败!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577170fba778c7f6c23eadd99740d3a16aa94c69034af9baa911f4c21b5e921bfdf8e44f4c1c14a8d531fc781c9008edc519bc9608052b47bc5b27946e159708b51f7f2eba",
+      "steps": 37,
+      "code": -5,
+      "decoded_hex": "b4edcef3c2eb3a2d350aceb4bcd3d4d8d4c6bcc6cbe3b2e5bcfebbf2d4c6bcc6cbe3b2e5bcfeceb4b5bcb3f653505f436c6f7564436f6d707574696e675f43616c6c6261636bbaafcafd3b",
+      "text_gbk": "错误码:-5\n未加载云计算插件或云计算插件未导出SP_CloudComputing_Callback函数;",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577171fba331c5f8a61aabf3982539",
+      "steps": 39,
+      "code": -4,
+      "decoded_hex": "b4edcef3c2eb3a2d340acafdbeddb0fcd2ecb3a321",
+      "text_gbk": "错误码:-4\n数据包异常!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577176fba434b9c2db4ea8a99870acaff96c377c6e60fdbed47b82f288",
+      "steps": 37,
+      "code": -3,
+      "decoded_hex": "b4edcef3c2eb3a2d330acdf8c2e7cda8d1b6b3f6b4ed2120c7ebd6d8d0c2c1acbdd321",
+      "text_gbk": "错误码:-3\n网络通讯出错! 请重新连接!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577177fb3e9f3a7662870b6b5ef6a2ed12b147220360e7dba50b1e",
+      "steps": 38,
+      "code": -2,
+      "decoded_hex": "b4edcef3c2eb3a2d320a57534153746172747570baafcafdb7b5bbd8caa7b0dc21",
+      "text_gbk": "错误码:-2\nWSAStartup函数返回失败!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a24a",
+      "encrypted_hex": "e1504d87b14e577174fbaa77a8f5dc5faadce67edaa509a52633046beea039f784d37d7d9223f8af3d9a9d5aa14934c02bd1cc31afa3",
+      "steps": 46,
+      "code": -1,
+      "decoded_hex": "b4edcef3c2eb3a2d310ac3bbd3d0cab9d3c3cdf8c2e7d1e9d6a4bcd3c3dc2c20bbf2d4c6bcc6cbe36c6962b0e6b1beb2bbc6a5c5e421",
+      "text_gbk": "错误码:-1\n没有使用网络验证加密, 或云计算lib版本不匹配!",
+      "fallback_format": false
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": 0,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    },
+    {
+      "decode_call": "0x14000a2d8",
+      "encrypted_hex": "e1504d87b14e577921d16302cfe3b3239daa9632f58c2b9c35581a940dbbfe1d86f26a6cc035f198974f3921a494e310",
+      "steps": 43,
+      "code": 2147483647,
+      "decoded_hex": "b4edcef3c2eb3a2564200aceb4c6a5c5e4b5bdb4edcef3d0c5cfa22c20c7ebcab9d3c3d7eed0c2d4c6bcc6cbe36c6962",
+      "text_gbk": "错误码:%d \n未匹配到错误信息, 请使用最新云计算lib",
+      "fallback_format": true
+    }
+  ],
+  "limitations": [
+    "受限解释器不是CPU模拟器，只支持本函数解码前已核对指令",
+    "CRT初始化被跳过，停在解码调用前；不验证分配失败、格式化、拷贝或错误返回码",
+    "每个比较阈值及其两侧加int32极值；文案保留GBK解码，不执行目标代码"
+  ]
+}
