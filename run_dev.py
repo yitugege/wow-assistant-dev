@@ -13,7 +13,7 @@ PACKAGE_DIR = APP_ROOT/'packages' if FROZEN else ROOT/'dist'
 sys.path.insert(0, str(ROOT/'desktop'))
 
 
-def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, no_update=False):
+def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False):
     if selftest and (auto_start or watch):
         raise ValueError('自检不能同时自动开始监控')
     if dump_ui is not None and (selftest or auto_start or watch):
@@ -193,6 +193,13 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 self.ui.update_check_button.setEnabled(True)
 
         def shutdown(self):
+            addon_timer=getattr(self,'_addon_refresh_timer',None)
+            if addon_timer is not None:addon_timer.stop()
+            for name in ('_addon_refresh_executor','_download_executor'):
+                executor=getattr(self,name,None)
+                if executor is not None:executor.shutdown(wait=False,cancel_futures=True)
+            download_timer=getattr(self,'_download_timer',None)
+            if download_timer is not None:download_timer.stop()
             handoff_timer=getattr(self,'_handoff_timer',None)
             if handoff_timer is not None:handoff_timer.stop()
             timer=getattr(self,'_client_update_timer',None)
@@ -215,6 +222,56 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
 
         def _periodic_library_refresh(self):
             self._refresh_online_library()
+            self._refresh_addon_release()
+
+        def _configure_addon_refresh(self,enabled):
+            self._addon_online=enabled
+            if enabled:
+                self.addon_startup_timer.timeout.connect(self._refresh_addon_release)
+                self.addon_startup_timer.start()
+                self.hub_timer.start()
+
+        def _refresh_addon_release(self):
+            if not getattr(self,'_addon_online',False):return
+            for name in ('_download_timer','_addon_refresh_timer'):
+                timer=getattr(self,name,None)
+                if timer is not None and timer.isActive():return
+            from concurrent.futures import ThreadPoolExecutor
+            from wowbuddy.dev_addon_update import refresh_package
+            self._addon_refresh_executor=ThreadPoolExecutor(max_workers=1)
+            self._addon_refresh_future=self._addon_refresh_executor.submit(refresh_package,data_dir)
+            for button in (self.ui.addon_detect_button,self.ui.addon_install_button,self.ui.addon_browse_button,self.ui.addon_clean_button):button.setEnabled(False)
+            self._addon_refresh_timer=QTimer(self)
+            self._addon_refresh_timer.timeout.connect(self._finish_addon_refresh)
+            self._addon_refresh_timer.start(100)
+
+        def _addon_game_snapshot(self):
+            from wowbuddy.dev_game_paths import discover_clients,common_roots
+            from wowbuddy.addon_games import selected_executable
+            from wowbuddy.addon_update import AddonGame
+            from wowbuddy.dev_addon_update import installed_name
+            running=selected_executable(self._addon_windows)
+            paths=discover_clients(self.settings,running_executable=running,search_roots=common_roots(),environment=os.environ)
+            running_dir=str(Path(running).absolute().parent).casefold() if running else ''
+            return tuple(AddonGame(path.name,str(path/'Interface/AddOns'),
+                         self.session.is_active() or str(path).casefold()==running_dir,
+                         installed_name(path/'Interface/AddOns')) for path in paths)
+
+        def _finish_addon_refresh(self):
+            if not self._addon_refresh_future.done():return
+            self._addon_refresh_timer.stop()
+            self._addon_refresh_executor.shutdown(wait=False)
+            try:
+                from wowbuddy.dev_addon_update import apply_release,installed_name
+                from wowbuddy.addon_update import SettingsPendingAddons
+                release=self._addon_refresh_future.result()
+                state=apply_release(release,SettingsPendingAddons(self.settings),games=self._addon_game_snapshot,
+                                    installed_name=installed_name,on_log=self.logger.append)
+                status=f"GitHub插件检查完成；待补装 {len(state.pending)} 个客户端。"
+            except Exception as error:status='GitHub插件自动更新失败：'+str(error)
+            self.ui.addon_status.setText(status)
+            self.logger.append(status)
+            for button in (self.ui.addon_detect_button,self.ui.addon_install_button,self.ui.addon_browse_button,self.ui.addon_clean_button):button.setEnabled(True)
 
         def _refresh_online_library(self):
             if self.hub_client is not None:
@@ -380,6 +437,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         network_enabled=False, automatic=watch, tray_enabled=not selftest and dump_ui is None)
     window.setWindowTitle('WowBuddyDev — 独立开发版')
     window._configure_automatic_client_update(client_online and not selftest and dump_ui is None,no_update)
+    window._configure_addon_refresh(addon_online and not selftest and dump_ui is None)
     window.ui.update_status.setText('插件更新：在插件页点击“GitHub下载更新”；客户端请下载配套Release。')
     if hub_online and not selftest and dump_ui is None:
         from wowbuddy.qt_network import QtHubClient

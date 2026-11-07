@@ -45,7 +45,7 @@ def fetch_bytes(url,limit,*,progress=None):
         return read_download(response,limit,progress)
 
 
-def download_latest(data_dir, *, repository=REPOSITORY, fetch=fetch_bytes):
+def download_latest(data_dir, *, repository=REPOSITORY, fetch=fetch_bytes, cached=None):
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',repository):
         raise ValueError('GitHub仓库名无效')
     release=json.loads(fetch(f'https://api.github.com/repos/{repository}/releases/latest',2*1024*1024))
@@ -66,6 +66,15 @@ def download_latest(data_dir, *, repository=REPOSITORY, fetch=fetch_bytes):
     manifest=json.loads(manifest_bytes)
     if manifest.get('product')!='wowbuddy-dev' or manifest.get('protocol_version')!=DEV_VERSION:
         raise ValueError('发布插件与当前客户端协议不匹配，请更新配套客户端')
+    if cached and cached.get('sha256')==manifest.get('sha256'):
+        try:
+            package=Path(cached['package'])
+            read_package(package)
+            local=json.loads(package.with_suffix('.manifest.json').read_text('utf8'))
+            if local['sha256']==manifest['sha256']:
+                return dict(cached,changed=False)
+        except (OSError,ValueError,KeyError):
+            pass  # 缓存损坏时重新下载；不把旧缓存错误当作线上包可用。
     zip_bytes=fetch(asset_url(ZIP_NAME),32*1024*1024)
     downloads=Path(data_dir)/'downloads';downloads.mkdir(parents=True,exist_ok=True)
     # 下载失败或校验失败只清理本次临时目录，不触碰已安装插件。
@@ -83,4 +92,4 @@ def download_latest(data_dir, *, repository=REPOSITORY, fetch=fetch_bytes):
             raise
     return {'package':str(package),'tag':release.get('tag_name',''),
             'release_url':release.get('html_url',''),'repository':repository,
-            'sha256':manifest['sha256'],'addon_directory':manifest['addon_directory']}
+            'sha256':manifest['sha256'],'addon_directory':manifest['addon_directory'],'changed':True}

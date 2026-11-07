@@ -285,6 +285,10 @@ class AddonUpdater:
             return self._end("cache_failed", result.error)
         self._state(phase="reinstalling", cache_changed=True)
         self._log("插件热更：addon.bin 已更新为线上版本，正在重装…")
+        return self.reinstall_games()
+
+    def reinstall_games(self):
+        """对已校验并提交的当前包执行原重装策略；包来源由调用方负责。"""
         actions = []
         for game in self.games():
             path = game.addons_path
