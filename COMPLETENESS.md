@@ -31,6 +31,8 @@
 
 ## 最近新增证据及其范围
 
+修正完整插件测试宿主漏发RegisterUnitEvent的问题；此前普通事件通过不能外推到核心成功回执。新增圣骑士真实事件处理→PixelBar纹理→桌面解码→SealMemory五帧联测，覆盖成功、重复GUID、其他单位忽略及审判清除；相关21项测试通过。游戏API仍为替身，未改产品，见SEAL-RECEIPT-INTEGRATION.md。
+
 进一步执行完整独立插件法师绘制链：专精查询抛错/非数字时，色块仍可解码，输出总开关OFF及合法选怪状态0；DB开关保持true，API恢复后恢复ON/状态2。纠正了把隔离模块异常外推为整条绘制中断的预期。2项渲染测试通过，游戏API仍为替身，详见AUTO-TARGET-BINDING-PARITY.md。
 
 自动选怪新增原包重绑/专精异常轨迹对照：战斗重绑保留旧绑定、81键占满清空状态、仅释放ALT-END后恢复、同按钮不重复挂钩及专精API失败恢复均一致。第一层GetSpecialization抛错或非数字会中断取包，原包同样如此；不是现场原因证明。7项桥测试通过，未修改产品，见AUTO-TARGET-BINDING-PARITY.md。
