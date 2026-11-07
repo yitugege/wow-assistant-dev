@@ -27,7 +27,9 @@
 
 ## 最近新增证据及其范围
 
-修复ForeverCompat拒绝技能名称字符串的问题：完整加载宿主在仅有C_Spell API时复现现场同类no-slot，修复后名称查询到ID并到达记录式动作槽调用；15项相关测试通过。原包存在同样限制，现场是否走此兼容层仍未确认，用户取消的脚本查询未重试。最新本地插件包为dist/spell-name-compat，未安装/发布/重建EXE，见SPELL-NAME-COMPAT-VALIDATION.md。
+冷却管理器完整 CDMImport 模块新增7项原包/独立版运行对照，覆盖旧配置迁移、解码异常、正常导入、战斗入口差异及布局写入失败。确认两者均有“失败仍返回成功”及缺少ApplyEditModeSettings时保存后报错的条件性行为；保留原行为，未据此宣称布局成功。真实编解码和游戏冷却管理器未验收，见CDM-IMPORT-PARITY.md。
+
+修复ForeverCompat拒绝技能名称字符串的问题：完整加载宿主在仅有C_Spell API时复现现场同类no-slot，修复后名称查询到ID并到达记录式动作槽调用；15项相关测试通过。原包存在同样限制，现场是否走此兼容层仍未确认，用户取消的脚本查询未重试。插件包为dist/spell-name-compat，修复已纳入本地7b0eaa1 EXE，未安装或公开发布，见SPELL-NAME-COMPAT-VALIDATION.md。
 
 已取得用户客户端1.60.1/build70862的真实点击保存记录：四次按下均为PreClick→默认动作→OnClick挂钩→PostClick，另有三次抬起；全部非战斗。原挂钩无法撤销先发生的默认动作，不能直接复制后声称已实现吞键。具体记录见DIRECT-CAST-HOOK-VALIDATION.md；直接施法权限和自动挂钩仍待验证，下面“尚未取得记录”为历史描述。
 
