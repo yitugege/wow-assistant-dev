@@ -2325,6 +2325,7 @@ local function reportMacroBindingError(actionKey, message)
   macroBindingErrors[actionKey] = message
   WowBuddyDev.AddErrorLog("MacroBinding", tostring(actionKey) .. ": " .. message)
 end
+WowBuddyDev.ReportMacroBindingError = reportMacroBindingError
 -- 功能：建（或复用）一个安全按钮，并按当前配置给它设置好点击行为。
 -- 入参：actionKey 动作键；bindingKey 绑定的按键；macroBody 要执行的宏体。
 -- 出参：true 成功；false 表示战斗中延后处理。
@@ -2441,10 +2442,12 @@ ApplyMacros_Internal = function()
     end
   end
   if WowBuddyDev.ApplyRaidFocusBindings then
-    pcall(WowBuddyDev.ApplyRaidFocusBindings)
+    local ok, err = pcall(WowBuddyDev.ApplyRaidFocusBindings)
+    if not ok then reportMacroBindingError("raid_focus", err) end
   end
   if WowBuddyDev.ApplyAutoTargetBinding then
-    pcall(WowBuddyDev.ApplyAutoTargetBinding)
+    local ok, err = pcall(WowBuddyDev.ApplyAutoTargetBinding)
+    if not ok then reportMacroBindingError("auto_target", err) end
   end
   if WowBuddyDev.InvalidateControlBindingConflicts then
     WowBuddyDev.InvalidateControlBindingConflicts()

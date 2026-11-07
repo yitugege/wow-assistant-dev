@@ -722,7 +722,11 @@ function WowBuddyDev.ApplyRaidFocusBindings()
   end
   local raidFocusKeys = WowBuddyDev.GetRaidFocusKeys()
   for keyIndex, actionKey in ipairs(raidFocusKeys) do
-    pcall(WowBuddyDev.CreateSecureFocusButton, "raid_focus_" .. keyIndex, actionKey, "raid" .. keyIndex)
+    local id = "raid_focus_" .. keyIndex
+    local ok, err = pcall(WowBuddyDev.CreateSecureFocusButton, id, actionKey, "raid" .. keyIndex)
+    if not ok and type(WowBuddyDev.ReportMacroBindingError) == "function" then
+      WowBuddyDev.ReportMacroBindingError(id, err)
+    end
   end
 end
 local raidFocusEventFrame = CreateFrame("Frame")

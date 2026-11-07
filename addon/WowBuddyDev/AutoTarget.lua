@@ -301,6 +301,9 @@ function WowBuddyDev.ApplyAutoTargetBinding()
   end
   local ok, bound = pcall(WowBuddyDev.CreateSecureButton, secureButtonName, keyName, autoTargetMacroText)
   if not ok or not bound then
+    if not ok and type(WowBuddyDev.ReportMacroBindingError) == "function" then
+      WowBuddyDev.ReportMacroBindingError(secureButtonName, bound)
+    end
     return false
   end
   -- 回执钩子挂不上不算绑定失败：ack 只是包里的一个位段，桌面端对它的要求是落在 0..31，

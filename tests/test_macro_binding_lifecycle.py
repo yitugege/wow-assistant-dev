@@ -138,5 +138,63 @@ class BindingLifecycleTests(unittest.TestCase):
         self.assertEqual(checked,241)
         self.assertEqual(len(g.errors),0)
 
+    def test_extension_exception_is_visible_and_successful_refresh_clears_it(self):
+        g=self.lua.globals()
+        self.lua.execute('''
+        WowBuddyDev.ApplyRaidFocusBindings=function() error('focus fixture') end
+        WowBuddyDev.ApplyAutoTargetBinding=function() error('target fixture') end
+        WowBuddyDev.RefreshMacroBindings()
+        ''')
+        ok,passed,total,failures=g.WowBuddyDev.CheckMacroBindings()
+        self.assertFalse(ok);self.assertEqual((passed,total),(1,1))
+        self.assertTrue(any('raid_focus' in s for s in failures.values()))
+        self.assertTrue(any('auto_target' in s for s in failures.values()))
+        self.lua.execute('''
+        WowBuddyDev.ApplyRaidFocusBindings=function() end
+        WowBuddyDev.ApplyAutoTargetBinding=function() return false end
+        WowBuddyDev.RefreshMacroBindings()
+        ''')
+        self.assertTrue(g.WowBuddyDev.CheckMacroBindings()[0])
+
+    def test_actual_raid_extension_preserves_failed_slot_and_continues_others(self):
+        g=self.lua.globals()
+        self.lua.execute('''
+        function isRaidFocusEnabled() return true end
+        function isInCombatLockdown() return combat end
+        WowBuddyDev.GetRaidFocusKeys=function() return {'F3','F4'} end
+        local original=WowBuddyDev.CreateSecureFocusButton
+        WowBuddyDev.CreateSecureFocusButton=function(id,key,unit)
+          if key=='F3' then error('secure focus setup failed') end
+          return original(id,key,unit)
+        end
+        ''')
+        source=(SOURCE.parent/'RaidFocus.lua').read_text('utf8')
+        self.lua.execute(source[source.index('function WowBuddyDev.ApplyRaidFocusBindings()'):source.index('local raidFocusEventFrame')])
+        g.WowBuddyDev.RefreshMacroBindings()
+        ok,_,_,failures=g.WowBuddyDev.CheckMacroBindings()
+        self.assertFalse(ok)
+        self.assertTrue(any('raid_focus_1' in s for s in failures.values()))
+        self.assertIsNotNone(g.bound.F4)
+
+    def test_actual_auto_target_extension_records_inner_creation_exception(self):
+        g=self.lua.globals()
+        self.lua.execute('''
+        function callBoolSafe(fn) return fn() end
+        autoTargetState={};secureButtonName='auto_fixture';autoTargetMacroText='/targetenemy'
+        function findFirstFreeKey() return 'F5',5 end
+        WowBuddyDev.classData={};WowBuddyDev.NormalizeActionKey=function(k) return k end
+        local original=WowBuddyDev.CreateSecureButton
+        WowBuddyDev.CreateSecureButton=function(id,key,body)
+          if id=='auto_fixture' then error('secure target setup failed') end
+          return original(id,key,body)
+        end
+        ''')
+        source=(SOURCE.parent/'AutoTarget.lua').read_text('utf8')
+        self.lua.execute(source[source.index('function WowBuddyDev.ApplyAutoTargetBinding()'):])
+        g.WowBuddyDev.RefreshMacroBindings()
+        ok,_,_,failures=g.WowBuddyDev.CheckMacroBindings()
+        self.assertFalse(ok);self.assertFalse(g.autoTargetState.bound)
+        self.assertTrue(any('auto_fixture' in s for s in failures.values()))
+
 
 if __name__=='__main__':unittest.main()
