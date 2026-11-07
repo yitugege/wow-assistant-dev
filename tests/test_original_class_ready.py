@@ -39,6 +39,8 @@ class OriginalClassReadyTests(unittest.TestCase):
             namespace = 'P07483180' if old else 'WowBuddyDev'
             start = core.index(namespace + '.COMMON_PIXEL_DATA = {')
             lua.execute(core[start:core.index('\n}', start)+2])
+            start = core.index('function ' + namespace + '.IsPetSpell(spellID)')
+            lua.execute(core[start:core.index('\nend', start)+4])
             for path in ('ForeverTalentData.lua', 'ForeverClassSupport.lua',
                          'classes/'+name+'/class_forever.lua'):
                 lua.execute(source(path))
@@ -58,6 +60,13 @@ class OriginalClassReadyTests(unittest.TestCase):
             old, new = create(name, True), create(name, False)
             original_ids = list(old.globals().registeredClass.actionAvailSpellIDs.values())
             self.assertEqual(original_ids, list(new.globals().registeredClass.actionAvailSpellIDs.values()))
+            # 原包这九个实际注册模块没有启用通用宠物技能名单/玩家替代映射。
+            for lua in (old,new):
+                registered=lua.globals().registeredClass
+                self.assertIsNone(registered.petSpells, name)
+                self.assertIsNone(registered.petSpellPlayerWrappers, name)
+                for spell in original_ids:
+                    self.assertFalse(lua.globals().WowBuddyDev.IsPetSpell(spell))
             for known, usable, cooldown in itertools.product((False,True), (False,True), (None,-1,0,0.01,3)):
                 for lua in (old,new):
                     g = lua.globals()

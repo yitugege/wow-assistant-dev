@@ -4,6 +4,8 @@
 
 ## 当前公开版本：0.2.8
 
+宠物分支范围核查：执行原/独立实际职业注册及Core.IsPetSpell，九职业均未配置petSpells/petSpellPlayerWrappers，182个位均不走通用宠物技能分类；接入真实分类函数后既有就绪与等级对照仍通过。此为当前注册表证据，不能推导游戏不存在宠物技能或运行时永不改变。见ORIGINAL-CLASS-READY-PARITY.md。
+
 等级差分补充：九职业动作ID与等级别名逐个学习、全学和全未学共19022组，原/独立IsSpellKnown、Raw与最终Ready一致，包含680组仅别名可用路径。详见ORIGINAL-CLASS-READY-PARITY.md；不覆盖所有多等级冷却组合与宠物技能书。
 
 设置入口差分补充：10个开关命令及爆发自动关闭逻辑的17步序列与原Core片段一致，覆盖存档迁移、重排、取消及旧回调代次保护。见SWITCH-COMMAND-PARITY.md；UI/计时器为记录替身，不代表全插件加载或游戏命令输入验收。

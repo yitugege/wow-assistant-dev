@@ -25,3 +25,9 @@
 新增19022组输入，逐组比较IsSpellKnown、IsSpellReadyRaw、IsSpellReady，全部一致；其中680组实际经过基础Raw不可用、等级别名使最终可用的路径。保持真实职业OverrideIsSpellReady和别名遍历，不强制修改技能可用状态。此前3822组仍通过。日志 `.local/original-class-ranks.log`。
 
 新增覆盖补足“仅学某一等级”的常见边界，但仍非所有多技能学习子集、各等级不同冷却、宠物技能书或秘密值场景的穷举；游戏执行验证仍缺失。本次只有验证代码变更，不修改发布EXE。
+
+## 当前职业注册与通用宠物分支
+
+后续核对发现不能根据猎人/术士名称推定通用宠物技能书分支已启用。测试现在同时执行原/独立Core的真实IsPetSpell函数，逐一检查九个实际注册class_forever模块：petSpells与petSpellPlayerWrappers均为nil，182个动作位在原/独立IsPetSpell中均返回false。新旧接口的宠物专属分支是PixelBar保留的通用代码，不是这批注册动作当前配置的执行路径。
+
+接入真实IsPetSpell后，原3822组状态与19022组等级输入仍全部通过，日志 `.local/original-pet-registration.log`，0.909秒。本证据不意味着游戏中没有宠物技能，也不证明全部宠物相关功能已验证；只能说明这九份原/独立注册表没有启用该通用分类。后续如发现运行时新增petSpells的证据，应重新检查分支可达性，不能凭该静态/加载时结果排除所有动态变化。
