@@ -1,6 +1,16 @@
 # 当前源码本地构建验收
 
-## 最新源码回归：94493f4（未重新构建）
+## 最新本地构建：源码2de8343
+
+目录业务EXE：`dist/desktop/WowBuddyDev/WowBuddyDev.exe`，SHA256 `1e2e13aa4e0644493940dfe490c045a945487798a8cd7bca142881c27fb5dd3b`。单文件EXE：`dist/outer/WowBuddyDev-Outer.exe`，SHA256 `5652df44a0fd7395960c1738059f83d70a7f0ae93c4e0cd43b5451db705eb43a`。本次已纳入受限容量排序；默认调用路径不变。版本字段仍为0.2.7，是本地后续构建，未覆盖公开附件。
+
+构建期间源码摘要不变，冻结界面及系统后端自检通过；单文件259个成员和身份资源校验通过。六种规则输入的冻结自检通过，每次一个测试进程最终归零；原构建规则文件未改变。首次解包、复用缓存、缺失ready恢复通过，每次三个进程最终归零。两次GUI启动后只向测试Job所属主窗口发送WM_CLOSE，设置保留及旧缓存清理通过；关闭PID为70620、56736，每次三个进程最终归零。
+
+报告：`dist/frozen-selftest-2de8343.json`、`dist/frozen-outer-2de8343.json`、`dist/outer-gui-2de8343.json`。日志：`.local/build-2de8343-{desktop,outer}.log`、`.local/check-2de8343-{selftest,outer,gui}.log`。隔离目录：`.local/frozen-selftest-yrccabuf`、`.local/frozen-outer-中文 & qd_btvsd`、`.local/outer-gui-2kwzgwze`。
+
+该构建未做新的公开升级链、冻结排序逐项差分或游戏实测。GUI验证仍使用禁用监控/更新/游戏扫描的测试配置，不能等同于完整游戏运行。
+
+## 历史源码回归：94493f4（当轮未重新构建）
 
 `tests` 顶层237项测试全部通过，用时136.969秒，退出码0，无跳过；`tests/core` 另行执行153项全部通过，用时1.463秒，无跳过。两套共390项，日志分别为 `.local/regression-94493f4.log`、`.local/regression-core-94493f4.log`。原机器码的多组子场景计入各自测试方法，不额外累加为顶层测试数。
 
@@ -8,7 +18,7 @@
 
 本轮没有重新构建EXE。重新读取现有目录版与外层SHA256，仍与下节43a7350产物一致；94493f4受限容量排序尚未打入这些文件。当前源码回归结果不能代替最新源码冻结构建与发布验收。
 
-## 最新本地构建：源码43a7350
+## 历史本地构建：源码43a7350
 
 已纳入治疗候选NaN处理及小组/大组排序修复。完整独立测试集231项通过，用时139.141秒，进程退出码0；日志.local/regression-healing-current.log。该数量不包括另行运行的tests/core套件，不能混称所有测试目录已递归覆盖。
 
