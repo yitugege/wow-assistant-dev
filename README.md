@@ -4,13 +4,13 @@
 
 ## GitHub 下载与发布
 
-当前公开开发测试版：[v0.2.1](https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.1)。客户端及插件已实际下载校验，下载后的EXE自检通过；仍未完成游戏内验收。v0.2.0没有新版客户端更新入口，请手动下载并完整解压v0.2.1。
+当前公开开发测试版：[v0.2.2](https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.2)。真实公开v0.2.1客户端副本已完成检查、下载、替换及自动重启验证，设置保留，换入EXE自检通过；配套插件实际下载校验通过。测试禁用游戏扫描，仍未完成游戏内验收。v0.2.0没有新版客户端更新入口，请手动下载并完整解压v0.2.2。
 
 在 Releases 下载配套客户端目录包，解压全部文件后运行 WowBuddyDev.exe。在插件页选择包含 Wow.exe 的目录，退出游戏并停止监控，点击“GitHub下载更新”。客户端从本仓库最新正式 Release 获取插件及清单，核对协议版本、ZIP 和成员 SHA256 后安装，更新前备份旧开发插件。
 
 `python tools/build_github_release.py` 生成 `dist/release/WowBuddyDev-addon.zip` 和同名 `.manifest.json`。发布时同时上传这两个文件。插件根目录、TOC 和 Lua 文件名在构建时随机生成，TOC/XML 引用同步更新，源码保持可读。随机命名只改变文件路径，不会消除游戏受保护操作限制。
 
-首次随机安装后，后续更新沿用本机目录名，保留启用状态及存档名称。从固定 WowBuddyDev 开发版迁移时需要重新启用新插件；旧 SavedVariables/WowBuddyDev.lua 保留但不会自动迁入随机目录对应的存档，请先备份设置。原助手插件不会被自动删除。
+首次随机安装后，后续更新沿用本机目录名，保留启用状态及存档名称。从固定 WowBuddyDev 开发版迁移时需要重新启用新插件；旧 SavedVariables/WowBuddyDev.lua 保留但不会自动迁入随机目录对应的存档，请先备份设置。v0.2.2安装成功后会清理符合原三个特征文件规则的旧插件目录，保留当前独立插件和无关插件，详见ADDON-CLEANUP.md。
 
 下面固定目录打包命令仍用于离线开发；公开分发采用上述随机命名包。游戏内加载、受保护操作和自动换怪仍需实测，不以构建通过代替。
 
