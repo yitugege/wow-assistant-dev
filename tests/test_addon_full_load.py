@@ -46,6 +46,9 @@ class AddonFullLoadTests(unittest.TestCase):
         for name in ('GetAutoTargetPacket', 'GetRaidFocusPacket', 'RebuildPixelBars'):
             self.assertEqual(lua.eval('type')(addon[name]), 'function', name)
         self.assertIsNotNone(lua.globals().LibStub(addon_name+'-RangeCheck-3.0'))
+        self.assertEqual(lua.globals().SLASH_DCBIND1, '/dcbind')
+        lua.globals().SlashCmdList.DCBIND('spell_116 61')
+        self.assertEqual(addon.DirectCast.slots.spell_116, 61)
         self.assertIsNone(lua.globals().WowBuddyDevDiagnostics)
         return lua, loaded
 

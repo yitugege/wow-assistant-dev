@@ -63,4 +63,5 @@ classes/Shaman/Shaman-Bindings.lua
 classes/Druid/class_forever.lua
 classes/Druid/Druid-Bindings.lua
 BuildCompat.lua
+DirectCastSlots.lua
 DecisionBridge.lua

@@ -6,7 +6,7 @@
 
 最新本地构建9fa2008已包含交接等待后清单复核及此前目录创建前缀UTF16等修复，保存于dist/local-9fa2008/WowBuddyDev-Outer.exe。48项相关源码回归及本轮冻结清单变化、启动、缓存检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
 
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前产品源码摘要与9fa2008构建清单一致；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码新增DirectCastSlots.lua，与9fa2008构建内嵌插件已不同，尚未重新构建EXE；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
 
 |对象|当前状态|证据|
 |---|---|---|
@@ -16,7 +16,7 @@
 
 ## 明确未完成项
 
-- DirectCast.lua仍未装入独立插件，原模块占槽、移动补发、自Buff及直接施法相关功能不能用普通按键通道代替完成证明。原缺陷与实现选择见DIRECT-CAST-ORIGINAL-FINDINGS.md。
+- DirectCastSlots.lua已接入TOC，恢复手工槽位登记与只读索引；这些登记尚无施法消费者。DirectCast.lua完整逻辑仍未装入，原模块自动占槽、移动补发、自Buff及直接施法相关功能不能用普通按键通道代替完成证明。原缺陷与迁入边界见DIRECT-CAST-ORIGINAL-FINDINGS.md。
 - DirectCast原文现有12项隔离测试，已确认光环未知值、5秒重试、8秒移动意图、引导状态及槽位缓存边界；API未抛错也可能报告虚假“成功”。这些是迁入约束证据，仍不是实际游戏施法证明。
 - 标注20.0.1的readable协议对应真实发送端仍未定位。已有客户端解码和合成输入测试不能代替发送端与完整绘制验收。
 - 已直接核对原EXE的34个交付成员及其中29个PE的54项资源，仅发现既有addon.bin插件容器；原安装器路径常量也指向该文件。此范围内无第二套插件交付证据，不排除其他编码或远程来源，见ADDON-PROTOCOL-ORIGIN.md。
