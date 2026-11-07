@@ -2,15 +2,16 @@
 
 本轮逐文件读取原addon.bin和独立源码，仅归一CRLF/LF、P07483180→WowBuddyDev、SemrepDB→WowBuddyDevDB。工具 `tools/audit_addon_migration.py` 输出完整摘要清单 `dist/addon-migration-audit.json` 和可审查差异 `dist/addon-migration.diff`。这不是运行时等价证明，也不把差异自动认定为用户批准。
 
-DirectCast后续原文执行结果见DIRECT-CAST-ORIGINAL-FINDINGS.md：五项隔离测试确认按钮返回值类型错误、关闭后遗留移动补发、放置失败仍缓存等行为。模块仍未恢复，不能仅复制文件后称其可用。
+DirectCast后续原文执行结果见DIRECT-CAST-ORIGINAL-FINDINGS.md：已确认按钮返回值类型错误、关闭后遗留移动补发、放置失败仍缓存等行为。当前已拆成六个独立模块恢复主要入口和周期逻辑，自动按钮挂钩仍未接入；不能仅凭离线对照称其游戏内可用。
 
-原78成员中：24个逐字节相同；42个仅上述名称或换行不同；11个仍有差异；1个缺失（DirectCast.lua）。独立新增SecurityDiagnostics.lua。原TOC映射到WowBuddyDev.toc后单独比较，不误报为文件丢失。
+2026-11-07按f1b6d86产品源码重新审计：原78成员中，24个逐字节相同，42个仅上述名称或换行不同，11个仍有差异，1个同名文件缺失（DirectCast.lua）。独立新增八个文件：DirectCast的Slots、Guards、Actions、Probe、Keeper、Movement六个模块，以及SecurityDiagnostics.lua、HookOrderProbe.lua，共85个文件。缺少原同名文件不等于其全部功能缺失。原TOC映射到WowBuddyDev.toc后单独比较，不误报为文件丢失。
 
 ## 影响功能的差异
 
 |位置|实际差异|验收结论|
 |---|---|---|
-|DirectCast.lua及TOC|原包包含且TOC加载；独立删除且打包工具拒绝该文件|实质未恢复项。原模块依赖解锁环境、直接调用施法API并挂钩安全按钮；不能用安全宏通道已实现代替该模块等价证明。此前移除用于排查受保护操作，不等于用户明确要求永久删除此原功能。|
+|DirectCast.lua及TOC|原包包含且TOC加载；独立打包拒绝原同名文件，改为加载六个可读子模块|槽位、宏解析、光环判断、显式施法入口、移动补发、自Buff续挂及环境入口已有原调用轨迹对照；自动按钮挂钩仍缺失，原生权限和施法结果待验收。环境入口本身不证明能解除游戏限制。|
+|Core.lua|增加只读GetBoundMacro查询，供DirectCast旧查询失败时回退|修复原模块无法访问局部宏注册表的问题；九职业绑定及重绑定离线检查通过。这是明确修复，不是原缺陷的逐字复现。|
 |PixelBar.lua、Core.lua|技能位图由固定bit0标记、从bit1起编码改为从bit0起承载24项，并使用独立版本码|修复24项状态溢出、与独立客户端配套；是协议变更，不是字节级原样还原。原协议兼容与独立协议应分开验收。|
 |Druid-Bindings.lua|SHIFT-F2原空槽补为既有变换之力宏|原资源缺陷修复，见ROTATION-GAPS.md；不能将241动作均有宏的现状归称原包也是如此。|
 |SettingsUI.lua|恢复导入前清理，匹配范围改为独立WowBuddyDev_前缀|已恢复枚举、逐项pcall读取/删除、失败继续及先清理后校验顺序；旧MKL/P07483180名字不清理。范围差异仍保留，详见下节测试及限制。|
@@ -21,7 +22,7 @@ DirectCast后续原文执行结果见DIRECT-CAST-ORIGINAL-FINDINGS.md：五项�
 
 ## 后续要求
 
-完整还原不能只统计测试数量。DirectCast缺失、天赋导入清理变化、控制键保存调用变化须保留在差异清单，直到有明确的恢复实现、用户确认的产品差异或可证明等价的替代行为。当前未在游戏中执行配置删除、受保护调用或新模块加载，本轮只增加审计工具和记录。
+完整还原不能只统计测试数量。DirectCast自动按钮挂钩缺失、天赋导入清理范围变化及原缺陷修复须保留在差异清单。最新诊断插件已安装，备份和WTF不变检查通过，但仍未取得游戏内加载、点击顺序或施法证据，见INSTALLED-HOOK-PROBE-VALIDATION.md。以下修复小节保留当时测试记录，其中“仅源码”描述属于历史状态；当前交付状态以COMPLETENESS.md为准。
 
 ## 后续修复：独立天赋导入清理
 
