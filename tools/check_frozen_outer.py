@@ -15,7 +15,7 @@ from wowbuddy.launcher import ChildLaunch,WindowsLauncherProcess,release_directo
 from wowbuddy.release_identity import read_release_identity,CACHE_NAMESPACE,file_sha256
 
 
-def run(target,root,environment):
+def run(target,root,environment,*,arguments=None,on_running=None):
     backend=WindowsLauncherProcess();k=backend.k
     class Accounting(C.Structure):
         _fields_=[('user',C.c_int64),('kernel',C.c_int64),('period_user',C.c_int64),('period_kernel',C.c_int64),
@@ -30,7 +30,8 @@ def run(target,root,environment):
         if not k.QueryInformationJobObject(job,1,C.byref(info),C.sizeof(info),None):raise C.WinError(C.get_last_error())
         return info.active,info.total
     try:
-        request=ChildLaunch(str(target),subprocess.list2cmdline([str(target),'--desktop-selftest']),str(root),environment,creation_flags=4)
+        arguments=['--desktop-selftest'] if arguments is None else list(arguments)
+        request=ChildLaunch(str(target),subprocess.list2cmdline([str(target),*arguments]),str(root),environment,creation_flags=4)
         process=backend.create(request)
         if not k.AssignProcessToJobObject(job,process.process):raise C.WinError(C.get_last_error())
         if k.ResumeThread(process.thread)==0xffffffff:raise C.WinError(C.get_last_error())
@@ -39,6 +40,7 @@ def run(target,root,environment):
             active,total=count()
             if k.WaitForSingleObject(process.process,0)==0 and active:early=True
             if not active:break
+            if on_running is not None:on_running(job)
             if time.monotonic()>=deadline:raise TimeoutError('冻结外层Job未按时退出')
             time.sleep(0.025)
         code=W.DWORD()
