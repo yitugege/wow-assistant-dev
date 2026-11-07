@@ -59,3 +59,37 @@ class ProtocolSwitchTests(unittest.TestCase):
                         self.assertEqual(window.session.state.field_values,
                             [r.decoded.value_text+(' '+r.decoded.detail if r.decoded.detail else '') for r in expected.rows])
         TrayTests.run_window(self,False,exercise)
+
+    def test_class_change_keeps_dispatch_ledgers_like_original(self):
+        from types import SimpleNamespace
+        from wowbuddy.capture import CaptureResult
+        from test_dev_tray import TrayTests
+        def exercise(window):
+            current={}
+            window.loop.capture=SimpleNamespace(capture=lambda hwnd:CaptureResult('ok',current['image'],'printwindow'))
+            window.dispatcher.sender=None
+            window.scheduler.clock_ms=lambda:1000
+            window.toggle_monitor()
+            state=window.dispatcher.state
+            state.success_count=7;state.last_sent_ms=900;state.local_gcd_until_ms=2400
+            state.focus.last_action='focus_party2';state.focus.last_switch_ms=800
+            ledger=state.auras
+            ledger.suppression_until['sentinel']=9000
+            ledger.check_at['sentinel']=8000
+            ledger.expect_off['sentinel']=('test_aura',)
+            ledger.failures['sentinel']=2
+            ledger.original_hold_ms['sentinel']=10000
+            ledger.sent_generation['sentinel']=4
+            maps=('suppression_until','check_at','expect_off','failures','original_hold_ms','sent_generation')
+            before={name:dict(getattr(ledger,name)) for name in maps}
+            for spec in (1482,1487,1484,1482):
+                current['image']=render_old(spec,{'player_valid':0x00ff00,'target_valid':0xff0000})[0]
+                result=window.poll_once()
+                with self.subTest(spec=spec):
+                    self.assertTrue(result.tick.decision.frame.ok)
+                    self.assertEqual(window.controller.spec_id,str(spec))
+                    self.assertEqual(window.session.state.current_spec,str(spec))
+                    self.assertEqual((state.success_count,state.last_sent_ms,state.local_gcd_until_ms),(7,900,2400))
+                    self.assertEqual((state.focus.last_action,state.focus.last_switch_ms),('focus_party2',800))
+                    self.assertEqual({name:dict(getattr(ledger,name)) for name in maps},before)
+        TrayTests.run_window(self,False,exercise)
