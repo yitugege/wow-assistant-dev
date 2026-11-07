@@ -8,8 +8,11 @@ DirectCast后续原文执行结果见DIRECT-CAST-ORIGINAL-FINDINGS.md：已确�
 
 ## 影响功能的差异
 
+后续技能名称兼容修复后重新审计：24个逐字节相同、41个仅名称/换行不同、12个有差异、1个原同名文件缺失，新增8个文件。上文f1b6d86统计为历史基线。
+
 |位置|实际差异|验收结论|
 |---|---|---|
+|ForeverCompat.lua|GetSpellInfo兼容函数增加字符串参数转发|原数字限定与DirectCast按名称查询冲突；完整TOC测试复现并修复，未替换已有原生接口。属于原缺陷修复，现场唯一根因仍未确认，见SPELL-NAME-COMPAT-VALIDATION.md。|
 |DirectCast.lua及TOC|原包包含且TOC加载；独立打包拒绝原同名文件，改为加载六个可读子模块|槽位、宏解析、光环判断、显式施法入口、移动补发、自Buff续挂及环境入口已有原调用轨迹对照；自动按钮挂钩仍缺失，原生权限和施法结果待验收。环境入口本身不证明能解除游戏限制。|
 |Core.lua|增加只读GetBoundMacro查询，供DirectCast旧查询失败时回退|修复原模块无法访问局部宏注册表的问题；九职业绑定及重绑定离线检查通过。这是明确修复，不是原缺陷的逐字复现。|
 |PanelV2.lua|补齐圣印回显OnEvent的事件名形参；重建presenceRows时清空sealCastIndex|原回调把事件名当单位名并直接返回，原包失败用例已保留；独立事件处理和重建回归通过，真实游戏未验收。见PANEL-PRESENCE-VALIDATION.md。|

@@ -4,6 +4,33 @@ from tests import test_addon_full_load as full_load
 
 
 class DirectCastIntegrationTests(unittest.TestCase):
+    def test_real_compat_shim_accepts_names_and_reaches_action_slot(self):
+        prelude=(full_load.ROOT/'tests/addon_login_host.lua').read_text('utf8')
+        prelude+='''
+            GetSpellInfo=nil;compatQueries={};directCalls={}
+            C_Spell={GetSpellInfo=function(identifier)
+                table.insert(compatQueries,identifier)
+                if identifier==116 or identifier=='寒冰箭' then
+                    return {name='寒冰箭',spellID=116,castTime=2000,iconID=1,minRange=0,maxRange=30}
+                end
+            end}
+            function GetActionInfo(slot) if slot==7 then return 'spell',116 end end
+            function UseAction(slot,unit) table.insert(directCalls,{slot=slot,unit=unit}) end
+        '''
+        lua,_=full_load.AddonFullLoadTests().load(full_load.SOURCE,'WowBuddyDev',prelude)
+        g=lua.globals();g.EmitFixtureEvent('ADDON_LOADED','WowBuddyDev');g.EmitFixtureEvent('PLAYER_LOGIN')
+        self.assertEqual(g.GetSpellInfo(116)[6],116)
+        self.assertEqual(g.WowBuddyDev.DirectCast.Cast('class_numpad5'),(True,'slot7'))
+        self.assertEqual(len(g.directCalls),1)
+        self.assertEqual(g.directCalls[1].unit,'target')
+        self.assertIn('寒冰箭',list(g.compatQueries.values()))
+        self.assertIsNone(g.GetSpellInfo('unknown'))
+        before=len(g.compatQueries)
+        self.assertIsNone(g.GetSpellInfo(lua.table()))
+        self.assertEqual(len(g.compatQueries),before)
+        lua.execute("C_Spell.GetSpellInfo=function() error('fixture unavailable') end")
+        self.assertIsNone(g.GetSpellInfo('寒冰箭'))
+
     def fixture(self, token='MAGE', class_id=8, spec=1482):
         lua=full_load.AddonFullLoadTests().login_fixture(token,class_id,spec)
         lua.execute('''

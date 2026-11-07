@@ -1,5 +1,7 @@
 # 当前源码本地构建验收
 
+最新插件包为dist/spell-name-compat/WowBuddyDev-addon.zip，含技能名称查询兼容和圣印回显修复；85文件，尚未安装/公开发布/重建EXE，见SPELL-NAME-COMPAT-VALIDATION.md。以下“最新插件增量”为前次历史记录。
+
 最新插件增量：修复PanelV2圣印回显事件参数及面板重建索引，随机包位于dist/seal-echo-fix/WowBuddyDev-addon.zip，85文件；详见PANEL-PRESENCE-VALIDATION.md。尚未安装或公开发布，本地04cd6be EXE不包含此修复。下述hook-order-probe仍是已安装版本。
 
 随后新增手动HookOrderProbe诊断按钮，最新本地插件包为dist/hook-order-probe/WowBuddyDev-addon.zip；04cd6be EXE也不含此诊断工具。插件包现已安装到本机_forever_测试客户端并验证备份/保存文件不变，未公开发布；见INSTALLED-HOOK-PROBE-VALIDATION.md。

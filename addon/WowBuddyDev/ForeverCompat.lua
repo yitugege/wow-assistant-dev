@@ -469,7 +469,8 @@ defineIfMissing("GetSpellInfo", function()
         return nil
     end
     return function(spellID)
-        if type(spellID) ~= "number" then
+        -- 旧接口也接受技能名；DirectCast的宏解析按名称查询，不能仅放行数字。
+        if type(spellID) ~= "number" and type(spellID) ~= "string" then
             return nil
         end
         local ok, info = pcall(C_Spell.GetSpellInfo, spellID)
