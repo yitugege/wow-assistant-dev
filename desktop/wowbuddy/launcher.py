@@ -129,7 +129,9 @@ def _mkdir_chain(fs: LauncherFileSystem, path: str) -> None:
     for index, character in enumerate(path):
         if character in "\\/" or index == len(path) - 1:
             prefix = path[:index + 1]
-            if len(prefix) in (2, 3) and prefix[1] == ":":
+            # 原wstring按UTF16单位判断，非BMP字符不能算作一个盘符单位。
+            wide_prefix = prefix.encode("utf-16le", "surrogatepass")
+            if len(wide_prefix) in (4, 6) and wide_prefix[2:4] == b":\0":
                 continue
             try:
                 fs.create_directory(prefix)

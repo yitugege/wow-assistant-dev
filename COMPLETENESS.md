@@ -6,6 +6,8 @@
 
 最新本地构建6bb86ed已包含取消更新记录写入失败后的界面恢复修复，保存于dist/local-6bb86ed/WowBuddyDev-Outer.exe，完整414项回归及冻结启动检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖；历史64ec113和“产品源码摘要一致”仅指此前构建记录。
 
+最新源码新增目录创建前缀的UTF16计数修复，见OUTER-MKDIR-NATIVE-PARITY.md。该产品改动尚未打入上述本地或公开EXE；先前源码与构建摘要一致的记录不适用于此改动之后。
+
 |对象|当前状态|证据|
 |---|---|---|
 |公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|

@@ -10,7 +10,7 @@ import test_outer_path_native as path_tests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.launcher_host import read_module_path, WideBufferResult, WindowsHostAPI
-from wowbuddy.launcher import module_directory
+from wowbuddy.launcher import module_directory, _mkdir_chain
 
 
 class ModulePathNativeTests(unittest.TestCase):
@@ -124,9 +124,10 @@ class ModulePathNativeTests(unittest.TestCase):
         # 原固定分隔集合为/和反斜杠，保留陷阱以避免意外执行未映射依赖。
         linked_spans=[(0x2280,0x2595),(0x43d0,0x4429),(0x4430,0x4604),
                       (0x4610,0x4822),(0x4830,0x4965),(0x4970,0x4acc),
-                      (0x4c30,0x4c35),(0x4eb0,0x4ece),(0xad90,0xaed8)]
+                      (0x4c30,0x4c35),(0x4eb0,0x4ece),(0xad90,0xaed8),
+                      (0x1ff0,0x2276),(0x1a30,0x1a84)]
         permitted={0x25a0,0x4c30,0x12d00,0x4260,0x1210,0x4d8c,0x4eb0,0xaa44,
-                   0x43d0,0x4610,0x4830,0x4970,0x12660}
+                   0x43d0,0x4610,0x4830,0x4970,0x12660,0x1a30,0x1ba0,0x1a90,0x11a0}
         for start,end in linked_spans:
             block=pe.get_data(start,end-start)
             decoded=list(decoder.disasm(block,pe.OPTIONAL_HEADER.ImageBase+start))
@@ -134,10 +135,14 @@ class ModulePathNativeTests(unittest.TestCase):
             for i in decoded:
                 if i.mnemonic=='call' or i.group(capstone.CS_GRP_JUMP):
                     op=i.operands[0]
+                    if (i.mnemonic=='call' and op.type==capstone.x86.X86_OP_MEM
+                        and op.mem.base==capstone.x86.X86_REG_RIP
+                        and i.address+i.size+op.mem.disp-pe.OPTIONAL_HEADER.ImageBase==0x14028):
+                        continue
                     if op.type!=capstone.x86.X86_OP_IMM:raise ValueError('目录调用链未知间接控制流')
                     target=op.imm-pe.OPTIONAL_HEADER.ImageBase
                     valid=target in permitted if i.mnemonic=='call' else (
-                        any(a<=target<b for a,b in linked_spans) or target==0x545c)
+                        any(a<=target<b for a,b in linked_spans) or target in (0x545c,0x4d8c))
                     if not valid:raise ValueError(f'目录调用链未映射目标{target:#x}')
             C.memmove(address+start,block,len(block))
         C.memmove(address+0x14478,pe.get_data(0x14478,8),8)
@@ -148,6 +153,12 @@ class ModulePathNativeTests(unittest.TestCase):
         install(0x4d8c,None,[C.c_void_p],release)
         target=install(0x8000,C.c_uint32,[C.c_void_p,C.c_void_p,C.c_uint32],module)
         C.c_uint64.from_address(address+0x14078).value=target
+        def make_directory(name,security):
+            cls.state['mkdir_calls'].append((name,security))
+            return int(cls.state['mkdir_ok'])
+        mkdir_callback=C.CFUNCTYPE(C.c_int,C.c_wchar_p,C.c_void_p)(make_directory)
+        cls.callbacks.append(mkdir_callback)
+        C.c_uint64.from_address(address+0x14028).value=C.cast(mkdir_callback,C.c_void_p).value
         cls.ucrt=C.CDLL('ucrtbase')
         for rva,name in [(0x12d00,'memset'),(0x12660,'memcpy')]:
             target=C.cast(getattr(cls.ucrt,name),C.c_void_p).value
@@ -163,6 +174,7 @@ class ModulePathNativeTests(unittest.TestCase):
             raise C.WinError(C.get_last_error())
         cls.native=C.CFUNCTYPE(C.c_void_p,C.c_void_p)(address+0x25a0)
         cls.directory=C.CFUNCTYPE(C.c_void_p,C.c_void_p)(address+0x2280)
+        cls.mkdir_chain=C.CFUNCTYPE(None,C.c_void_p)(address+0x1ff0)
         cls.resize=C.CFUNCTYPE(None,C.c_void_p,C.c_size_t)(address+0x1300)
         cls.construct=C.CFUNCTYPE(None,C.c_void_p,C.c_void_p,C.c_size_t)(address+0x1210)
         cls.aligned_allocate=C.CFUNCTYPE(C.c_void_p,C.c_size_t)(address+0x11a0)
@@ -326,6 +338,28 @@ class ModulePathNativeTests(unittest.TestCase):
         output=C.create_string_buffer(32)
         self.assertEqual(self.directory(output),C.addressof(output))
         self.assertEqual(self.decode_string(output),module_directory(read_module_path(WindowsHostAPI())))
+
+    def test_original_directory_creation_prefixes(self):
+        paths=['','C:','C:\\','C:/','C:\\a\\b','a//b\\c','\\\\server\\share\\child',
+               '/root//child/','中文/😀/目录','😀:','😀:/子目录','A:relative',
+               'x'*2100+'/end']
+        for path in paths:
+            for succeeds in (True,False):
+                with self.subTest(path=path,success=succeeds):
+                    self.state.clear()
+                    self.state.update(buffers=[],freed=[],mkdir_calls=[],mkdir_ok=succeeds)
+                    encoded=path.encode('utf-16le','surrogatepass')
+                    source=C.create_string_buffer(encoded)
+                    output=C.create_string_buffer(32)
+                    self.construct(output,source,len(encoded)//2)
+                    self.mkdir_chain(output)
+                    expected=[]
+                    class FS:
+                        def create_directory(self,prefix):
+                            expected.append((prefix,None))
+                            if not succeeds:raise OSError('fixture directory failure')
+                    _mkdir_chain(FS(),path)
+                    self.assertEqual(self.state['mkdir_calls'],expected)
 
 
 if __name__=='__main__':unittest.main()

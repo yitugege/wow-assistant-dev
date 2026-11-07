@@ -1,5 +1,9 @@
 # 当前源码本地构建验收
 
+## 构建之后的产品改动
+
+目录创建前缀的UTF16计数修复已修改`desktop/wowbuddy/launcher.py`，见OUTER-MKDIR-NATIVE-PARITY.md。当前保存的6bb86ed与公开0.2.8均未包含此改动，需要后续重建和冻结验证；下文源码摘要一致的结论只适用于当时的构建快照。
+
 ## 最新本地构建与回归：6bb86ed，未公开发布
 
 已包含更新取消记录无法落盘后的界面恢复修复。版本字段仍为0.2.8，公开附件未变。保存的单文件为`dist/local-6bb86ed/WowBuddyDev-Outer.exe`，SHA256 `e59ec68588439764b820d13831e12e4246bbca7e13cb8ebacfaac54d62c15aca`；目录版`dist/desktop/WowBuddyDev/WowBuddyDev.exe`摘要为`12b0ad2619cc29af53db4c3785f2c5e59c8b6299021ef574ea208812197f6fd6`。构建前后及验证后产品源码摘要一致，外层259成员和身份资源校验通过。
