@@ -15,6 +15,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--initializers', action='store_true', help='纳入已取证的初始化表目标')
     parser.add_argument('--follow-thunks', action='store_true', help='跟进无展开目标的直线跳板（最多8条指令）')
+    parser.add_argument('--terminators', action='store_true', help='纳入aac4引用的两组终止回调表')
     args=parser.parse_args()
     path=EVIDENCE/'original-27ac1127fc/probe/outer-memory-analysis.exe'
     payload=path.read_bytes()
@@ -46,6 +47,22 @@ def main():
                     raise ValueError('初始化指针与原映像不一致')
                 if pointer:
                     roots.append(pointer-base)
+        roots=list(dict.fromkeys(roots))
+    terminator_tables=[]
+    if args.terminators:
+        for start,end in [(0x14360,0x14380),(0x14388,0x14390)]:
+            entries=[]
+            for slot in range(start,end,8):
+                raw=pe.get_data(slot,8)
+                if len(raw)!=8:raise ValueError('终止回调表读取不完整')
+                pointer=int.from_bytes(raw,'little')
+                if pointer:
+                    if not 0<=pointer-base<pe.OPTIONAL_HEADER.SizeOfImage:
+                        raise ValueError('终止回调指针超出映像')
+                    roots.append(pointer-base)
+                entries.append({'slot':hex(slot),'bytes':raw.hex(),'value':hex(pointer),
+                                'target_rva':hex(pointer-base) if pointer else None})
+            terminator_tables.append({'start':hex(start),'end_exclusive':hex(end),'entries':entries})
         roots=list(dict.fromkeys(roots))
     pending=list(roots);seen=set();functions=[];unmapped=[]
     examined_unmapped=set();thunks=[]
@@ -114,8 +131,13 @@ def main():
     if args.follow_thunks:
         report['unwindless_prefixes']=thunks
         report['limitations'].append('无展开目标最多读取8条直线指令，只跟进直接jmp；不是完整叶函数CFG')
+    if args.terminators:
+        report['terminator_tables']=terminator_tables
+        report['terminator_table_source']='原aac4正文引用；指针读取自已核对SHA256的内存映像'
+        report['limitations'].append('终止表仅证明捕获时刻的静态指针；未解析运行时注册的编码退出表')
     suffix='-with-initializers' if args.initializers else '-functions'
     if args.follow_thunks:suffix+='-thunks'
+    if args.terminators:suffix+='-terminators'
     output=ROOT/f'dist/outer-reachable{suffix}.json'
     output.write_text(json.dumps(report,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps({'report':str(output),'reachable':len(functions),
