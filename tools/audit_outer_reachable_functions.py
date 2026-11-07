@@ -1,5 +1,6 @@
 """原外层内存映像的静态直接调用可达性；不执行目标，不推断间接调用目的。"""
 import bisect
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -11,6 +12,9 @@ EVIDENCE=Path('D:/reverse-analysis/wow-assistant/reconstruction/evidence/outer-o
 
 
 def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--initializers', action='store_true', help='纳入已取证的初始化表目标')
+    args=parser.parse_args()
     path=EVIDENCE/'original-27ac1127fc/probe/outer-memory-analysis.exe'
     payload=path.read_bytes()
     digest=hashlib.sha256(payload).hexdigest()
@@ -27,6 +31,21 @@ def main():
     decoder=capstone.Cs(capstone.CS_ARCH_X86,capstone.CS_MODE_64)
     decoder.detail=True
     roots=[0x5154,0x4fe0,0x31d0,0x2fd0]
+    initializer_evidence=None
+    if args.initializers:
+        evidence_path=ROOT/'dist/outer-initializer-tables.json'
+        initializer_evidence=json.loads(evidence_path.read_text(encoding='utf8'))
+        if initializer_evidence['sha256']!=digest:
+            raise ValueError('初始化表与分析映像摘要不一致')
+        for table in initializer_evidence['tables']:
+            for entry in table['entries']:
+                slot=int(entry['slot'],16)
+                pointer=int(entry['value'],16)
+                if int.from_bytes(pe.get_data(slot,8),'little')!=pointer:
+                    raise ValueError('初始化指针与原映像不一致')
+                if pointer:
+                    roots.append(pointer-base)
+        roots=list(dict.fromkeys(roots))
     pending=list(roots);seen=set();functions=[];unmapped=[]
     while pending:
         address=pending.pop()
@@ -65,7 +84,9 @@ def main():
             'limitations':['仅直接call、跨范围跳转及顺序落入后继；未解析间接函数指针、回调、异常处理器或动态加载',
                            'pdata记录可能是展开分块，并非源代码函数边界',
                            '有正文不代表已实现或验证；无匹配正文不自动等于缺失业务功能']}
-    output=ROOT/'dist/outer-reachable-functions.json'
+    if initializer_evidence is not None:
+        report['initializer_evidence_sha256']=hashlib.sha256(evidence_path.read_bytes()).hexdigest()
+    output=ROOT/('dist/outer-reachable-with-initializers.json' if args.initializers else 'dist/outer-reachable-functions.json')
     output.write_text(json.dumps(report,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps({'report':str(output),'reachable':len(functions),
                       'outside_export_range':sum(f['outside_previous_export_range'] for f in functions),
