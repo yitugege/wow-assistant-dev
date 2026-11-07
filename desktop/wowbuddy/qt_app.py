@@ -422,11 +422,12 @@ class AssistantWindow(QWidget):
         # 原081970直接读取QComboBox；有效活动目标返回时不改用户当前选择。
         self.monitor.selected_index = self.ui.window_combo.currentIndex()
         previous = (self.monitor.windows, self.monitor.selected_index)
+        was_active = self.session.is_active()
         self.monitor.tick()
         if previous != (self.monitor.windows, self.monitor.selected_index):
             self._render_windows()
         self._drain_monitor_messages()
-        self._render_monitor()
+        self._render_monitor(update_status=was_active and not self.session.is_active())
 
     def auto_start_once(self):
         """081850：一次性 --auto；不刷新下拉框，不停止已经活动的监控。"""
@@ -441,10 +442,10 @@ class AssistantWindow(QWidget):
         if not self.session.is_active():
             self.toggle_monitor()
 
-    def _render_monitor(self):
+    def _render_monitor(self, *, update_status=True):
         self.ui.monitor_button.setText("停止监控" if self.session.is_active() else "开始监控")
         status = self.session.state.status or self.monitor.status
-        if status:
+        if update_status and status:
             self.ui.status_label.setText(status)
 
     def select_rotation(self, index):

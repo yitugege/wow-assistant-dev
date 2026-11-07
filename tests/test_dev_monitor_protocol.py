@@ -75,6 +75,13 @@ class MonitorProtocolTests(unittest.TestCase):
                     result=window.poll_once()
                     self.assertEqual(result.capture.status,'minimized')
                     self.assertEqual(sent,['SHIFT-F2'])
+                    state['minimized']=False
+                    state['time']+=5000
+                    window.poll_once()
+                    restored_status=window.ui.status_label.text()
+                    self.assertNotIn('最小化',restored_status)
+                    window.watch_once()
+                    self.assertEqual(window.ui.status_label.text(),restored_status)
                     window.toggle_monitor()
                     result=window.poll_once()
                     self.assertEqual(result.status,'inactive')
