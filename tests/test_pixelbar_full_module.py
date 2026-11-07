@@ -118,6 +118,37 @@ class PixelBarModuleTests(unittest.TestCase):
             self.assertEqual(g.PermesValues.mana_pct,16777215)
             lua.execute('powerUnavailable=false; powerValue=75')
             tick()
+        if class_name=='Mage':
+            # 仅游戏查询输入可控，保留PixelBar的IsSpellKnown/IsSpellReady及职业采集。
+            lua.execute('''knownRank=nil; rangeResult=true; cooldown=0; usable=true
+            function IsSpellKnown(id) return id==knownRank end
+            C_Spell={IsSpellInRange=function(id,unit)
+                rangeQueriedRank=id;return rangeResult
+            end}
+            function WowBuddyDev.GetSpellCooldownRemaining() return cooldown end
+            function WowBuddyDev.IsSpellUsable() return usable end''')
+            spell_index=list(g.WowBuddyDev.actionAvailSpellIDs.values()).index(116)
+            def skill_tick(script,known,in_range,ready):
+                lua.execute(script)
+                tick()
+                frame=captured_frame()
+                self.assertEqual(frame.values['known_116'],known)
+                self.assertEqual(frame.values['range_116'],in_range)
+                self.assertEqual(g.PermesValues.ready_116,ready)
+                # pipeline已将开发协议位图转换为原引擎保留bit0的格式。
+                self.assertEqual(bool(int(frame.values['action_avail']) & (1 << (spell_index+1))),ready)
+            skill_tick('knownRank=nil','OFF','OFF',False)
+            skill_tick('knownRank=116','ON','ON',True)
+            skill_tick('rangeResult=false','ON','OFF',True)
+            skill_tick('rangeResult=nil','ON','UNKNOWN',True)
+            skill_tick('rangeResult=true; cooldown=3','ON','ON',False)
+            skill_tick('cooldown=0; usable=false','ON','ON',False)
+            skill_tick('usable=true','ON','ON',True)
+            # 只学高等级别名时基础技能仍应被识别；射程必须询问已学等级。
+            skill_tick('knownRank=205','ON','ON',True)
+            self.assertEqual(g.rangeQueriedRank,205)
+            skill_tick('targetAlive=false','ON','OFF',True)
+            skill_tick('targetAlive=true; knownRank=nil','OFF','OFF',False)
         lua.execute('targetAlive=false')
         dead=tick()
         self.assertEqual(dead.state,1)
