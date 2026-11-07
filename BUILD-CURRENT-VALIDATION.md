@@ -1,6 +1,16 @@
 # 当前源码本地构建验收
 
-## 最新构建：源码32bb8a9
+## 最新构建：源码f33b078
+
+已纳入回执解析967c037、Qt初始化12f2fee、治疗自检6a8cdf2和打断判断f33b078。目录版SHA256为`3ccecfff4ebac232b72a375e170af499b84e4b66fc1af8b785dc44f3b3ccf2eb`，单文件为`16779aa07a81be3bee930271969efe722a26b421726746bc991e5d50d6b17561`，位置仍为下表对应路径。版本字段0.2.6，未覆盖公开发布。
+
+构建前后源码摘要一致；冻结窗口及系统后端自检通过。六种规则输入的冻结自检通过，每次1进程最终0，12个启动环境字段和原资源未变检查通过；隔离目录.local/frozen-selftest-8kd_ffo6。
+
+外层259成员校验、首次解包/缓存复用/缺失ready恢复通过，每次3进程最终0；隔离目录.local/frozen-outer-中文 & irrw64p1，缓存键951dde2f74740a6e。禁用游戏扫描并使用诊断参数启动两次GUI，向各自Job内窗口发送WM_CLOSE，设置保留和旧缓存清理通过，每次3进程最终0；目录.local/outer-gui-pq4uaxea。
+
+报告为dist/frozen-native-selftest-current.json、dist/frozen-outer-check.json、dist/outer-gui-check.json。日志为.local/build-current-parity-{desktop,outer}.log及.local/check-current-parity-{selftest,outer,gui}.log。未验证真实游戏、在线升级或冻结程序逐项数值边界；对应源码原Qt对照不混称为冻结执行。
+
+## 历史构建：源码32bb8a9
 
 已将可用技能统计和候选引擎的int64解析修复打入目录客户端及单文件外层。版本字段仍为0.2.6，本次是本地测试构建，未覆盖公开附件。
 
