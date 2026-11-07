@@ -109,6 +109,49 @@ class AddonFullLoadTests(unittest.TestCase):
         lua.globals().EmitFixtureEvent('PLAYER_REGEN_ENABLED')
         self.assert_login_bindings(lua, 'MAGE', 1482, 21)
 
+    def world_fixture(self, token, class_id, spec):
+        prelude = f"fixtureClass='{token}';fixtureClassID={class_id};fixtureSpecID={spec}\n"
+        prelude += '\n'.join((ROOT/'tests'/host).read_text('utf8')
+                            for host in ('addon_login_host.lua', 'addon_world_host.lua'))
+        lua, _ = self.load(SOURCE, 'WowBuddyDev', prelude)
+        lua.globals().EmitFixtureEvent('ADDON_LOADED', 'WowBuddyDev')
+        lua.globals().EmitFixtureEvent('PLAYER_LOGIN')
+        return lua
+
+    def test_nine_class_enter_world_and_delayed_initialization(self):
+        for token, class_id, spec, used_count in self.CLASS_CASES:
+            with self.subTest(token=token):
+                lua = self.world_fixture(token, class_id, spec)
+                g = lua.globals()
+                g.EmitFixtureEvent('PLAYER_ENTERING_WORLD', True, False)
+                self.assertEqual(g.AdvanceFixtureTime(15), 7)
+                self.assertEqual(len(g.pendingAfter), 0)
+                self.assert_login_bindings(lua, token, spec, used_count)
+                report = g.WowBuddyDevDB.compatReport
+                self.assertEqual(report.resolvedSpecID, spec)
+                self.assertTrue(report.classDataMatched)
+                self.assertEqual(report.registeredSpecCount, 9)
+                self.assertEqual(g.fixtureCVars.useUiScale, '0')
+                self.assertEqual(g.fixtureCVars.uiScale, '0.75')
+                self.assertEqual(list(g.fixturePopups.keys()), [])
+                containers = [f for _, f in g.frames.items() if f.kind == 'AuraContainer']
+                self.assertTrue(containers)
+                self.assertTrue(all(f.unit and f.auraUpdates > 0 for f in containers))
+
+    def test_enter_world_scale_write_rejected_then_manual_recovery(self):
+        lua = self.world_fixture('MAGE', 8, 1482)
+        g = lua.globals()
+        g.fixtureRejectScale = True
+        g.EmitFixtureEvent('PLAYER_ENTERING_WORLD', True, False)
+        g.AdvanceFixtureTime(15)
+        self.assertEqual(g.fixtureCVars.useUiScale, '1')
+        self.assertIsNotNone(g.fixturePopups.PERMES_UI_SCALE_WARNING)
+        g.fixtureCVars.useUiScale = '0'
+        g.EmitFixtureEvent('CVAR_UPDATE', 'useUiScale', '0')
+        g.AdvanceFixtureTime(0)
+        self.assertIsNone(g.fixturePopups.PERMES_UI_SCALE_WARNING)
+        self.assert_login_bindings(lua, 'MAGE', 1482, 21)
+
     def test_randomized_package_loads_and_records_actual_addon_identity(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

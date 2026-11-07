@@ -30,3 +30,13 @@ DirectCast 缺项、20.0.1 发送端定位、实际受保护操作错误、自�
 补充后运行同一条 unittest 命令：6 项测试通过，耗时 2.258 秒；九职业场景属于其中一项测试的九个子场景。
 
 这里的 SetOverrideBindingClick、SetAttribute 是记录调用的替身，不会执行游戏宏，也不能证明游戏接受宏或硬件事件。未触发 PLAYER_ENTERING_WORLD、定时器、OnUpdate 或按钮点击；未验证真实目标切换、伤害、移动或受保护执行。初次诊断遇到的 date 等缺失均属于宿主接口缺项，本轮没有产品代码修复。
+
+## 后续补充：进入世界与单次计时器
+
+基于 2e65ae6 的产品源码继续添加 `tests/addon_world_host.lua`。九职业分别执行 PLAYER_ENTERING_WORLD，按到期顺序推进 15 秒离线时钟，每个职业执行 7 个 C_Timer.After 回调，队列清空，覆盖 Core 的多次延时绑定刷新。再次逐键检查职业宏与选怪键绑定，全部通过。
+
+同时检查兼容报告匹配当前职业和专精、九职业注册计数、光环容器已设置单位并请求刷新。UI 缩放由 1 变 0，原比例 0.75 保留。另注入 useUiScale 写入返回 false，确认显示人工处理提示；模拟用户将该设置改为 0 并发出 CVAR_UPDATE 后，提示消失，绑定仍正常。
+
+运行原 unittest 命令，8 项测试通过（其中两项分别包含九职业子场景），耗时 3.604 秒。
+
+这只扩展了指定事件和单次计时器范围：AuraContainer 的 SetUnit、AddAuraSlot、UpdateAllAuras 仅记录输入，没有运行原生光环引擎，也未调用 initializeFrame。场景未提供真实技能、天赋和光环数据；不能证明实际面板光环显示。周期 NewTicker、OnUpdate、按钮点击及游戏宏执行仍未验收。游戏 API 缺项造成的初次报错通过明确宿主接口补齐，没有改动产品代码或发布包。
