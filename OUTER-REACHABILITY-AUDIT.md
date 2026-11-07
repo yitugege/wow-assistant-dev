@@ -11,3 +11,15 @@
 这是覆盖证据缺口，尚未证明新增功能遗漏。范围外可能含CRT初始化、退出及容器支持代码；未匹配展开的目标可能是导入跳板或叶函数。下一步应分类这些目标，再针对业务相关分支取得正文/运行证据，而不是把所有项机械转成产品模块或声称已全部恢复。
 
 本图是静态过近似：遍历同一展开范围内的指令，未证明每条分支实际可达；也未解析间接函数指针、异常处理器、回调及动态加载，因此不是完整调用图。0x5154仍是候选原始入口，不是动态确认的保护层跳转终点。工具没有新增、删除或修改原参考映像，也没有改变独立EXE。
+
+## 范围外补充导出与初步分类
+
+本轮REA连接缺少GHIDRA_INSTALL_DIR，decompile_all返回provider_unavailable，没有产生有效导出。随后使用已有本地Ghidra12.1.4和JDK21，通过独立临时工程、默认自动分析及 `tools/ExportOuterRemaining.java` 导出，无需修改REA全局配置。此为本地Ghidra证据，不伪称REA Evidence。
+
+输出 `dist/outer-ghidra-remaining`：函数清单476项，其中范围外372份正文写出，导出接口失败0；索引为functions.tsv，源码身份及逐文件SHA256在evidence-manifest.json。日志 `.local/outer-ghidra-remaining.log`。导出后复核输入映像摘要不变，临时工程由headless的deleteProject选项清理。
+
+57个范围外展开起点均可对应本次函数清单。已识别的符号包括__vcrt_initialize、__vcrt_initialize_ptd、__vcrt_initialize_locks、__acrt_uninitialize、_calloc_base、区域设置释放、_guard_dispatch_icall、strlen等。匿名FUN函数仍需审读，不能仅凭靠近CRT函数就全部排除为无关代码。
+
+31个未匹配展开目标的检查结果保留在 `dist/outer-unwindless-targets.json`：其中0xf0e4和0xf0f8可由机器码及导入表直接确认是FlsGetValue/FlsSetValue跳板；部分是直接跳板或没有展开记录的短函数。0x5151与0xbf93起始为int3填充，来自顺序后继过近似，不应当计作丢失业务函数。当前调用图会在未匹配展开的目标停止，仍可能漏掉经短跳板继续到达的函数，不能将其视为完整覆盖。
+
+需要特别保留：0x7ff762f042d0（提供者命名_guard_check_icall）虽写出文件，但日志含两处constructor解析警告，正文明确标记坏指令控制流。它不在本轮57个展开起点列表内，也不能据导出成功声称该辅助函数已可靠恢复。372份正文是待审计证据，不是372个功能已还原。
