@@ -57,3 +57,12 @@ class AutoStartTests(unittest.TestCase):
             self.assertEqual(run_dev.main(),0)
             self.assertTrue(launch.call_args.kwargs['watch'])
         with self.assertRaises(ValueError):run_dev.launch('unused',selftest=True,watch=True)
+
+    def test_normal_launch_restores_native_watch_default_and_explicit_opt_out(self):
+        for arguments,expected in (([],True),(['--no-watch'],False),(['--auto'],True)):
+            with self.subTest(arguments=arguments),patch.object(sys,'argv',['run_dev.py',*arguments]),patch.object(run_dev,'launch',return_value=0) as launch:
+                self.assertEqual(run_dev.main(),0)
+                self.assertEqual(launch.call_args.kwargs['watch'],expected)
+        with patch.object(sys,'argv',['run_dev.py','--watch','--no-watch']),contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as raised:run_dev.main()
+            self.assertEqual(raised.exception.code,2)

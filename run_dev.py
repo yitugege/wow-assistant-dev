@@ -585,7 +585,9 @@ def main():
                         help='验证真实Win32后端构造及GUI关闭，不开始监控或发键')
     parser.add_argument('--data-dir',type=Path,default=APP_ROOT/'.local')
     parser.add_argument('--auto',action='store_true',help='界面初始化后尝试一次开始监控')
-    parser.add_argument('--watch',action='store_true',help='立即检查并每5秒自动连接游戏窗口；窗口关闭后停止监控')
+    watch_options=parser.add_mutually_exclusive_group()
+    watch_options.add_argument('--watch',action='store_true',help='显式启用默认的5秒游戏窗口自动监视')
+    watch_options.add_argument('--no-watch',action='store_true',help='本次启动不自动连接游戏窗口，改为手动开始监控')
     parser.add_argument('--install-addon',action='store_true',help='无主窗安装自有插件包并退出')
     parser.add_argument('--install-addon-dir',default=None,help='直接安装目标目录，原版格式为 --install-addon-dir=路径')
     parser.add_argument('--dump-ui',action='store_true',help='离屏导出界面诊断到data-dir后退出，不抓屏或发键')
@@ -648,7 +650,7 @@ def main():
         parser.error('专精、天赋及方案诊断参数需要 --dump-ui')
     if (args.auto or args.watch) and (args.selftest or args.selftest_backends):
         parser.error('--auto / --watch 不能与自检参数同时使用')
-    if not (args.selftest or args.selftest_backends): return launch(args.data_dir,auto_start=args.auto,watch=args.watch,no_update=args.no_update)
+    if not (args.selftest or args.selftest_backends): return launch(args.data_dir,auto_start=args.auto,watch=not args.no_watch,no_update=args.no_update)
     with TemporaryDirectory(prefix='wowbuddy-dev-selftest-') as temporary:
         report=launch(temporary,selftest=True,real_backends=args.selftest_backends)
     report['temporary_removed']=not Path(temporary).exists()
