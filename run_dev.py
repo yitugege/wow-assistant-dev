@@ -45,9 +45,67 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
 
         def _configure_unfinished_controls(self):
             super()._configure_unfinished_controls()
+            self.ui.update_check_button.setEnabled(True)
             self.ui.hub_pull_button.setEnabled(True)
             self.ui.hub_pull_button.setText('重载本地方案')
             self.ui.hub_pull_button.setToolTip(str(Path(data_dir)/'hub/rotations.json'))
+
+        def check_update(self, checked=False, *, manual=True):
+            from wowbuddy.github_client import check_latest
+            self._start_client_update_task(check_latest,'正在检查GitHub客户端版本…','check')
+
+        def download_update(self, checked=False):
+            if not getattr(self,'_client_update_info',{}).get('has_update'):return
+            if self.session.is_active():self.toggle_monitor()
+            from wowbuddy.github_client import download_checked
+            workspace=APP_ROOT.parent/'WowBuddyDev-updates'
+            self._start_client_update_task(lambda:download_checked(self._client_update_info,workspace),
+                                           '正在下载并校验客户端更新包…','download')
+
+        def _start_client_update_task(self, operation, status, phase):
+            if getattr(self,'_client_update_future',None) is not None and not self._client_update_future.done():return
+            from concurrent.futures import ThreadPoolExecutor
+            self._client_update_phase=phase
+            self._client_update_executor=ThreadPoolExecutor(max_workers=1)
+            self._client_update_future=self._client_update_executor.submit(operation)
+            self.ui.update_check_button.setEnabled(False)
+            self.ui.update_apply_button.setEnabled(False)
+            self.ui.update_status.setText(status)
+            self._client_update_timer=QTimer(self)
+            self._client_update_timer.timeout.connect(self._finish_client_update_task)
+            self._client_update_timer.start(100)
+
+        def _finish_client_update_task(self):
+            if not self._client_update_future.done():return
+            self._client_update_timer.stop()
+            self._client_update_executor.shutdown(wait=False)
+            try:
+                result=self._client_update_future.result()
+                if self._client_update_phase=='check':
+                    self._client_update_info=result
+                    status=f"当前 {result['current_version']} / GitHub {result['version']}："+('发现新版本' if result['has_update'] else '没有更新')
+                    self.ui.update_apply_button.setText('下载更新包')
+                    self.ui.update_apply_button.setVisible(result['has_update'])
+                    self.ui.update_apply_button.setEnabled(result['has_update'])
+                    self.ui.update_apply_button.setToolTip('下载并校验完整客户端；自动替换重启交接尚未接入')
+                else:
+                    self._client_update_staged=result
+                    status='更新包已校验并暂存，尚未替换程序：'+result['staged']
+            except Exception as error:
+                status='客户端更新失败：'+str(error)
+                if self._client_update_phase=='check':
+                    self._client_update_info={}
+                    self.ui.update_apply_button.hide()
+            self.ui.update_status.setText(status)
+            self.logger.append(status)
+            self.ui.update_check_button.setEnabled(True)
+
+        def shutdown(self):
+            timer=getattr(self,'_client_update_timer',None)
+            if timer is not None:timer.stop()
+            executor=getattr(self,'_client_update_executor',None)
+            if executor is not None:executor.shutdown(wait=False,cancel_futures=True)
+            super().shutdown()
 
         def refresh_hub(self):
             try:
@@ -319,12 +377,20 @@ def main():
     parser.add_argument('--hub-selftest',action='store_true',help='检查本地循环库并报告缺失动作，不联网')
     parser.add_argument('--hub-fetch',action='store_true',help='与 --hub-selftest 合用，从自有GitHub拉取循环库')
     parser.add_argument('--engine-selftest',action='store_true',help='运行原引擎离线自检并记录失败/跳过计数')
+    parser.add_argument('--check-update',action='store_true',help='检查自有GitHub客户端版本；有更新返回10')
     parser.add_argument('--spec',action='append',default=[],help='界面诊断的专精ID，可重复指定')
     parser.add_argument('--talent',default=None,help='界面诊断的天赋字符串')
     parser.add_argument('--rotations',default='',help='界面诊断的循环库JSON路径')
     parser.add_argument('--rotation',default='',help='界面诊断的专精ID|子分类|方案名')
     parser.add_argument('--toggle-showall',action='store_true',help='同时导出显示全部切换诊断')
     args=parser.parse_args()
+    if args.check_update:
+        if (args.selftest or args.selftest_backends or args.install_addon or args.install_addon_dir is not None
+                or args.dump_ui or args.hub_selftest or args.hub_fetch or args.engine_selftest or args.auto or args.watch
+                or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall):
+            parser.error('--check-update 仅与 --data-dir 配合使用')
+        from wowbuddy.github_client import run_check_command
+        return run_check_command(args.data_dir)
     if args.hub_fetch and not args.hub_selftest:
         parser.error('--hub-fetch 需要 --hub-selftest')
     if args.install_addon:
