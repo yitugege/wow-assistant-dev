@@ -64,7 +64,10 @@ def check(*, backend='printwindow', move_window=False, decorated=False):
                     frame=RGBImage([list(row)+[0x0d0d0d]*(160-frame.width) for row in frame.rows])
                 available=app.primaryScreen().availableGeometry()
                 if frame.height>available.height() or window.devicePixelRatioF()!=1:
-                    raise RuntimeError('此像素级检查需要1倍缩放且测试色条完整位于屏幕内')
+                    raise RuntimeError(
+                        f'此像素级检查需要1倍缩放且测试色条完整位于屏幕内: '
+                        f'{spec}/{protocol}, frame_height={frame.height}, '
+                        f'available_height={available.height()}, dpr={window.devicePixelRatioF()}')
                 window.set_frame(frame)
                 window.show()
                 app.processEvents()
@@ -76,6 +79,8 @@ def check(*, backend='printwindow', move_window=False, decorated=False):
                 y=available.top()+int((available.height()-outer_size.height())*factor)
                 window.move(x,y)
                 app.processEvents()
+                # 同步绘制不保证 Windows 已呈现；下面对两种后端都等待匹配帧。
+                window.repaint()
                 hwnd=int(window.winId())
                 rect=windows.window_rect(hwnd);client=windows.client_rect(hwnd)
                 origin=windows.client_to_screen(hwnd)
@@ -86,19 +91,19 @@ def check(*, backend='printwindow', move_window=False, decorated=False):
                     assert origin[0]>=rect.left and origin[0]+client.width<=rect.right,(rect,client,origin)
                     assert origin[1]+client.height<=rect.bottom,(rect,client,origin)
                 attempts=0
-                if dxgi is None:
-                    image=capture.capture(hwnd,rect,origin,client.width,client.height)
-                else:
-                    expected=tuple(row[:48] for row in frame.rows)
-                    deadline=time.monotonic()+4
-                    while True:
-                        app.processEvents()
+                expected=tuple(row[:48] for row in frame.rows)
+                deadline=time.monotonic()+4
+                while True:
+                    app.processEvents()
+                    if dxgi is None:
+                        image=capture.capture(hwnd,rect,origin,client.width,client.height)
+                    else:
                         image=dxgi.capture(Rect(origin[0],origin[1],origin[0]+client.width,origin[1]+client.height))
-                        attempts+=1
-                        if image is not None and image.rows==expected:break
-                        if time.monotonic()>=deadline:
-                            raise RuntimeError(f'DXGI未取得匹配帧: {spec}/{protocol}, error={dxgi.last_error}, attempts={attempts}')
-                        time.sleep(0.03)
+                    attempts+=1
+                    if image is not None and image.rows==expected:break
+                    if time.monotonic()>=deadline:
+                        raise RuntimeError(f'{backend}未取得匹配帧: {spec}/{protocol}, attempts={attempts}')
+                    time.sleep(0.03)
                 assert image is not None,(spec,protocol)
                 assert (image.width,image.height)==(min(48,frame.width),frame.height),(
                     spec,protocol,'抓屏尺寸不符',image.width,image.height,frame.width,frame.height,client)

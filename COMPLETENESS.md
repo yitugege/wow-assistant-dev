@@ -4,15 +4,15 @@
 
 ## 当前交付与源码身份
 
-最新本地构建04cd6be已包含近期DirectCast五个子模块、Core职业宏查询修复及此前交接清单/目录创建修复，保存于dist/local-04cd6be/WowBuddyDev-Outer.exe。实际启动、后端初始化、规则输入、缓存及设置保留检查通过，内嵌插件83文件与当前源码逐字节一致，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
+最新本地构建7b0eaa1已包含技能名称查询兼容、圣印事件及重建索引修复、两个诊断模块和此前客户端修复，内嵌插件85文件与源码逐字节一致，见BUILD-CURRENT-VALIDATION.md。完整顶层回归356项中355项通过、1项抓屏检查失败；改进测试窗口等待后仍受1082像素色条超过1032像素可用屏幕高度限制。不能称全量回归通过，公开0.2.8附件未覆盖。
 
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码又新增DirectCastProbe.lua及HookOrderProbe.lua，04cd6be EXE尚不含这些入口；最新本地随机插件包见dist/hook-order-probe。旧9fa2008 EXE不含DirectCast子模块；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。最新随机插件包为dist/spell-name-compat/WowBuddyDev-addon.zip，已安装游戏插件仍为f1b6d86，未安装上述两项修复。历史04cd6be EXE不含两个诊断入口及上述修复；旧9fa2008 EXE不含DirectCast子模块；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
 
 |对象|当前状态|证据|
 |---|---|---|
 |公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
 |本机游戏插件|f1b6d86源码包已从0.2.5-dev升级到0.2.8-dev，保留WowBuddyDev目录；原生游戏尚未验收|INSTALLED-HOOK-PROBE-VALIDATION.md，85文件校验、70个WTF文件保持不变|
-|最新本地EXE|源码04cd6be，版本字段仍为0.2.8；含近期DirectCast子模块，未覆盖公开附件|dist/local-04cd6be/WowBuddyDev-Outer.exe；SHA256 91d3fe6976c4a607dbe8854106c49c5a2efe7b5b8d16c88b6cc829434eff9ef6|
+|最新本地EXE|源码7b0eaa1，版本字段仍为0.2.8；内嵌85文件插件，未覆盖公开附件|dist/local-7b0eaa1/WowBuddyDev-Outer.exe；SHA256 62a2186c82f8486b1c77705c1532f94bb67cfa4b79e36a0d017e84f419dff072|
 |最近源码对照|原路径、目录创建、文件写入、字符搜索机器码对照；目录创建发现并修复四个场景差异|OUTER-MKDIR-NATIVE-PARITY.md、OUTER-MODULE-PATH-NATIVE-PARITY.md、OUTER-WRITE-NATIVE-PARITY.md|
 
 ## 明确未完成项

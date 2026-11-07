@@ -1,6 +1,21 @@
 # 当前源码本地构建验收
 
-最新插件包为dist/spell-name-compat/WowBuddyDev-addon.zip，含技能名称查询兼容和圣印回显修复；85文件，尚未安装/公开发布/重建EXE，见SPELL-NAME-COMPAT-VALIDATION.md。以下“最新插件增量”为前次历史记录。
+## 7b0eaa1 构建与当前回归限制
+
+已重新构建目录版及单文件，包含 ForeverCompat 技能名称查询修复、PanelV2 圣印事件与重建索引修复、DirectCastProbe 和 HookOrderProbe。内嵌插件 85 个文件与源码及目录版 `_internal/addon/WowBuddyDev` 逐字节一致，报告为 `dist/addon-embedded-7b0eaa1.json`。本节之后的“最新”均为历史记录，以本节为准。
+
+- 目录版 SHA256：`c3b9b17c0c16ffd7973fe4489cf3a46ed24686009d59b2572d864c535aa68c28`。
+- 单文件 SHA256：`62a2186c82f8486b1c77705c1532f94bb67cfa4b79e36a0d017e84f419dff072`，266 个外层成员。
+- 界面初始化、系统后端初始化及冻结程序六种规则输入自检通过；六个测试 Job 最终进程数均为零。
+- 单文件三种解包/缓存场景及两次正常 GUI 启动退出、设置保留检查通过，各测试 Job 最终进程数均为零。只关闭测试 Job 所属窗口，没有开启监控。单文件及上述报告归档到 `dist/local-7b0eaa1/`，可执行文件为 `dist/local-7b0eaa1/WowBuddyDev-Outer.exe`。
+- 完整顶层回归 356 项中 355 项通过、1 项失败，耗时 197.959 秒，日志 `.local/regression-7b0eaa1.log`。不能表述为全量回归通过。
+- 失败项为自建 Qt 窗口 PrintWindow 抓屏。单独复现取得全黑或上一帧；仅同步 repaint 仍可失败。检查工具改为最多等待 4 秒取得完整匹配帧，与已有 DXGI 检查保持一致，记录尝试次数；未修改产品抓屏代码。之后检查进行到 1484/readable 时触发环境限制：色条高 1082，当前屏幕可用高 1032、缩放 1.0。报告 `dist/win32-printwindow-check.json` 仍为失败；未跳过、缩放色条或更改显示设置来宣称通过，其他尚未执行的抓屏场景也不计通过。
+
+用户已取消游戏内 `/dump type(GetSpellInfo)` 查询，没有查询结果。此轮没有安装新插件、公开发布或执行游戏施法；实际游戏内仍为 f1b6d86 插件，公开下载仍为原 v0.2.8 附件。技能查询修复的实际施法效果和自动接续打怪仍未验收。
+
+## 历史插件增量记录
+
+此前插件包为dist/spell-name-compat/WowBuddyDev-addon.zip，含技能名称查询兼容和圣印回显修复；85文件，当时尚未安装/公开发布/重建EXE，见SPELL-NAME-COMPAT-VALIDATION.md。以下“最新插件增量”为前次历史记录。
 
 最新插件增量：修复PanelV2圣印回显事件参数及面板重建索引，随机包位于dist/seal-echo-fix/WowBuddyDev-addon.zip，85文件；详见PANEL-PRESENCE-VALIDATION.md。尚未安装或公开发布，本地04cd6be EXE不包含此修复。下述hook-order-probe仍是已安装版本。
 
@@ -8,7 +23,7 @@
 
 构建后新增差异：DirectCastProbe.lua恢复EnvCloakCast入口，最新随机插件包位于dist/directcast-probe；下述04cd6be EXE尚不含此文件，未再次重建。仅插件源码与包有此增量，未安装或公开发布。
 
-## 最新本地构建：04cd6be，未公开发布
+## 历史本地构建：04cd6be，未公开发布
 
 已将DirectCast的Slots、Guards、Actions、Keeper、Movement五个子模块及Core职业宏查询修复打入目录版和单文件。版本字段仍为0.2.8，公开0.2.8附件未覆盖。前轮46项相关源码测试通过，本轮没有改动产品源码，执行实际打包程序验证。
 
