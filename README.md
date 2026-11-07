@@ -4,7 +4,7 @@
 
 ## GitHub 下载与发布
 
-当前公开开发测试版：[v0.2.4](https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.4)。147项独立回归、134项核心回归、冻结EXE自检及两条崩溃诊断对照通过；更新内容与限制见[RELEASE-0.2.4.md](RELEASE-0.2.4.md)。游戏验收尚未完成。v0.2.0没有新版客户端更新入口，请手动下载并完整解压最新版本。
+当前公开开发测试版：[v0.2.6](https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.6)。包含协议显示缓存、统计状态、更新流程及插件安装身份修复；199项独立回归、134项核心回归、冻结构建与公开下载后自检通过，更新内容与范围见[RELEASE-0.2.6.md](RELEASE-0.2.6.md)。游戏验收尚未完成。目录版须完整解压，单文件版可使用WowBuddyDev-Outer.exe；v0.2.0没有新版更新入口，需手动下载。
 
 在 Releases 下载配套客户端目录包，解压全部文件后运行 WowBuddyDev.exe。在插件页选择包含 Wow.exe 的目录，退出游戏并停止监控，点击“GitHub下载更新”。客户端从本仓库最新正式 Release 获取插件及清单，核对协议版本、ZIP 和成员 SHA256 后安装，更新前备份旧开发插件。
 
