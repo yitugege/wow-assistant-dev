@@ -2,6 +2,10 @@
 
 ## 自动选怪离线联测补充
 
+纹理到解码的后续衔接：完整模块测试现从纹理替身的实际SetPoint、SetSize、SetColorTexture和可见性记录生成24×1200背景图，再交给当前Assets.pipeline解码；没有按桌面契约重新排列或重写像素值。公共字段及法师注册布局两种场景均通过，9帧状态序列包含整体隐藏后的识别失败和重新显示后的恢复。每个可见帧核对old协议、1482身份、DEV_VERSION、ttd整数及总开关值。日志`.local/pixelbar-decoder-bridge.log`，2项测试通过。
+
+法师场景执行整个classes/Mage/class_forever.lua注册实际pixelData/testSpells/actionAvailSpellIDs，核对全部pixelData字段ID顺序与桌面旧契约一致，每格有真实重建产生的4×4纹理；并验证测试提供的目标有效性、玩家有效性和75%法力最终解码值。FillForeverExtraValues仍为显式替身，技能已学API固定false；没有执行真实职业状态采集、光环容器、字体排版和GPU叠层。背景图中未由模块写入的后续位置只是背景，不把那些字段解码成功当成插件已绘制。此证据不能扩大为全部法师技能或其他职业验收。
+
 进一步完整模块验证：`tests/test_pixelbar_full_module.py`加载未经截取的ActionKeyCheck.lua、AutoTarget.lua和PixelBar.lua，以及Core.lua实际29项COMMON_PIXEL_DATA定义，执行RebuildPixelBars和注册的OnUpdate回调。测试宿主`tests/pixelbar_host.lua`显式提供游戏API/纹理替身，未知方法不自动补默认值；专精字段列表为空、无治疗曲线与叠层，不能扩大为全职业渲染覆盖。
 
 该连续场景实际观察到ttd纹理4×4、左上位置(0,76)，定位块为(4,128)的洋红纹理；取自纹理赋色记录的整数等于回调值并能按桌面协议解析。目标存活→死亡→点击回执→键盘焦点占用→脱战→取包函数异常的状态、序号和回执均核对通过。整体隐藏调用实际ToggleAllOverlayVisibility，关闭总开关并隐藏容器；之后帧回调仍执行，但主开关颜色为红。报告日志`.local/pixelbar-full-module.log`。

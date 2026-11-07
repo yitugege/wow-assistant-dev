@@ -89,3 +89,14 @@ function pixelAt(x,y)
        texture.point[4]==x and texture.point[5]==y then return texture end
   end
 end
+function visiblePixelRectangles()
+  local result={}
+  if not WowBuddyDev.pixelContainer.shown then return result end
+  for _,texture in ipairs(textures) do
+    if texture.parent==WowBuddyDev.pixelContainer and texture.shown and texture.point and texture.color then
+      result[#result+1]={x=texture.point[4],y=-texture.point[5],width=texture.width,height=texture.height,
+                        r=texture.color[1],g=texture.color[2],b=texture.color[3]}
+    end
+  end
+  return result
+end
