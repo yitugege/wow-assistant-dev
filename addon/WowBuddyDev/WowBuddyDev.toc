@@ -2,7 +2,7 @@
 ## Title: WowBuddyDev
 ## Notes: 独立开发版
 ## Author: Unknown
-## Version: 0.2.4-dev
+## Version: 0.2.5-dev
 ## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics
 
 ForeverCompat.lua
