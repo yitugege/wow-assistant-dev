@@ -25,6 +25,11 @@ class BindingLifecycleTests(unittest.TestCase):
           function f:SetAttribute(key,value) mutation();self.attributes[key]=value end
           function f:GetAttribute(key) return self.attributes[key] end
           function f:SetScript(key,value) self.scripts[key]=value end
+          function f:HookScript(key,value)
+            self.hookCount=(self.hookCount or 0)+1
+            local previous=self.scripts[key]
+            self.scripts[key]=function(...) if previous then previous(...) end;value(...) end
+          end
           function f:RegisterEvent(name) self.events[name]=true end
           function f:RegisterUnitEvent(name) self.events[name]=true end
           function f:SetSize() end
@@ -210,6 +215,58 @@ class BindingLifecycleTests(unittest.TestCase):
         ok,_,_,failures=g.WowBuddyDev.CheckMacroBindings()
         self.assertFalse(ok);self.assertFalse(g.autoTargetState.bound)
         self.assertTrue(any('auto_fixture' in s for s in failures.values()))
+
+    def test_full_auto_target_uses_real_core_button_and_single_click_hook(self):
+        g=self.lua.globals()
+        self.lua.execute('''WowBuddyDev.classData={};WowBuddyDev.DB={masterSwitch=true}
+        dead=false
+        function UnitAffectingCombat() return combat end
+        function UnitExists() return true end
+        function UnitIsDeadOrGhost(unit) return unit=='target' and dead end
+        function UnitCanAttack() return true end
+        function UnitCanAssist() return false end
+        function GetCurrentKeyBoardFocus() return nil end
+        function GetSpecialization() return 1 end
+        function GetSpecializationInfo() return 1482 end
+        function WowBuddyDev.IsRangedDamageSpec() return true end
+        function WowBuddyDev.IsMeleeSpec() return false end
+        function WowBuddyDev.GetAutoTargetEnabled() return true end''')
+        for name in ('ActionKeyCheck.lua','AutoTarget.lua'):
+            self.lua.execute((SOURCE.parent/name).read_text('utf8'))
+        g.WowBuddyDev.RefreshMacroBindings()
+        button=g.frames.WBD_BTN_auto_target
+        self.assertIsNotNone(button)
+        self.assertEqual(button.attributes.macrotext,
+            '/targetenemy [combat,nochanneling,noexists][combat,nochanneling,dead]')
+        def packet():
+            value=int(g.WowBuddyDev.GetAutoTargetPacket())
+            return (value>>13)&127,(value>>10)&7,(value>>5)&31
+        key_index,gate,ack=packet()
+        key=g.WowBuddyDev.AUTO_TARGET_KEYS[key_index]
+        self.assertEqual(g.bound[key].action,'CLICK WBD_BTN_auto_target:LeftButton')
+        self.assertEqual((gate,ack),(0,0))
+        # 重复刷新复用按钮；HookScript若错误重复注册，单次点击将暴露多次递增。
+        for _ in range(3):g.WowBuddyDev.RefreshMacroBindings()
+        self.assertEqual(button.hookCount,1)
+        self.lua.execute('combat=true')
+        self.assertEqual(packet()[1],2)
+        before=g.writes
+        self.assertFalse(g.WowBuddyDev.ApplyAutoTargetBinding())
+        self.assertEqual(g.writes,before)
+        self.lua.execute('dead=true')
+        self.assertEqual(packet()[1],1)
+        for count in range(1,34):
+            button.scripts.OnClick(button)
+            self.assertEqual(packet()[2],count%32)
+        self.lua.execute('combat=false')
+        g.WowBuddyDev.DB.masterKey=key
+        g.WowBuddyDev.RefreshMacroBindings()
+        new_index,_,_=packet()
+        new_key=g.WowBuddyDev.AUTO_TARGET_KEYS[new_index]
+        self.assertNotEqual(new_key,key)
+        self.assertIsNone(g.bound[key])
+        self.assertEqual(g.bound[new_key].action,'CLICK WBD_BTN_auto_target:LeftButton')
+        self.assertEqual(button.hookCount,1)
 
 
 if __name__=='__main__':unittest.main()

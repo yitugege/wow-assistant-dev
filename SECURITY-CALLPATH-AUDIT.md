@@ -1,5 +1,11 @@
 # 受保护操作调用补验
 
+## 自动选怪与Core按钮实际连接
+
+新增测试在实际Core绑定片段上加载完整ActionKeyCheck.lua及AutoTarget.lua，不替换CreateSecureButton。验证实际生成的安全按钮宏文、覆写键映射和包中按键下标一致；三次重复刷新仅挂一次OnClick钩子，33次模拟点击按32回绕。进入战斗后ApplyAutoTargetBinding返回false且保护写入数不变；有效目标到死亡状态从2变1。脱战后把原选怪键设为主键再刷新，真实空闲键选择换键，旧绑定清除，按钮复用且钩子仍为1。
+
+10项生命周期测试通过（0.059秒），日志.local/auto-target-real-core.log。UI/游戏API仍为替身，点击由测试直接调用，没有按键进入真实WoW或宏执行证据。本轮无业务改动，不将自动选怪包和回执通过扩大成自动打下一只怪通过。
+
 用户此前截图提示插件调用仅暴雪UI允许的功能，具体被拦函数尚无游戏记录。本轮没有改变安全执行机制，也没有把改名当作弹窗修复。
 
 阅读Core安全按钮创建及刷新路径：CreateSecureButton与ApplyMacros_Internal先检查InCombatLockdown，战斗中仅记录pendingMacroBindings；脱战事件再刷新。已有测试覆盖直接战斗刷新和九职业241动作。本轮新增UPDATE_BINDINGS已排队、定时回调执行前进入战斗的场景：实际Core片段执行后保护写入计数不增加、旧F1保留、新F2尚未绑定；脱战事件后旧键清除、新键绑定，检查通过。9项生命周期测试通过，日志.local/security-queued-binding.log。
