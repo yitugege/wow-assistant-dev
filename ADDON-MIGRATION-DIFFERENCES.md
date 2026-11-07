@@ -2,6 +2,8 @@
 
 本轮逐文件读取原addon.bin和独立源码，仅归一CRLF/LF、P07483180→WowBuddyDev、SemrepDB→WowBuddyDevDB。工具 `tools/audit_addon_migration.py` 输出完整摘要清单 `dist/addon-migration-audit.json` 和可审查差异 `dist/addon-migration.diff`。这不是运行时等价证明，也不把差异自动认定为用户批准。
 
+DirectCast后续原文执行结果见DIRECT-CAST-ORIGINAL-FINDINGS.md：五项隔离测试确认按钮返回值类型错误、关闭后遗留移动补发、放置失败仍缓存等行为。模块仍未恢复，不能仅复制文件后称其可用。
+
 原78成员中：24个逐字节相同；42个仅上述名称或换行不同；11个仍有差异；1个缺失（DirectCast.lua）。独立新增SecurityDiagnostics.lua。原TOC映射到WowBuddyDev.toc后单独比较，不误报为文件丢失。
 
 ## 影响功能的差异
