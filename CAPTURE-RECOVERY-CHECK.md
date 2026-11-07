@@ -11,3 +11,11 @@ tests/core/test_capture_recovery.py对实际DxgiCapture状态机增加三个显�
 139项核心测试通过，日志.local/capture-recovery-core.log。本轮未改业务代码；没有模拟实际GPU设备切换、旋转、多显示器或DPI变化，也未向游戏采集或发送输入。
 
 本轮只读进程检查未发现Wow、WowB或WowClassic。已询问用户是否能进入角色；未收到准备完成前，真实游戏功能验收仍未完成。
+
+## DXGI与PrintWindow选择矩阵
+
+进一步核对原01ec80：DXGI非空且01f740返回非零坐标时直接返回；否则调用PrintWindow。在DXGI存在时，仅备用图有有效标记才替换DXGI；DXGI为空则使用备用图。返回非空图不代表色块已识别。
+
+新增16组合，两个后端各取空图、无标记图、原点标记图、有效非原点标记图。测试运行真实定位函数，不替换标记判定；核对返回图对象、后端名、备用调用次数、状态、标记位及客户端屏幕坐标。原点(0,0)作为未找到哨兵，与原条件一致。所有组合及140项核心测试通过，日志.local/capture-fallback-core.log。
+
+本次只验证后端选择和定位调用链；没有调用真实PrintWindow或DXGI，不据此证明遮挡、独占全屏或实际GPU行为。未修改业务代码。

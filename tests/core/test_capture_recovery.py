@@ -1,6 +1,7 @@
 """抓屏访问丢失及缓存坐标变化；显式替身不接触桌面。"""
 import unittest
-from wowbuddy.capture import DxgiCapture,DxgiInitialization,Rect,DXGI_ERROR_WAIT_TIMEOUT
+from types import SimpleNamespace
+from wowbuddy.capture import DxgiCapture,DxgiInitialization,Rect,DXGI_ERROR_WAIT_TIMEOUT,WindowCapture
 from wowbuddy.pixel_geometry import RGBImage
 
 
@@ -24,6 +25,36 @@ class Backend:
 
 
 class CaptureRecoveryTests(unittest.TestCase):
+    def test_two_backend_selection_matrix_and_origin_marker(self):
+        def image(kind):
+            if kind=='none':return None
+            rows=[[0x123456]*48 for _ in range(10)]
+            if kind=='marker':rows[2][4:6]=[0xff00ff]*2
+            if kind=='origin':rows[0][0:2]=[0xff00ff]*2
+            return RGBImage(rows)
+        for dxgi_kind in ('none','blank','origin','marker'):
+            for print_kind in ('none','blank','origin','marker'):
+                with self.subTest(dxgi=dxgi_kind,printed=print_kind):
+                    dxgi,printed=image(dxgi_kind),image(print_kind)
+                    calls=[]
+                    windows=SimpleNamespace(is_iconic=lambda hwnd:False,
+                        window_rect=lambda hwnd:Rect(90,190,300,400),
+                        client_rect=lambda hwnd:Rect(0,0,100,10),client_to_screen=lambda hwnd:(100,200))
+                    primary=SimpleNamespace(capture=lambda *args:calls.append(('dxgi',args)) or dxgi)
+                    fallback=SimpleNamespace(capture=lambda *args:calls.append(('print',args)) or printed)
+                    result=WindowCapture(windows,primary,fallback).capture(10)
+                    if dxgi_kind=='marker':
+                        expected=dxgi;backend='dxgi';self.assertEqual(len(calls),1)
+                    else:
+                        self.assertEqual(len(calls),2)
+                        if dxgi_kind=='none' or print_kind=='marker':expected=printed;backend='printwindow'
+                        else:expected=dxgi;backend='dxgi'
+                    self.assertIs(result.image,expected)
+                    self.assertEqual(result.backend,backend)
+                    self.assertEqual(result.status,'ok' if expected is not None else 'capture_failed')
+                    self.assertEqual(result.marker_found,dxgi_kind=='marker' or print_kind=='marker')
+                    self.assertEqual(result.client_rect,Rect(100,200,200,210))
+
     def test_timeout_reuses_only_identical_screen_crop(self):
         backend=Backend();capture=DxgiCapture(backend,lambda:1000)
         original=Rect(10,10,110,20);moved=Rect(11,10,111,20)
