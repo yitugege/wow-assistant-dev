@@ -1,6 +1,12 @@
 # 当前源码本地构建验收
 
-## 最新本地构建：源码2de8343
+## 最新本地构建：0.2.8，源码03a6169
+
+最终顶层回归251项通过，用时138.192秒；核心回归153项通过，用时1.379秒，共404项。日志 `.local/regression-028-verbose.log` 与 `.local/regression-core-028.log`。顶层首次运行被人工结束后使用详细日志重跑；90秒定时堆栈是诊断输出，不代表测试超时失败。核心首次调用遗漏 PYTHONPATH，修正运行环境后通过。
+
+成套产物摘要见 RELEASE-0.2.8.md。冻结六组输入、三组缓存、两次隔离 GUI 启动及设置保留通过。报告保留为 `dist/frozen-selftest-028.json`、`dist/frozen-outer-028.json`、`dist/outer-gui-028.json`。`tools/check_release_consistency.py` 对实际发布包核验：版本一致、成员摘要一致、59个 Lua 与源码一致且可编译、TOC/XML 引用完整、单文件身份与业务 EXE 摘要一致。未安装到游戏目录，未执行真实游戏施法。
+
+## 历史本地构建：源码2de8343
 
 目录业务EXE：`dist/desktop/WowBuddyDev/WowBuddyDev.exe`，SHA256 `1e2e13aa4e0644493940dfe490c045a945487798a8cd7bca142881c27fb5dd3b`。单文件EXE：`dist/outer/WowBuddyDev-Outer.exe`，SHA256 `5652df44a0fd7395960c1738059f83d70a7f0ae93c4e0cd43b5451db705eb43a`。本次已纳入受限容量排序；默认调用路径不变。版本字段仍为0.2.7，是本地后续构建，未覆盖公开附件。
 
