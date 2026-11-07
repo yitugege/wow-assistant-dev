@@ -9,6 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.launcher_host import read_module_path, WideBufferResult, WindowsHostAPI
+from wowbuddy.launcher import module_directory
 
 
 class ModulePathNativeTests(unittest.TestCase):
@@ -75,7 +76,7 @@ class ModulePathNativeTests(unittest.TestCase):
         k.VirtualFree.argtypes=[C.c_void_p,C.c_size_t,C.c_ulong]
         k.GetModuleFileNameW.argtypes=[C.c_void_p,C.c_void_p,C.c_uint32]
         k.GetModuleFileNameW.restype=C.c_uint32
-        address=k.VirtualAlloc(None,0x15000,0x3000,4)
+        address=k.VirtualAlloc(None,0x22000,0x3000,4)
         if not address:raise C.WinError(C.get_last_error())
         cls.addClassCleanup(lambda:k.VirtualFree(address,0,0x8000))
         cls.state={}
@@ -121,7 +122,30 @@ class ModulePathNativeTests(unittest.TestCase):
         C.memmove(address+0x1300,resize_code,len(resize_code))
         for start,block in string_blocks:
             C.memmove(address+start,block,len(block))
-        C.memmove(address+0x14478,pe.get_data(0x14478,4),4)
+        # 原目录函数及字符集合搜索链。4260分支需要非ASCII分隔集合，
+        # 原固定分隔集合为/和反斜杠，保留陷阱以避免意外执行未映射依赖。
+        linked_spans=[(0x2280,0x2595),(0x43d0,0x4429),(0x4430,0x4604),
+                      (0x4610,0x4822),(0x4830,0x4965),(0x4970,0x4acc),
+                      (0x4c30,0x4c35),(0x4eb0,0x4ece)]
+        permitted={0x25a0,0x4c30,0x12d00,0x4260,0x1210,0x4d8c,0x4eb0,0xaa44,
+                   0x43d0,0x4610,0x4830,0x4970,0x12660}
+        for start,end in linked_spans:
+            block=pe.get_data(start,end-start)
+            decoded=list(decoder.disasm(block,pe.OPTIONAL_HEADER.ImageBase+start))
+            if sum(i.size for i in decoded)!=len(block):raise ValueError('目录调用链解码不完整')
+            for i in decoded:
+                if i.mnemonic=='call' or i.group(capstone.CS_GRP_JUMP):
+                    op=i.operands[0]
+                    if op.type!=capstone.x86.X86_OP_IMM:raise ValueError('目录调用链未知间接控制流')
+                    target=op.imm-pe.OPTIONAL_HEADER.ImageBase
+                    valid=target in permitted if i.mnemonic=='call' else (
+                        any(a<=target<b for a,b in linked_spans) or target==0x545c)
+                    if not valid:raise ValueError(f'目录调用链未映射目标{target:#x}')
+            C.memmove(address+start,block,len(block))
+        C.memmove(address+0x14478,pe.get_data(0x14478,8),8)
+        if pe.get_data(0x1447c,4) not in (b'/\x00\\\x00',b'\\\x00/\x00'):
+            raise ValueError('原分隔符集合变化')
+        C.memmove(address+0x16000,pe.get_data(0x16000,0x1000),0x1000)
         install(0x4d50,C.c_void_p,[C.c_size_t],allocate)
         install(0xad90,C.c_size_t,[C.c_void_p],length)
         install(0x4d8c,None,[C.c_void_p],release)
@@ -131,13 +155,17 @@ class ModulePathNativeTests(unittest.TestCase):
         for rva,name in [(0x12d00,'memset'),(0x12660,'memcpy')]:
             target=C.cast(getattr(cls.ucrt,name),C.c_void_p).value
             C.memmove(address+rva,b'\x48\xb8'+target.to_bytes(8,'little')+b'\xff\xe0',12)
-        for rva in (0xaa44,0x1a90,0x1ba0,0x1bc0):
+        for rva in (0xaa44,0x1a90,0x1ba0,0x1bc0,0x4260,0x545c):
             C.memmove(address+rva,b'\xcc',1)
-        for page in (0x1000,0x2000,0x4000,0x8000,0xa000,0x12000):
+        for page in (0x1000,0x2000,0x4000,0x5000,0x8000,0xa000,0x12000):
             old=C.c_ulong()
             if not k.VirtualProtect(address+page,0x1000,0x20,C.byref(old)):
                 raise C.WinError(C.get_last_error())
+        old=C.c_ulong()
+        if not k.VirtualProtect(address+0x16000,0x1000,2,C.byref(old)):
+            raise C.WinError(C.get_last_error())
         cls.native=C.CFUNCTYPE(C.c_void_p,C.c_void_p)(address+0x25a0)
+        cls.directory=C.CFUNCTYPE(C.c_void_p,C.c_void_p)(address+0x2280)
         cls.resize=C.CFUNCTYPE(None,C.c_void_p,C.c_size_t)(address+0x1300)
         cls.construct=C.CFUNCTYPE(None,C.c_void_p,C.c_void_p,C.c_size_t)(address+0x1210)
         cls.aligned_allocate=C.CFUNCTYPE(C.c_void_p,C.c_size_t)(address+0x11a0)
@@ -233,6 +261,36 @@ class ModulePathNativeTests(unittest.TestCase):
             pointer=self.aligned_allocate(size)
             if not size:self.assertIsNone(pointer)
             elif size>=4096:self.assertEqual(pointer%32,0)
+
+    def test_complete_directory_chain(self):
+        paths=['','a.exe','C:\\a.exe','C:/a.exe','/a','\\a','C:\\中文\\😀.exe',
+               '\\\\server\\share\\a.exe','C:\\a\ud800/b.exe','C:/a\udc00\\b.exe']
+        for size in (6,7,8,12,13,14,15,16,1022,1023,2047):
+            for position in (0,size//2,size-1):
+                paths.append('x'*position+'\\'+'x'*(size-position-1))
+        for path in paths:
+            with self.subTest(path_length=len(path)):
+                units=len(path.encode('utf-16le','surrogatepass'))//2
+                capacity=1024
+                answers=[]
+                while units>=capacity-1:
+                    answers.append((min(units,capacity),path))
+                    capacity*=2
+                answers.append((units,path))
+                self.state.clear()
+                self.state.update(buffers=[],calls=[],freed=[],answers=answers)
+                output=C.create_string_buffer(32)
+                self.assertEqual(self.directory(output),C.addressof(output))
+                self.assertEqual(self.decode_string(output),module_directory(path or '.'))
+                self.assertEqual(self.state['answers'],[])
+        self.assertEqual(len(paths),43)
+
+    def test_complete_directory_chain_with_windows_api(self):
+        self.state.clear()
+        self.state.update(buffers=[],calls=[],freed=[],live=True)
+        output=C.create_string_buffer(32)
+        self.assertEqual(self.directory(output),C.addressof(output))
+        self.assertEqual(self.decode_string(output),module_directory(read_module_path(WindowsHostAPI())))
 
 
 if __name__=='__main__':unittest.main()
