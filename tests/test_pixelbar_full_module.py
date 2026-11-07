@@ -183,6 +183,40 @@ class PixelBarModuleTests(unittest.TestCase):
             self.assertEqual(g.rangeQueriedRank,205)
             skill_tick('targetAlive=false','ON','OFF',True)
             skill_tick('targetAlive=true; knownRank=nil','OFF','OFF',False)
+        if class_name=='Druid':
+            lua.execute('''groupHealth={player=100,party1=70,party2=79};unfriendly={}
+            function UnitExists(unit) return unit=='player' or unit=='target' or groupHealth[unit]~=nil end
+            function UnitCanAssist(_,unit) return groupHealth[unit]~=nil and not unfriendly[unit] end
+            function UnitHealth(unit) return groupHealth[unit] or 100 end
+            function IsSpellKnown(id) return id==408120 end
+            C_Spell={IsSpellInRange=function() return true end}
+            function WowBuddyDev.GetSpellCooldownRemaining() return 0 end
+            function WowBuddyDev.IsSpellUsable() return true end''')
+            profile=next(p for p in json.loads((ROOT/'assets/rotations.json').read_text('utf8'))['rotations'] if p['id']==17)
+            clock=[10000]
+            sent=[]
+            sender=SimpleNamespace(send=lambda key,**kwargs:sent.append(key) or True,
+                status='测试投递',channel='fixture',backend=SimpleNamespace(now_ms=lambda:clock[0],Sleep=lambda ms:None))
+            scheduler=Scheduler(pipeline,ActionDispatcher(sender),lambda:clock[0])
+            for script,expected in [('',True),('groupHealth.party2=80',False),
+                    ('groupHealth.player=50',True),('unfriendly.party1=true',False),
+                    ('unfriendly.party1=nil;groupHealth.player=100;groupHealth.party2=79',True),
+                    ('groupHealth.party1=nil',False)]:
+                lua.execute(script)
+                tick()
+                frame=captured_frame()
+                clock[0]+=7000
+                before=len(sent)
+                result=scheduler.process(pipeline.prepare_frame(frame,selected_profile=profile),hwnd=123,send_interval_ms=100)
+                with self.subTest(group_heal_script=script):
+                    self.assertEqual('spell_408120_focus' in [c.action for c in result.decision.candidates],expected)
+                    if expected:
+                        self.assertEqual(result.status,'sent')
+                        self.assertEqual(result.selected.pre_action,'focus_player')
+                        self.assertEqual(sent[before:],['ALT-CTRL-NUMPAD6','ALT-CTRL-NUMPAD3'])
+                    else:
+                        self.assertEqual(result.status,'no_candidates')
+                        self.assertEqual(sent[before:],[])
         if class_name=='Priest':
             lua.execute('''partyHealth={party1=40,party2=10}; partyMissing={};partyDead={};partyHostile={};healthError={}
             focusUnit='party2'
