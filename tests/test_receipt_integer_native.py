@@ -7,7 +7,8 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.aura_probe import field_integer,spell_id_from_action
+from wowbuddy.aura_probe import field_integer,spell_id_from_action,AuraProbeLedger,Receipt,ProbeResult
+from wowbuddy.send_gates import focus_index,should_skip_focus
 from test_availability_display_native import QString
 
 
@@ -35,6 +36,41 @@ class ReceiptIntegerNativeTests(unittest.TestCase):
                 value=native(text)
                 expected=value if 2<=value<=0xfffffe else -1
                 self.assertEqual(spell_id_from_action('spell_'+text+'_target'),expected)
+
+        # 原089570对focus_party后缀直接toInt；不是field_integer的trim/section流程。
+        convert32=getattr(dll,'?toInt@QString@@QEBAHPEA_NH@Z')
+        convert32.argtypes=convert.argtypes
+        convert32.restype=C.c_int32
+        focus_samples=['1','4','5','0','-1','+2',' 2 ','2\0junk','\u00a02\u00a0',
+                       '0'*5000+'2','9'*5000,str(2**32+2),'2 extra']
+        for index,text in enumerate(focus_samples):
+            with self.subTest(index=index,kind='focus'):
+                raw=text.encode('utf-16-le');buf=C.create_string_buffer(raw+b'\0\0')
+                source=QString(None,C.addressof(buf),len(raw)//2);ok=C.c_bool()
+                number=convert32(C.byref(source),C.byref(ok),10)
+                expected=number if ok.value and 1<=number<=4 else -1
+                action='focus_party'+text
+                self.assertEqual(focus_index(action),expected)
+                self.assertEqual(should_skip_focus(action,last_action='',last_switch_ms=0,
+                    now_ms=4000,focus_known=True,observed_index=2),expected==2)
+
+    def test_receipt_conversion_changes_probe_ledger(self):
+        for spell,receipt,result,deadline in (
+            ('116\0ignored',Receipt.FIRED_SAME,ProbeResult.IMMUNE,11400),
+            ('116\u00a0 note',Receipt.FIRED_OTHER,ProbeResult.MISSED,2400),
+            ('9'*5000,Receipt.FIRED_OTHER,ProbeResult.MISSED,2400)):
+            with self.subTest(spell_length=len(spell),receipt=receipt):
+                ledger=AuraProbeLedger()
+                action='spell_'+'0'*5000+'116'
+                ledger.record_send(action,success=True,now_ms=1000,hold_ms=10000,
+                    expect_off=('aura',),fields={'player_succeeded_generation':'0'*5000+'1'})
+                self.assertEqual(ledger.sent_generation[action],1)
+                events=ledger.check({'player_succeeded_generation':'2\0ignored',
+                    'player_succeeded_spell_id':spell,'aura':'OFF'},now_ms=1400,casting=False)
+                self.assertEqual(len(events),1)
+                self.assertEqual((events[0].receipt,events[0].result),(receipt,result))
+                self.assertEqual(ledger.suppression_until[action],deadline)
+                self.assertNotIn(action,ledger.check_at)
 
 
 if __name__=='__main__':unittest.main()
