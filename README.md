@@ -4,7 +4,7 @@
 
 ## GitHub 下载与发布
 
-当前公开开发测试版：[v0.2.3](https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.3)。128项独立回归、134项核心回归和冻结EXE自检通过；公开附件重新下载后校验和客户端自检通过。真实公开v0.2.2临时副本已执行检查、下载、交接替换，设置保留且换入EXE自检通过；本次关闭自动重启，未做游戏验收。命令变化和边界见[RELEASE-0.2.3.md](RELEASE-0.2.3.md)。v0.2.0没有新版客户端更新入口，请手动下载并完整解压v0.2.3。
+当前公开开发测试版：[v0.2.4](https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.4)。147项独立回归、134项核心回归、冻结EXE自检及两条崩溃诊断对照通过；更新内容与限制见[RELEASE-0.2.4.md](RELEASE-0.2.4.md)。游戏验收尚未完成。v0.2.0没有新版客户端更新入口，请手动下载并完整解压最新版本。
 
 在 Releases 下载配套客户端目录包，解压全部文件后运行 WowBuddyDev.exe。在插件页选择包含 Wow.exe 的目录，退出游戏并停止监控，点击“GitHub下载更新”。客户端从本仓库最新正式 Release 获取插件及清单，核对协议版本、ZIP 和成员 SHA256 后安装，更新前备份旧开发插件。
 
@@ -16,7 +16,7 @@
 
 ## 当前内容
 
-当前源码新增启动取证日志：默认位于程序旁 `.local/startup.log`，也可由 `--data-dir` 指定；记录Qt、资源加载和主窗口阶段，Python异常的完整堆栈写入同目录startup-error.log。尚未包含在公开v0.2.2附件中，原生崩溃捕获的未完成范围见STARTUP-DIAGNOSTICS.md。
+当前源码新增启动取证日志：默认位于程序旁 `.local/startup.log`，也可由 `--data-dir` 指定；记录Qt、资源加载和主窗口阶段，Python异常的完整堆栈写入同目录startup-error.log。已包含在当前公开附件中；原生崩溃捕获的未完成范围见STARTUP-DIAGNOSTICS.md。
 
 - `desktop/wowbuddy/`：迁入当前桌面重建源码，由独立run_dev.py入口使用，并提供自有EXE构建脚本。
 - `addon/WowBuddyDev/`：独立插件源码，固定目录及TOC名称。
