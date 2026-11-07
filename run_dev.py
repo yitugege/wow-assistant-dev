@@ -20,9 +20,9 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         raise ValueError('界面诊断不能与自检或自动监控同时使用')
     if selftest or dump_ui is not None:
         os.environ['QT_QPA_PLATFORM'] = 'offscreen'
-    from PySide6.QtCore import QUrl, QTimer
+    from PySide6.QtCore import QUrl, QTimer, Qt
     from PySide6.QtGui import QDesktopServices
-    from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QFileDialog
+    from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QFileDialog, QMenu
     from wowbuddy.assets import Assets
     from wowbuddy.settings import open_ini_settings
     from wowbuddy.qt_app import AssistantWindow
@@ -89,13 +89,53 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self.ui.addon_path.setText(self.settings.snapshot().addon_last_dir)
             self.ui.addon_path.setReadOnly(True)
             self.ui.addon_status.setText('选择客户端后安装WowBuddyDev；请先退出游戏，测试前禁用旧插件。')
-            self.ui.addon_clean_button.setEnabled(False)
+            self._addon_windows = windows
+            self.ui.addon_clean_button.setText('自动检测')
+            self.ui.addon_clean_button.setEnabled(True)
+            self.ui.addon_clean_button.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            self.ui.addon_clean_button.setToolTip('检测游戏客户端；右键选择最近目录')
+            self.ui.addon_clean_button.clicked.connect(self._detect_development_client)
+            self.ui.addon_clean_button.customContextMenuRequested.connect(self._recent_development_clients)
             self.ui.addon_detect_button.setText('GitHub下载更新')
+            self.ui.addon_detect_button.setToolTip('从自有GitHub仓库下载并安装配套插件')
             self.ui.addon_detect_button.clicked.connect(self._download_github_addon)
             self.ui.addon_browse_button.setEnabled(True)
             self.ui.addon_browse_button.clicked.connect(self._browse_development_client)
             self.ui.addon_install_button.setText('安装/更新开发插件')
             self.ui.addon_install_button.clicked.connect(self._install_development_addon)
+
+        def _select_development_client(self, selected):
+            from wowbuddy.dev_game_paths import normalize_client
+            try:
+                directory=str(normalize_client(selected))
+                self.settings.save_addon_dir(directory)
+                self.ui.addon_path.setText(directory)
+                self.ui.addon_status.setText('已选择客户端：'+directory)
+            except (ValueError,OSError) as error:
+                self.ui.addon_status.setText(str(error))
+
+        def _detect_development_client(self):
+            if 'WOWBUDDY_NO_GAME_SCAN' in os.environ:
+                self.ui.addon_status.setText('当前环境已禁用游戏目录扫描。')
+                return
+            from wowbuddy.dev_game_paths import discover_clients, common_roots
+            from wowbuddy.addon_games import selected_executable
+            try:
+                paths=discover_clients(self.settings,running_executable=selected_executable(self._addon_windows),
+                                       search_roots=common_roots(),environment=os.environ)
+                if paths:self._select_development_client(paths[0])
+                else:self.ui.addon_status.setText('未检测到游戏客户端，请手动选择目录。')
+            except (OSError,ValueError) as error:
+                self.ui.addon_status.setText('检测失败：'+str(error))
+
+        def _recent_development_clients(self, position):
+            menu=QMenu(self)
+            for path in self.settings.snapshot().addon_history:
+                action=menu.addAction(path)
+                action.triggered.connect(lambda checked=False,p=path:self._select_development_client(p))
+            if menu.actions():menu.addSeparator()
+            menu.addAction('清空最近目录').triggered.connect(self.settings.clear_addon_history)
+            menu.exec(self.ui.addon_clean_button.mapToGlobal(position))
 
         def _download_github_addon(self):
             if self.session.is_active() or not self.ui.addon_path.text():
@@ -106,7 +146,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             self._download_client = self.ui.addon_path.text()
             self._download_executor = ThreadPoolExecutor(max_workers=1)
             self._download_future = self._download_executor.submit(download_latest, data_dir)
-            for button in (self.ui.addon_detect_button,self.ui.addon_install_button,self.ui.addon_browse_button):
+            for button in (self.ui.addon_detect_button,self.ui.addon_install_button,self.ui.addon_browse_button,self.ui.addon_clean_button):
                 button.setEnabled(False)
             self.ui.addon_status.setText('正在从GitHub下载并校验插件…')
             self._download_timer = QTimer(self)
@@ -129,20 +169,14 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 status = 'GitHub插件更新失败：' + str(error)
             self.ui.addon_status.setText(status)
             self.logger.append(status)
-            for button in (self.ui.addon_detect_button,self.ui.addon_install_button,self.ui.addon_browse_button):
+            for button in (self.ui.addon_detect_button,self.ui.addon_install_button,self.ui.addon_browse_button,self.ui.addon_clean_button):
                 button.setEnabled(True)
 
         def _browse_development_client(self):
             selected = QFileDialog.getExistingDirectory(self, '选择包含Wow.exe的客户端目录', self.ui.addon_path.text())
             if not selected:
                 return
-            from wowbuddy.dev_addon_install import client_directory
-            try:
-                directory = str(client_directory(selected))
-                self.settings.save_addon_dir(directory)
-                self.ui.addon_path.setText(directory)
-            except (ValueError, OSError) as error:
-                self.ui.addon_status.setText(str(error))
+            self._select_development_client(selected)
 
         def _install_development_addon(self):
             from wowbuddy.dev_addon_install import install_package

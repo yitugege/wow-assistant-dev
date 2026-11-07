@@ -24,8 +24,8 @@ def client_directory(selected):
     _plain_path(path)
     if path.name.lower() == 'addons' and path.parent.name.lower() == 'interface':
         path = path.parent.parent
-    if not path.is_dir() or not (path/'Wow.exe').is_file():
-        raise ValueError('请选择包含Wow.exe的客户端目录，或该客户端的Interface/AddOns目录')
+    if not path.is_dir() or not any((path/name).is_file() for name in ('Wow.exe','WowB.exe')):
+        raise ValueError('请选择包含Wow.exe或WowB.exe的客户端目录，或该客户端的Interface/AddOns目录')
     return path.resolve()
 
 

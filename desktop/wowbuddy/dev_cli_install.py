@@ -16,12 +16,15 @@ def run_development_install(arguments,package,data_dir,*,detect=None):
         def detect():
             if 'WOWBUDDY_NO_GAME_SCAN' in os.environ:
                 return ()
-            from .addon_actions import LocalAddonFiles
-            from .addon_games import build_game_snapshot
+            from .addon_games import selected_executable
+            from .dev_game_paths import discover_clients,common_roots
+            from types import SimpleNamespace
             from .game_windows import CtypesWindowBackend
             from .settings import open_ini_settings
             settings=open_ini_settings(str(data_dir/'settings.ini'))
-            return build_game_snapshot(LocalAddonFiles(),CtypesWindowBackend(),settings,os.environ)
+            paths=discover_clients(settings,running_executable=selected_executable(CtypesWindowBackend()),
+                                   search_roots=common_roots(),environment=os.environ)
+            return tuple(SimpleNamespace(addons_path=str(p/'Interface/AddOns')) for p in paths)
     def prepare():
         try:
             read_package(package)

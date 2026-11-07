@@ -39,6 +39,8 @@
 
 ## 独立桌面源码入口
 
+插件页“自动检测”会优先选运行中的客户端，并读取最近目录、配置根目录和常见安装位置；支持 `_classic_beta_`、`_cn_beta_`、`_forever_`。右键该按钮可选择或清空最近目录。手选允许游戏根目录、客户端、Interface、AddOns，安装前仍需退出游戏。原检测实现保留作对照，新增路径支持位于 `dev_game_paths.py`。
+
 无界面安装使用 `python run_dev.py --install-addon --install-addon-dir="D:/游戏/_forever_/Interface/AddOns" --data-dir="D:/安装报告"`。直接目录语义、返回码及原版差异见 [CLI-INSTALL.md](CLI-INSTALL.md)。此命令新增于 v0.2.0 发布之后的源码。
 
 使用具备PySide6的Windows Python运行 `python run_dev.py`。资源只读本工程assets，设置和日志默认写入本工程.local目录；也可用 `--data-dir` 指定独立数据目录。默认不自动开始监控。
