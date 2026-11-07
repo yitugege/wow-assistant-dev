@@ -21,6 +21,36 @@ class Windows:
 
 
 class AssistantFilterTests(unittest.TestCase):
+    def test_gui_passes_executable_only_for_frozen_launch(self):
+        import ntpath
+        from unittest.mock import patch
+        import run_dev
+        from test_dev_tray import TrayTests
+        for frozen in (False,True):
+            with self.subTest(frozen=frozen),patch.object(run_dev,'FROZEN',frozen):
+                def exercise(window):
+                    expected=ntpath.normcase(ntpath.normpath(sys.executable)) if frozen else None
+                    self.assertEqual(window.monitor.backend.current_executable,expected)
+                TrayTests().run_window(False,exercise)
+
+    def test_current_process_is_excluded_without_querying_its_path(self):
+        from unittest.mock import patch
+        backend=Windows({999:''})
+        with patch.object(backend,'process_path',side_effect=AssertionError('不应查询自身路径')):
+            self.assertEqual(enumerate_windows(AssistantWindowFilter(backend)).windows,())
+
+    def test_renamed_frozen_sibling_is_excluded_by_exact_path(self):
+        own=r'D:\Own\cache\WOW战斗助手.exe'
+        backend=Windows({1:'d:/own/cache/WOW战斗助手.EXE',2:r'D:\Other\WOW战斗助手.exe',
+                         3:r'D:\Game\Wow.exe',4:r'D:\Game\WowB.exe'})
+        filtered=AssistantWindowFilter(backend,current_executable=own)
+        self.assertEqual([w.hwnd for w in enumerate_windows(filtered).windows],[2,3,4])
+        self.assertEqual(find_game_window(filtered),4)
+
+    def test_source_mode_does_not_exclude_other_python_windows(self):
+        backend=Windows({1:r'C:\Python\python.exe',2:r'C:\Game\Wow.exe'})
+        self.assertEqual([w.hwnd for w in enumerate_windows(AssistantWindowFilter(backend)).windows],[1,2])
+
     def test_original_collision_reproduced_and_product_instance_excluded(self):
         backend=Windows({1:r'D:\download\WowBuddyDev.exe'})
         self.assertEqual(find_game_window(backend),1)
