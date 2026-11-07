@@ -1,5 +1,6 @@
 """自有测试窗口提供协议图像，实际 PrintWindow 或 DXGI 抓屏后解码。"""
 import json
+from itertools import product
 import os
 from pathlib import Path
 import sys
@@ -10,7 +11,7 @@ sys.path.insert(0,str(ROOT/'desktop'))
 sys.path.insert(0,str(ROOT/'tests/core'))
 
 
-def check(*, backend='printwindow'):
+def check(*, backend='printwindow', move_window=False):
     if backend not in ('printwindow','dxgi'):raise ValueError(backend)
     if os.name!='nt':raise RuntimeError('需要 Windows')
     from PySide6.QtCore import Qt
@@ -49,7 +50,8 @@ def check(*, backend='printwindow'):
     results=[]
     try:
         for spec in (1482,1484,1485,1486,1487,1488,1489,1490,1491):
-            for protocol in ('old','readable'):
+            positions=('top_left','center','bottom_right') if move_window else ('top_left',)
+            for protocol,position in product(('old','readable'),positions):
                 frame=(render_old(spec,{'master_switch':0x00ff00})[0]
                        if protocol=='old' else render_readable(spec))
                 if protocol=='readable':
@@ -59,14 +61,18 @@ def check(*, backend='printwindow'):
                 available=app.primaryScreen().availableGeometry()
                 if frame.height>available.height() or window.devicePixelRatioF()!=1:
                     raise RuntimeError('此像素级检查需要1倍缩放且测试色条完整位于屏幕内')
-                window.move(available.topLeft())
                 window.set_frame(frame)
+                factor={'top_left':0,'center':0.5,'bottom_right':1}[position]
+                x=available.left()+int((available.width()-frame.width)*factor)
+                y=available.top()+int((available.height()-frame.height)*factor)
+                window.move(x,y)
                 window.show()
                 app.processEvents()
                 hwnd=int(window.winId())
                 rect=windows.window_rect(hwnd);client=windows.client_rect(hwnd)
                 origin=windows.client_to_screen(hwnd)
                 assert rect is not None and client is not None and origin is not None
+                assert origin==(x,y),(position,origin,(x,y))
                 attempts=0
                 if dxgi is None:
                     image=capture.capture(hwnd,rect,origin,client.width,client.height)
@@ -92,9 +98,10 @@ def check(*, backend='printwindow'):
                 assert decoded.spec_id==str(spec),(spec,protocol,decoded.spec_id)
                 assert decoded.protocol==protocol,(spec,protocol,decoded.protocol)
                 results.append({'spec':spec,'protocol':protocol,'width':image.width,
-                                'height':image.height,'pixels_exact':True,'decoded':True,'attempts':attempts})
+                                'height':image.height,'pixels_exact':True,'decoded':True,'attempts':attempts,
+                                'position':position,'client_origin':origin})
         return {'passed':True,'backend':'Win32DxgiBackend' if dxgi else 'Win32PrintWindow','receiver':'本进程无激活 Qt 测试窗口',
-                'cases':results,
+                'cases':results,'window_movement_checked':move_window,
                 'dxgi_verified':dxgi is not None,'game_capture_verified':False}
     finally:
         if gpu is not None:gpu.close()
@@ -105,12 +112,14 @@ if __name__=='__main__':
     import argparse
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--backend',choices=('printwindow','dxgi'),default='printwindow')
+    parser.add_argument('--move-window',action='store_true',help='在屏幕内三个位置重复真实抓屏')
     args=parser.parse_args()
     try:
-        result=check(backend=args.backend)
+        result=check(backend=args.backend,move_window=args.move_window)
     except Exception as error:
         result={'passed':False,'backend':args.backend,'error':str(error),'game_capture_verified':False}
-    output=ROOT/f'dist/win32-{args.backend}-check.json'
+    suffix='movement-check' if args.move_window else 'check'
+    output=ROOT/f'dist/win32-{args.backend}-{suffix}.json'
     output.parent.mkdir(exist_ok=True)
     output.write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')
     print(json.dumps(result,ensure_ascii=True))

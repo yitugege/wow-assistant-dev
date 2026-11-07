@@ -1,5 +1,11 @@
 # PrintWindow 实际抓屏核对
 
+## 补充：屏幕内移动后的真实抓屏
+
+`tools/check_win32_printwindow.py --move-window`新增左上、中央、右下三个位置，九专精×两协议×三位置共54场景。每次移动后重新读取真实窗口矩形、客户区及ClientToScreen坐标，确认原点等于请求位置，实际PrintWindow输出逐像素一致，随后解码成功。当前Windows会话、1倍缩放、测试色条完整处于屏幕内时全部通过。
+
+结果为dist/win32-printwindow-movement-check.json，日志.local/printwindow-movement.log。窗口仍为本进程无激活测试窗口，结束后关闭销毁；未抓取用户游戏窗口或保存整屏图像。此项扩展原18场景证据，不覆盖移动过程中的每一个中间帧、遮挡、超屏、高DPI或DXGI。原默认检查仍为18场景，移动报告独立保存。
+
 ## 结果与范围
 
 在当前 Windows 桌面、100% 缩放、自有测试窗口完整处于屏幕内的条件下，真实 `Win32PrintWindow` 抓屏通过 9 个专精 × 两种协议，共 18 个场景：输出条带逐像素等于输入图像，随后原有解码管线正确识别协议和专精。
