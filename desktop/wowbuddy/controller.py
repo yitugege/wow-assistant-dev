@@ -188,6 +188,12 @@ class FrameController:
         if frame.spec_id != self.spec_id:
             # 098ea0先清字段表，再按专精恢复方案；这一刻天赋分组尚为空。
             self._change_spec(frame, frame.spec_id, restore=True)
+        elif (not self.pipeline.legacy_descriptor_cache and self.display_frame is not None
+              and self.display_frame.protocol != frame.protocol):
+            # 用户选择修复协议切换：解码表和显示缓存必须一起换代。
+            # 同专精不重新恢复方案或调用专精变化回调，旧行为对比模式保留。
+            self.display_frame = blank_schema(self.pipeline, frame, self.spec_id)
+            self.display_revision += 1
         self.last_frame = frame
         self.display_frame = frame
         self.fields = dict(frame.values)

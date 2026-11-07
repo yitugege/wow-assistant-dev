@@ -655,8 +655,8 @@ class AssistantWindow(QWidget):
         self._render_thresholds()
 
     def _render_fields(self, frame):
-        # 095410只更新本次采样到的槽；同身份切换协议不重建098EA0的表。
-        # 保留旧表元数据、过滤规则及未被本帧覆盖的尾部读数。
+        # 原095410只更新采样槽；旧行为对比模式保留尾部读数。
+        # 修复模式同专精切换协议会推进display_revision，由调用方清identity重建。
         if self._field_identity is None or getattr(self, "_field_spec", None) != frame.spec_id:
             self._field_rows = tuple(frame.rows)
             self._field_spec = frame.spec_id

@@ -36,3 +36,26 @@ class ProtocolSwitchTests(unittest.TestCase):
         controller=FrameController(pipeline,HubState())
         controller.prepare(render_old(1482)[0])
         with self.assertRaises(UnverifiedDescriptorTable):controller.prepare(render_readable(1482))
+
+    def test_gui_switch_rebuilds_field_metadata_and_cached_values(self):
+        from types import SimpleNamespace
+        from wowbuddy.capture import CaptureResult
+        from test_dev_tray import TrayTests
+        def exercise(window):
+            current={}
+            window.loop.capture=SimpleNamespace(capture=lambda hwnd:CaptureResult('ok',current['image'],'printwindow'))
+            window.dispatcher.sender=None
+            window.toggle_monitor()
+            for spec in sorted(set(self.assets.contract['specs']) & set(self.assets.readable_contract['specs'])):
+                old,_=render_old(int(spec));readable=render_readable(int(spec))
+                for index,image in enumerate((old,readable,old,readable)):
+                    with self.subTest(spec=spec,index=index):
+                        current['image']=image
+                        result=window.poll_once()
+                        expected=FrameController(self.assets.pipeline(),HubState()).prepare(image).frame
+                        self.assertTrue(result.tick.decision.frame.ok)
+                        self.assertEqual(window._field_rows,expected.rows)
+                        self.assertEqual(len(window.session.state.field_values),len(expected.rows))
+                        self.assertEqual(window.session.state.field_values,
+                            [r.decoded.value_text+(' '+r.decoded.detail if r.decoded.detail else '') for r in expected.rows])
+        TrayTests.run_window(self,False,exercise)
