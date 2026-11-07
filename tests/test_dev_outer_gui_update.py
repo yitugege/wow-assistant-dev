@@ -24,13 +24,37 @@ class OuterGuiUpdateTests(unittest.TestCase):
                 window._client_update_future.result(timeout=5);window._finish_client_update_task()
                 outer.assert_called_once();directory.assert_not_called()
             staged={'kind':'outer','staged':'D:/fixture/update.exe','installed':False}
-            with patch('wowbuddy.github_outer.download_checked',return_value=staged) as download,patch('wowbuddy.github_client.download_checked') as directory:
+            self.assertIn('自动替换并重启',window.ui.update_apply_button.toolTip())
+            with patch('wowbuddy.github_outer.download_checked',return_value=staged) as download,patch('wowbuddy.github_client.download_checked') as directory,patch('wowbuddy.dev_outer_update.install_outer',return_value=HandoffResult('restart_started','重启已安排',restart_started=True,exit_scheduled=True)) as install:
                 window.ui.update_apply_button.click()
                 window._client_update_future.result(timeout=5);window._finish_client_update_task()
                 self.assertEqual(download.call_args.args[1],Path('D:/fixture/WowBuddyDev-updates'))
                 directory.assert_not_called()
-            self.assertEqual(window._client_update_staged,staged)
-            self.assertIn('自有外层',window.ui.update_apply_button.toolTip())
+                self.assertEqual(window._client_update_staged,staged)
+                self.assertFalse(window._client_auto_chain)
+                from PySide6.QtWidgets import QApplication
+                QApplication.processEvents()
+                install.assert_called_once()
+            self.assertIsNone(window._client_update_staged)
+            self.assertTrue(window._outer_installing)
+        self.run_window(exercise)
+
+    def test_manual_download_failure_does_not_install_and_can_retry(self):
+        def exercise(window):
+            window._client_update_info={'kind':'outer','has_update':True}
+            window._client_auto_chain=False
+            window.ui.update_apply_button.setEnabled(True)
+            with patch('wowbuddy.github_outer.download_checked',side_effect=ValueError('校验失败')),patch('wowbuddy.dev_outer_update.install_outer') as install:
+                window.ui.update_apply_button.click()
+                try:window._client_update_future.result(timeout=5)
+                except ValueError:pass
+                window._finish_client_update_task()
+                from PySide6.QtWidgets import QApplication
+                QApplication.processEvents()
+                install.assert_not_called()
+            self.assertIn('校验失败',window.ui.update_status.text())
+            self.assertEqual(window.ui.update_apply_button.text(),'重试下载')
+            self.assertTrue(window.ui.update_apply_button.isEnabled())
         self.run_window(exercise)
 
     def test_install_is_main_thread_guarded_and_restarts_outer(self):

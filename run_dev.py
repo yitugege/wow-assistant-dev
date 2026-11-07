@@ -141,7 +141,8 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                     self.ui.update_apply_button.setText('下载更新包')
                     self.ui.update_apply_button.setVisible(result['has_update'])
                     self.ui.update_apply_button.setEnabled(result['has_update'])
-                    self.ui.update_apply_button.setToolTip('下载并校验完整客户端，完成后可安装并重启')
+                    self.ui.update_apply_button.setToolTip('下载校验后自动替换并重启' if getattr(self,'_outer_update_target',None)
+                                                          else '下载并校验完整客户端，完成后可安装并重启')
                     self._client_auto_chain=(result['has_update'] and not self._client_update_manual
                                              and self.ui.auto_update_check.isChecked() and FROZEN)
                     if self._client_auto_chain:QTimer.singleShot(0,self.download_update)
@@ -163,7 +164,8 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                         self.ui.update_apply_button.setToolTip('替换自有外层并重新启动，保留稳定设置目录' if getattr(self,'_outer_update_target',None)
                                                               else '退出当前助手后替换整个客户端目录，并保留本地设置')
                         self.ui.update_apply_button.setEnabled(True)
-                        if getattr(self,'_client_auto_chain',False):QTimer.singleShot(0,self._begin_update_handoff)
+                        if getattr(self,'_outer_update_target',None) or getattr(self,'_client_auto_chain',False):
+                            QTimer.singleShot(0,self._begin_update_handoff)
                     else:status+='；源码模式请使用打包后的客户端安装更新'
             except Exception as error:
                 status='客户端更新失败：'+str(error)
