@@ -36,11 +36,22 @@ class PersistentCooldownParityTests(unittest.TestCase):
               function UnitGUID(unit) assert(unit=='player');return guid end
               function IsInInstance() return inInstance,instanceType end
               function WowBuddyDev.InitDB() WowBuddyDev.DB={} end
+              function InCombatLockdown() return false end
+              function CreateFrame() return {SetScript=function(self,key,fn) self[key]=fn end,
+                RegisterUnitEvent=function() end} end
+              WowBuddyDev.classData={cooldownEventAliases={[205]=116,[900]=901},
+                petSpells={[901]=true}}
             ''')
             namespace = 'P07483180' if index == 0 else 'WowBuddyDev'
             section = source[source.index('local consumableCooldownStart = {}'):
                              source.index('function '+namespace+'.IsPetSpell(spellID)')]
-            lua.execute(section + '''
+            helper_start = source.index('function '+namespace+'.IsPetSpell(spellID)')
+            helpers = source[helper_start:source.index(namespace+'.COMMON_PIXEL_DATA = {', helper_start)]
+            event_start = source.index('local eventFrame = CreateFrame("Frame")')
+            event = source[event_start:source.index('local healingStoneResetFrame', event_start)]
+            query_start = source.index('function '+namespace+'.GetSpellCooldownRemaining(spellID)')
+            query = source[query_start:source.index(namespace+'.lastCastTime = lastCastTimeBySpell', query_start)]
+            lua.execute(section + helpers + event + query + '''
               probe={ledger=getPersistentLedger,remaining=ledgerEntryRemaining,
                 record=recordPersistentCooldownStart,apply=applyLedgerEntryToRuntime,
                 potion=recordBurstPotionUse,clearPotion=clearBurstPotionRuntime,
@@ -49,6 +60,10 @@ class PersistentCooldownParityTests(unittest.TestCase):
                 ends=cooldownEndBySpell,items=consumableCooldownStart,known=consumableStateKnown} end
               function wipeRuntime() lastCastTimeBySpell={};cooldownEndBySpell={};
                 consumableCooldownStart={};consumableStateKnown=false end
+              consumableByItemSpell[1000]='item_burst_potion'
+              function fire(unit,castGuid,id)
+                eventFrame.OnEvent(eventFrame,'UNIT_SPELLCAST_SUCCEEDED',unit,castGuid,id)
+              end
             ''')
             runtimes.append(lua)
 
@@ -118,6 +133,28 @@ class PersistentCooldownParityTests(unittest.TestCase):
         self.assertEqual(step("return probe.resetEvent('ENCOUNTER_END')")[0], True)
         self.assertEqual(step("instanceType='party';return probe.resetEvent('ENCOUNTER_END')")[0], False)
         self.assertEqual(step("return probe.resetEvent('PLAYER_ENTERING_WORLD')")[0], False)
+        # 真正的成功回调 -> 真实账本函数 -> 重载恢复 -> 真实剩余时间查询。
+        step("now=500;server=3000;guid='A';WowBuddyDev.DB={};wipeRuntime();fire('player','cast-1',205)")
+        value, state = step('now=510.25;server=3010;return WowBuddyDev.GetSpellCooldownRemaining(116)')
+        self.assertEqual(value, 49.75)
+        self.assertEqual(state['db']['persistentCooldownLedger']['A'][116]['duration'], 60)
+        duplicate = step("fire('player','cast-1',205)")[1]
+        self.assertEqual(duplicate, state)
+        _, state = step("fire('pet','pet-1',900)")
+        self.assertEqual(state['starts'][901], 510.25)
+        self.assertNotIn(901, state['db']['persistentCooldownLedger']['A'])
+        _, state = step("fire('player','potion-1',1000)")
+        self.assertEqual(state['db']['persistentCooldownLedger']['A']
+                         ['consumable:item_burst_potion']['sessionRecordedAt'], 510.25)
+        value, state = step('now=5;server=3020;wipeRuntime();WowBuddyDev.RestorePersistentCooldowns();'
+                            'WowBuddyDev.RestorePersistentConsumableCooldowns();'
+                            'return WowBuddyDev.GetSpellCooldownRemaining(116)')
+        self.assertEqual(value, 40)
+        self.assertEqual(state['items']['item_burst_potion'], -5)
+        value, state = step('now=45;server=3060;return WowBuddyDev.GetSpellCooldownRemaining(116)')
+        self.assertEqual(value, 0)
+        self.assertNotIn(116, state['db']['persistentCooldownLedger']['A'])
+        self.assertNotIn(116, state['starts'])
 
 
 if __name__ == '__main__':
