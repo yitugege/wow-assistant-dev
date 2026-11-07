@@ -46,8 +46,8 @@ class AutoStartTests(unittest.TestCase):
             self.assertEqual(run_dev.main(),0)
             self.assertTrue(launch.call_args.kwargs['auto_start'])
 
-    def test_selftest_combination_and_abbreviations_rejected(self):
-        for tail in (['--auto','--desktop-selftest'],['--auto','--selftest-backends'],['--watch','--desktop-selftest'],['--watch','--selftest-backends'],['--aut']):
+    def test_independent_selftest_combinations_rejected(self):
+        for tail in (['--auto','--desktop-selftest'],['--auto','--selftest-backends'],['--watch','--desktop-selftest'],['--watch','--selftest-backends']):
             with self.subTest(tail=tail),patch.object(sys,'argv',['run_dev.py',*tail]),contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit) as raised:run_dev.main()
                 self.assertEqual(raised.exception.code,2)

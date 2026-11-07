@@ -637,6 +637,21 @@ def main():
     parser.add_argument('--rotations',default='',help='界面诊断的循环库JSON路径')
     parser.add_argument('--rotation',default='',help='界面诊断的专精ID|子分类|方案名')
     parser.add_argument('--toggle-showall',action='store_true',help='同时导出显示全部切换诊断')
+    # 原GUI分支对完整参数列表做精确匹配，不拒绝无关项，也不把--当结束标记。
+    # 独立构建诊断和帮助仍使用下面的严格解析器。
+    from wowbuddy.native_cli import parse_native_cli
+    from wowbuddy.dev_native_commands import command_data_dir
+    native=parse_native_cli(sys.argv)
+    strict_commands={'--desktop-selftest','--selftest-backends','--engine-selftest','--help','-h'}
+    if native.command=='gui' and native.dump_ui is None and not strict_commands.intersection(sys.argv[1:]):
+        if '--watch' in sys.argv and '--no-watch' in sys.argv:
+            parser.error('--watch 与 --no-watch 不能同时使用')
+        try:
+            data_dir=command_data_dir(sys.argv,APP_ROOT/'.local')
+        except ValueError as error:
+            parser.error(str(error))
+        return launch(data_dir,auto_start=native.auto_start,watch='--no-watch' not in sys.argv,
+                      no_update=native.suppress_auto_update,staged=True)
     args=parser.parse_args()
     if args.hub_fetch and not args.hub_selftest:
         parser.error('--hub-fetch 需要 --hub-selftest')
