@@ -63,6 +63,8 @@
 
 无界面更新使用 `WowBuddyDev.exe --update-now --data-dir="D:/更新记录"`。返回0可能表示“无需更新”或“交接已就绪”；实际安装结果须查看报告中的 final_report，不能只凭退出码判断安装完成。
 
+EXE自动更新开关现已恢复：开启且距上次成功检查超过6小时时，启动4秒后检查；后台发现新版会下载并安装重启。`--no-update` 可抑制本次启动检查。手动检查只提示，不直接安装。此前版本保存的关闭状态保持不变。
+
 安装requirements-dev.txt后运行 `python tools/build_desktop.py`。构建产物为 `dist/desktop/WowBuddyDev/WowBuddyDev.exe`，是目录版：需要保留旁边的_internal和packages目录，不能只复制EXE。
 
 该构建直接打包run_dev.py与desktop/wowbuddy源码，附带本工程assets和插件源码，不引用原EXE。插件ZIP放在packages目录，设置默认保存在EXE旁的.local目录。构建结束自动运行冻结入口的--selftest，记录build-manifest.json和desktop-selftest.json。

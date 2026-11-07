@@ -13,7 +13,7 @@ PACKAGE_DIR = APP_ROOT/'packages' if FROZEN else ROOT/'dist'
 sys.path.insert(0, str(ROOT/'desktop'))
 
 
-def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True):
+def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, no_update=False):
     if selftest and (auto_start or watch):
         raise ValueError('自检不能同时自动开始监控')
     if dump_ui is not None and (selftest or auto_start or watch):
@@ -52,9 +52,22 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
 
         def check_update(self, checked=False, *, manual=True):
             if getattr(self,'_handoff',None):return
+            timer=getattr(self,'_client_update_timer',None)
+            if timer is not None and timer.isActive():return
+            if not manual and not getattr(self,'_automatic_client_enabled',False):return
+            self._client_update_manual=manual
+            self._client_auto_chain=False
             self._client_update_staged=None
             from wowbuddy.github_client import check_latest
             self._start_client_update_task(check_latest,'正在检查GitHub客户端版本…','check')
+
+        def _configure_automatic_client_update(self, enabled, suppress):
+            self._automatic_client_enabled=enabled
+            self.ui.auto_update_check.setEnabled(enabled)
+            self.update_timer.stop()
+            if enabled and not suppress:
+                delay=self.settings.snapshot().automatic_update_delay_ms(self.clock_ms())
+                if delay is not None:self.update_timer.start(delay)
 
         def download_update(self, checked=False):
             if getattr(self,'_client_update_staged',None):
@@ -88,11 +101,15 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 result=self._client_update_future.result()
                 if self._client_update_phase=='check':
                     self._client_update_info=result
+                    self.settings.save_last_check_ms(self.clock_ms())
                     status=f"当前 {result['current_version']} / GitHub {result['version']}："+('发现新版本' if result['has_update'] else '没有更新')
                     self.ui.update_apply_button.setText('下载更新包')
                     self.ui.update_apply_button.setVisible(result['has_update'])
                     self.ui.update_apply_button.setEnabled(result['has_update'])
                     self.ui.update_apply_button.setToolTip('下载并校验完整客户端，完成后可安装并重启')
+                    self._client_auto_chain=(result['has_update'] and not self._client_update_manual
+                                             and self.ui.auto_update_check.isChecked() and FROZEN)
+                    if self._client_auto_chain:QTimer.singleShot(0,self.download_update)
                 elif self._client_update_phase=='handoff':
                     self._handoff=result
                     import time
@@ -108,6 +125,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                         self.ui.update_apply_button.setText('安装并重启')
                         self.ui.update_apply_button.setToolTip('退出当前助手后替换整个客户端目录，并保留本地设置')
                         self.ui.update_apply_button.setEnabled(True)
+                        if getattr(self,'_client_auto_chain',False):QTimer.singleShot(0,self._begin_update_handoff)
                     else:status+='；源码模式请使用打包后的客户端安装更新'
             except Exception as error:
                 status='客户端更新失败：'+str(error)
@@ -332,8 +350,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
         application_dir=data_dir, environment={'WOWBUDDY_HOME':str(data_dir),'WOWBUDDY_NO_GAME_SCAN':''},
         network_enabled=False, automatic=watch, tray_enabled=not selftest and dump_ui is None)
     window.setWindowTitle('WowBuddyDev — 独立开发版')
-    window.ui.auto_update_check.setChecked(False)
-    window.ui.auto_update_check.setEnabled(False)
+    window._configure_automatic_client_update(client_online and not selftest and dump_ui is None,no_update)
     window.ui.update_status.setText('插件更新：在插件页点击“GitHub下载更新”；客户端请下载配套Release。')
     if hub_online and not selftest and dump_ui is None:
         from wowbuddy.qt_network import QtHubClient
@@ -430,6 +447,7 @@ def main():
     parser.add_argument('--engine-selftest',action='store_true',help='运行原引擎离线自检并记录失败/跳过计数')
     parser.add_argument('--check-update',action='store_true',help='检查自有GitHub客户端版本；有更新返回10')
     parser.add_argument('--update-now',action='store_true',help='检查、下载并交接安装客户端更新')
+    parser.add_argument('--no-update',action='store_true',help='不安排本次启动的EXE自动检查；不关闭循环库联网')
     parser.add_argument('--spec',action='append',default=[],help='界面诊断的专精ID，可重复指定')
     parser.add_argument('--talent',default=None,help='界面诊断的天赋字符串')
     parser.add_argument('--rotations',default='',help='界面诊断的循环库JSON路径')
@@ -483,7 +501,7 @@ def main():
         parser.error('专精、天赋及方案诊断参数需要 --dump-ui')
     if (args.auto or args.watch) and (args.selftest or args.selftest_backends):
         parser.error('--auto / --watch 不能与自检参数同时使用')
-    if not (args.selftest or args.selftest_backends): return launch(args.data_dir,auto_start=args.auto,watch=args.watch)
+    if not (args.selftest or args.selftest_backends): return launch(args.data_dir,auto_start=args.auto,watch=args.watch,no_update=args.no_update)
     with TemporaryDirectory(prefix='wowbuddy-dev-selftest-') as temporary:
         report=launch(temporary,selftest=True,real_backends=args.selftest_backends)
     report['temporary_removed']=not Path(temporary).exists()

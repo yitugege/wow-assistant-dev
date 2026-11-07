@@ -67,7 +67,7 @@ class TrayTests(unittest.TestCase):
             return 0
         with TemporaryDirectory() as directory, patch('wowbuddy.game_windows.CtypesWindowBackend',return_value=backend), patch('wowbuddy.capture.make_win32_capture',return_value=NoSystemBackend()), patch('wowbuddy.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()), patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=available), patch('wowbuddy.qt_app.QSystemTrayIcon',Tray), patch.object(QApplication,'exec',side_effect=event_loop):
             try:
-                self.assertEqual(run_dev.launch(directory,hub_online=hub_online),0)
+                self.assertEqual(run_dev.launch(directory,hub_online=hub_online,client_online=False),0)
                 self.assertTrue(seen[0]._closed)
                 self.assertFalse(seen[0].poll_timer.isActive())
                 self.assertFalse(seen[0].watch_timer.isActive())
