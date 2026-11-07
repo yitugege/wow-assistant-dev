@@ -12,7 +12,7 @@ from wowbuddy.auto_target import parse_auto_target, key_for_index
 
 
 class AutoTargetBridgeTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self, source_dir=None):
         self.lua = LuaRuntime(unpack_returned_tuples=True)
         self.lua.execute('''
         WowBuddyDev={DB={masterSwitch=true},classData={}}
@@ -37,9 +37,59 @@ class AutoTargetBridgeTests(unittest.TestCase):
         end
         function WowBuddyDev.GetSecureButton() return button end
         ''')
+        self.lua.execute('P07483180=WowBuddyDev')
+        source_dir=source_dir or ROOT/'addon/WowBuddyDev'
         for name in ('ActionKeyCheck.lua', 'AutoTarget.lua'):
-            self.lua.execute((ROOT/'addon/WowBuddyDev'/name).read_text('utf8'))
+            self.lua.execute((source_dir/name).read_text('utf8'))
         self.assertTrue(self.lua.eval('WowBuddyDev.ApplyAutoTargetBinding()'))
+
+    def test_original_lua_gate_failures_and_recovery(self):
+        reference=Path('D:/reverse-analysis/wow-assistant/addon-source')
+        if not reference.is_dir():self.skipTest('需要原内置插件参考源码')
+        from wowbuddy.packages import read_addon
+        members={m.name:m.data for m in read_addon((reference.parent/'unpacked/addon.bin').read_bytes())}
+        for name in ('ActionKeyCheck.lua','AutoTarget.lua'):
+            self.assertEqual((reference/name).read_bytes(),members[name])
+        self.setUp(reference);original=self.lua
+        self.setUp();rebuilt=self.lua
+        baseline='''combat=true;exists=true;dead=false;focus=false;enabled=true
+        WowBuddyDev.DB.masterSwitch=true;WowBuddyDev.DB.masterKey=nil
+        function GetCurrentKeyBoardFocus() if focus then return {} end end
+        function UnitAffectingCombat() return combat end
+        function UnitExists() return exists end
+        function UnitIsDeadOrGhost(unit) return unit=='target' and dead or false end
+        function UnitCanAttack() return true end
+        function GetSpecializationInfo() return 1491 end'''
+        cases=[('dead','dead=true'),('absent','exists=false'),
+               ('typing','focus=true'),('master_off','WowBuddyDev.DB.masterSwitch=false'),
+               ('disabled','enabled=false'),('combat_exit','combat=false;resetSession()'),
+               ('key_conflict','WowBuddyDev.DB.masterKey=boundKey'),
+               ('spec_switch','exists=false;function GetSpecializationInfo() return 1482 end')]
+        for api in ('GetCurrentKeyBoardFocus','UnitAffectingCombat','UnitExists','UnitIsDeadOrGhost','UnitCanAttack'):
+            for mode,body in (('nil','return nil'),('error',"error('unreadable')")):
+                cases.append((api+'_'+mode,'function '+api+'() '+body+' end'))
+        for name,mutation in cases:
+            with self.subTest(case=name):
+                # 先建立有效战斗会话，再扰动，最后恢复；比较完整包而非仅状态位。
+                for lua in (original,rebuilt):lua.execute(baseline+';resetSession()')
+                for command in ('',mutation,baseline):
+                    packets=[]
+                    for lua in (original,rebuilt):
+                        lua.execute(command)
+                        packets.append(lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
+                    self.assertEqual(*packets)
+                    self.assertIsNotNone(parse_auto_target(packets[1]))
+                self.assertEqual(parse_auto_target(packets[1]).state,2)
+        # 验证31次序号与32次回执循环不会使包越界或跨版本不同。
+        for _ in range(70):
+            packets=[]
+            for lua in (original,rebuilt):
+                lua.execute('button.callback()')
+                packets.append(lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
+            self.assertEqual(*packets)
+            self.assertEqual(parse_auto_target(packets[1]).state,2)
+        self.assertEqual(original.globals().macro,rebuilt.globals().macro)
+        self.assertEqual(original.globals().boundKey,rebuilt.globals().boundKey)
 
     def packet(self):
         packet = parse_auto_target(self.lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
