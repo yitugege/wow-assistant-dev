@@ -8,7 +8,9 @@
 
 发布后通过客户端实际下载模块从公开GitHub下载目录包、插件和单文件，核对清单及SHA256；目录版和隔离单文件启动自检通过。随机插件目录为`w64cfe25c40c6`。证据为`dist/release-027-local-check.json`、`dist/frozen-outer-check.json`和`dist/public-release-027-check.json`；日志为`.local/validate-027.log`、`.local/check-027-outer.log`和`.local/check-public-027.log`。
 
-本版没有执行0.2.6到0.2.7的运行中升级交接，也未安装至用户游戏目录或完成真实游戏验收。历史GUI/数值边界测试仍按各自源码基线记录，不能混称为本版全部重新执行。
+补充验证：0.2.6到0.2.7的真实公开下载、替换及重启交接已通过CLI和GUI自动更新两条路径。两次各观察到6个隔离测试进程，最终全部退出；GUI旧进程28640、新进程53188，设置保留。证据为dist/upgrade-026-027-cli.json及dist/upgrade-026-027-gui.json。未验证手动点击更新按钮。
+
+插件实际公开包升级也在隔离目录通过：新包目录w64cfe25c40c6安装时保留旧身份w0047ac9cbe3b，78个新文件与78个备份文件逐字节核对通过，SavedVariables测试文件保持不变。见dist/addon-upgrade-026-027.json；不代表已在游戏中加载。未安装至用户游戏目录或完成真实游戏验收。历史GUI/数值边界测试仍按各自源码基线记录，不能混称为本版全部重新执行。
 
 ## 历史构建：源码f33b078
 
