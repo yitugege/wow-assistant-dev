@@ -97,6 +97,85 @@ class AutoTargetBridgeTests(unittest.TestCase):
         self.assertEqual(packet.key, self.lua.globals().boundKey)
         return packet
 
+    def original_pair(self):
+        import hashlib
+        from wowbuddy.packages import read_addon
+        reference=Path('D:/reverse-analysis/wow-assistant/addon-source')
+        package=reference.parent/'unpacked/addon.bin'
+        if not package.exists():self.skipTest('需要原内置插件包')
+        data=package.read_bytes()
+        self.assertEqual(hashlib.sha256(data).hexdigest(),
+                         '361134bc9f2dd0b2c8cd8849b3741bd88d09c55ec371de9abc7b6f79502ebbed')
+        members={m.name:m.data for m in read_addon(data)}
+        for name in ('ActionKeyCheck.lua','AutoTarget.lua'):
+            self.assertEqual((reference/name).read_bytes(),members[name])
+        self.setUp(reference);original=self.lua
+        self.setUp()
+        return original,self.lua
+
+    def test_original_key_exhaustion_combat_rebind_and_recovery(self):
+        histories=[]
+        for lua in self.original_pair():
+            rows=[]
+            lua.execute('''repeatHooks=0
+              function button:HookScript(event,callback)
+                repeatHooks=repeatHooks+1;error('same button must not be hooked again')
+              end''')
+            for command in (
+                'combat=true; return WowBuddyDev.GetAutoTargetPacket()',
+                # 战斗中重绑直接失败，但不得清掉之前可用的绑定。
+                'assert(WowBuddyDev.ApplyAutoTargetBinding()==false); return WowBuddyDev.GetAutoTargetPacket()',
+                # 脱战重绑时所有候选键占满，清除状态并产生接收端不能解码的keyIndex=0包。
+                '''combat=false;WowBuddyDev.ACTION_TO_KEY={}
+                for i,key in ipairs(WowBuddyDev.AUTO_TARGET_KEYS) do WowBuddyDev.ACTION_TO_KEY[i]=key end
+                assert(WowBuddyDev.ApplyAutoTargetBinding()==false)
+                return WowBuddyDev.GetAutoTargetPacket()''',
+                # 只释放最后一键，必须选择原第81个索引，而非任意新增按键。
+                '''WowBuddyDev.ACTION_TO_KEY[81]=nil
+                assert(WowBuddyDev.ApplyAutoTargetBinding()==true)
+                combat=true;return WowBuddyDev.GetAutoTargetPacket()''',
+                # 相同按钮反复绑定不叠加点击回执。
+                '''combat=false;assert(WowBuddyDev.ApplyAutoTargetBinding()==true)
+                button.callback();combat=true;return WowBuddyDev.GetAutoTargetPacket()''',
+            ):
+                rows.append(lua.execute(command))
+            self.assertEqual(lua.globals().repeatHooks,0)
+            histories.append(rows)
+        self.assertEqual(*histories)
+        packets=[parse_auto_target(v) for v in histories[1]]
+        self.assertEqual((packets[0].key_index,packets[0].state),(1,2))
+        self.assertEqual((packets[1].key_index,packets[1].state),(1,2))
+        self.assertIsNone(packets[2])
+        self.assertEqual((packets[3].key_index,packets[3].key,packets[3].state),(81,'ALT-END',2))
+        self.assertEqual(packets[4].ack,1)
+
+    def test_original_spec_query_failure_and_recovery_trace(self):
+        histories=[]
+        for lua in self.original_pair():
+            rows=[]
+            lua.execute('combat=true')
+            rows.append(lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
+            lua.execute('exists=false; function GetSpecializationInfo() error("fixture",0) end')
+            rows.append(lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
+            lua.execute('exists=true')
+            rows.append(lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
+            lua.execute('exists=false')
+            rows.append(lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
+            # 第一层GetSpecialization没有pcall：原代码在抛错或返回非数字时中断。
+            for body in ('error("fixture",0)','return "unknown"'):
+                lua.execute('function GetSpecialization() '+body+' end')
+                ok,error=lua.eval('pcall(WowBuddyDev.GetAutoTargetPacket)')
+                self.assertFalse(ok);self.assertIsInstance(error,str)
+                rows.append(ok)
+            lua.execute('function GetSpecialization() return 1 end; function GetSpecializationInfo() return 1491 end')
+            rows.append(lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
+            lua.execute('exists=true')
+            rows.append(lua.eval('WowBuddyDev.GetAutoTargetPacket()'))
+            histories.append(rows)
+        self.assertEqual(*histories)
+        self.assertEqual([parse_auto_target(histories[1][i]).state for i in (0,1,2,3,6,7)],
+                         [2,0,2,1,0,2])
+
     def test_all_lua_key_indices_match_desktop(self):
         keys = self.lua.globals().WowBuddyDev.AUTO_TARGET_KEYS
         self.assertEqual(len(keys), 81)
