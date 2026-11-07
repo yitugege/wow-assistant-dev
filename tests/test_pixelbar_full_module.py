@@ -183,6 +183,58 @@ class PixelBarModuleTests(unittest.TestCase):
             self.assertEqual(g.rangeQueriedRank,205)
             skill_tick('targetAlive=false','ON','OFF',True)
             skill_tick('targetAlive=true; knownRank=nil','OFF','OFF',False)
+        if class_name=='Priest':
+            lua.execute('''partyHealth={party1=40,party2=10}; partyMissing={};partyDead={};partyHostile={};healthError={}
+            focusUnit='party2'
+            function UnitExists(unit)
+              if unit=='focus' then return focusUnit~=nil end
+              if unit=='party1' or unit=='party2' then return not partyMissing[unit] end
+              return unit=='player' or unit=='target'
+            end
+            function UnitIsDeadOrGhost(unit) return (unit=='target' and not targetAlive) or partyDead[unit]==true end
+            function UnitCanAssist(_,unit) return unit=='player' or (partyHealth[unit]~=nil and not partyHostile[unit]) end
+            function UnitHealth(unit)
+              if healthError[unit] then error('fixture health unavailable') end
+              return partyHealth[unit] or 100
+            end
+            function UnitIsUnit(a,b) return a==b or (a=='focus' and b==focusUnit) end
+            function IsSpellKnown(id) return id==2060 end
+            C_Spell={IsSpellInRange=function() return true end}
+            function WowBuddyDev.GetSpellCooldownRemaining() return 0 end
+            function WowBuddyDev.IsSpellUsable() return true end''')
+            profile=next(p for p in json.loads((ROOT/'assets/rotations.json').read_text('utf8'))['rotations'] if p['id']==20)
+            clock=[10000]
+            sent=[]
+            sender=SimpleNamespace(send=lambda key,**kwargs:sent.append(key) or True,
+                status='测试投递',channel='fixture',backend=SimpleNamespace(now_ms=lambda:clock[0],Sleep=lambda ms:None))
+            scheduler=Scheduler(pipeline,ActionDispatcher(sender),lambda:clock[0])
+            def healing_tick(script,health1,health2,friendly2,selected):
+                lua.execute(script)
+                tick()
+                frame=captured_frame()
+                self.assertEqual(frame.values['health_party1'],str(health1))
+                self.assertEqual(frame.values['health_party2'],str(health2))
+                self.assertEqual(frame.values['friendly_party2'],friendly2)
+                self.assertEqual(frame.values['focus_index'],'2')
+                clock[0]+=5000
+                before=len(sent)
+                result=scheduler.process(pipeline.prepare_frame(frame,selected_profile=profile),hwnd=123,send_interval_ms=100)
+                if selected:
+                    self.assertEqual(result.status,'sent')
+                    self.assertEqual((result.selected.action,result.selected.pre_action),('spell_2060_focus','focus_'+selected))
+                    expected=['CTRL-NUMPAD8'] if selected=='party2' else ['ALT-NUMPAD9','CTRL-NUMPAD8']
+                    self.assertEqual(sent[before:],expected)
+                else:
+                    self.assertEqual(result.status,'no_candidates')
+                    self.assertEqual(sent[before:],[])
+            healing_tick('',40,10,'ON','party2')
+            healing_tick('partyHealth.party1=5;partyHealth.party2=40',5,40,'ON','party1')
+            healing_tick('partyMissing.party2=true',5,16777215,'OFF','party1')
+            healing_tick('partyMissing.party2=nil;partyDead.party2=true',5,16777215,'OFF','party1')
+            healing_tick('partyDead.party2=nil;partyHostile.party2=true',5,16777215,'OFF','party1')
+            healing_tick('partyHostile.party2=nil;healthError.party2=true',5,16777215,'ON','party1')
+            healing_tick('healthError.party1=true',16777215,16777215,'ON',None)
+            healing_tick('healthError={};partyHealth.party1=40;partyHealth.party2=10',40,10,'ON','party2')
         lua.execute('targetAlive=false')
         dead=tick()
         self.assertEqual(dead.state,1)
