@@ -53,6 +53,64 @@ class RestartSettingsTests(unittest.TestCase):
             self.window(directory,first)
             self.window(directory,second)
 
+    def test_every_snapshot_profile_and_threshold_group_restores(self):
+        profiles=json.loads((ROOT/'assets/rotations.json').read_text('utf8'))['rotations']
+        checked_profiles=0;checked_groups=0;persisted_expected={}
+        with TemporaryDirectory() as root:
+            for ordinal,profile in enumerate(profiles):
+                spec=profile['specId'];saved={};selected=[]
+                directory=str(Path(root)/str(ordinal))
+                def first(window):
+                    nonlocal checked_groups
+                    self.identify(window,spec)
+                    matching=[i for i in range(1,window.ui.rotation_combo.count())
+                              if window.ui.rotation_combo.itemData(i)==
+                              f"{spec}|{profile['subKey']}|{profile['profileName']}"]
+                    self.assertTrue(matching,profile['profileName'])
+                    # 原选择键不含ID；重名条目仍按快照首项恢复。
+                    window.ui.rotation_combo.setCurrentIndex(matching[-1] if profile['id']==131 else matching[0])
+                    selected.append(window.ui.rotation_combo.currentData())
+                    self.assertEqual(window.controller.selection.active_profile.key,selected[0])
+                    first_match=next(p for p in profiles if (p['specId'],p['subKey'],p['profileName'])==
+                                     (spec,profile['subKey'],profile['profileName']))
+                    self.assertEqual(window.controller.selection.active_profile.id,first_match['id'])
+                    self.assertEqual(len(window.threshold_panel.rows),len(window.controller.groups))
+                    for index,(row,group) in enumerate(zip(window.threshold_panel.rows,window.controller.groups)):
+                        for value in (0,row.slider.maximum(),0):
+                            row.slider.setValue(value)
+                            for key in group.keys:
+                                self.assertEqual(window.controller.switch_settings[key],value)
+                        final=row.slider.maximum() if index%2 else 0
+                        row.slider.setValue(final)
+                        saved[group.keys]=final
+                        checked_groups+=1
+                def second(window):
+                    self.identify(window,spec)
+                    self.assertEqual(window.controller.selection.active_profile.key,selected[0])
+                    self.assertEqual(window.ui.rotation_combo.currentData(),selected[0])
+                    self.assertEqual(set(saved),{group.keys for group in window.controller.groups})
+                    for row,group in zip(window.threshold_panel.rows,window.controller.groups):
+                        self.assertEqual(row.slider.value(),saved[group.keys])
+                        for key in group.keys:
+                            self.assertEqual(window.controller.switch_settings[key],saved[group.keys])
+                with self.subTest(profile=profile['profileName'],spec=spec):
+                    self.window(directory,first)
+                    self.window(directory,second)
+                    persisted_expected[str(ordinal)]={'hub/by-spec/'+str(spec):selected[0],
+                        **{'switch/'+key:value for keys,value in saved.items() for key in keys}}
+                    checked_profiles+=1
+            script="from PySide6.QtCore import QSettings; import sys,json; from pathlib import Path; result={}; root=Path(sys.argv[1]); exec('for p in root.iterdir():\\n q=QSettings(str(p/\"settings.ini\"),QSettings.IniFormat)\\n result[p.name]={k:q.value(k) for k in q.allKeys()}'); print(json.dumps(result))"
+            loaded=subprocess.run([sys.executable,'-c',script,root],capture_output=True,timeout=15)
+            self.assertEqual(loaded.returncode,0,loaded.stderr)
+            actual=json.loads(loaded.stdout)
+            for ordinal,values in persisted_expected.items():
+                for key,value in values.items():
+                    got=actual[ordinal][key]
+                    self.assertEqual(int(got) if key.startswith('switch/') else got,value)
+            self.assertEqual(checked_profiles,41)
+            self.assertGreater(checked_groups,41)
+            print(f'方案条目={checked_profiles}，唯一选择键=40，阈值组检查={checked_groups}')
+
     def test_saved_profiles_restore_on_fresh_start_and_preserve_native_switch_edge(self):
         selected={};disabled={}
         specs=(1482,1484,1485,1486,1487,1488,1489,1490,1491)
