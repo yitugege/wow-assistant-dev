@@ -235,6 +235,41 @@ class PixelBarModuleTests(unittest.TestCase):
             healing_tick('partyHostile.party2=nil;healthError.party2=true',5,16777215,'ON','party1')
             healing_tick('healthError.party1=true',16777215,16777215,'ON',None)
             healing_tick('healthError={};partyHealth.party1=40;partyHealth.party2=10',40,10,'ON','party2')
+            # 色彩曲线接口返回真实插件构造的颜色；普通血量API设置独立探针。
+            lua.execute('''curveMode='color';curveCalls=0;numericHealthCalls=0
+            Enum={LuaCurveType={Step=1}}
+            C_CurveUtil={CreateColorCurve=function()
+              return {points={},SetType=function(self,kind) self.kind=kind end,
+                AddPoint=function(self,x,color) self.points[#self.points+1]={x=x,color=color} end}
+            end}
+            function UnitHealthPercent(unit,useMax,curve)
+              if not curve then return nil end
+              curveCalls=curveCalls+1
+              assert(useMax==true and curve.kind==1 and #curve.points==101)
+              if curveMode=='error' and unit=='party2' then error('fixture color inaccessible') end
+              if curveMode=='nil' and unit=='party2' then return nil end
+              local pct=(partyHealth[unit] or 100)/100
+              local selected
+              for _,point in ipairs(curve.points) do
+                if point.x<=pct then selected=point.color end
+              end
+              return selected
+            end
+            function UnitHealth(unit)
+              numericHealthCalls=numericHealthCalls+1
+              return partyHealth[unit] or 100
+            end''')
+            healing_tick('',40,10,'ON','party2')
+            self.assertGreater(g.curveCalls,0)
+            self.assertEqual(g.numericHealthCalls,0)
+            healing_tick('partyHealth.party2=12.99',40,12,'ON','party2')
+            self.assertEqual(g.numericHealthCalls,0)
+            healing_tick("curveMode='error'",40,16777215,'ON','party1')
+            self.assertEqual(g.numericHealthCalls,0)
+            healing_tick("curveMode='nil'",40,12,'ON','party2')
+            self.assertGreater(g.numericHealthCalls,0)
+            healing_tick("curveMode='color';numericHealthCalls=0;partyHealth.party2=10",40,10,'ON','party2')
+            self.assertEqual(g.numericHealthCalls,0)
         lua.execute('targetAlive=false')
         dead=tick()
         self.assertEqual(dead.state,1)
