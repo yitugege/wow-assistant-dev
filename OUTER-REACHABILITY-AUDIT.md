@@ -98,3 +98,15 @@
 新增参数 `--terminators`：`python tools/audit_outer_reachable_functions.py --initializers --follow-thunks --terminators`。保留旧报告，生成带`-terminators`后缀的新报告，记录表边界、槽位原字节、指针及目标RVA。图从238增至251个展开范围，范围外166个，旧精确正文未匹配192个，无展开目标71个。已断言原238项均保留，三条根指针匹配实际映像；新增13项不等于13个产品功能。
 
 仍未解析运行时注册的编码退出表、任意间接调用及完整异常路径。静态表值只代表捕获时刻，没有运行原终止函数或据此声称独立外层动态等价。
+
+### 终止差集13项正文与三处机器码复核
+
+`python tools/audit_outer_thunk_coverage.py --terminators`记录终止表新增13项的正文身份、警告及逐项语义，输出`dist/outer-termination-coverage.json`。13项全部完成首轮正文阅读，精确正文均存在。范围为locale回退、标准流与额外流清理、描述符校验、锁包装及底层句柄关闭，不是新战斗功能，也不构成独立版动态等价证明。
+
+`python tools/audit_outer_initializer_machine.py --termination`按.pdata边界完整导出fc50、11e04、1210c三个区间，保留指令字节、RIP目标和摘要到`dist/outer-termination-machine.json`。三段全部解码，无尾部遗漏。现有默认初始化报告不覆盖。
+
+- **0x11e04伪代码错误已由指令确认**：反编译将参数标成undefined4，并在某个分支赋为全局低32位；实际从入口至11e48调用11ce0之间没有写RCX。11e34读取全局128位到XMM0，11e3f写入栈上上下文，11e44只设置RDX。因此原64位流指针完整传递，不能照搬伪代码的参数截断或覆盖。
+- **0xfc50参数推断澄清**：开头fc56调用fb28跳板，而非直接将传入bool交给common_flush_all；fb28设置CL的证据已在短跳板报告中保留。之后关闭额外流、遍历三个标准流释放缓冲和锁，最后释放并清空指针表。
+- **0x1210c标准句柄别名**：12139设置ECX=2，12159查询描述符2的句柄，1215e设置ECX=1后再次查询；相同则跳过CloseHandle。随后依旧调用e248清空当前描述符并清除打开标志。CloseHandle失败时保留GetLastError并映射到错误上下文，最终返回-1。
+
+仅凭反编译器符号或返回类型无法可靠复原这些边界。此次没有改写原导出文件，也没有执行原终止代码；原文件与机器码证据并存，供后续实现和审计使用。

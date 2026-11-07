@@ -1,5 +1,6 @@
 """跟踪短跳板扩展出的新增展开范围；人工审读不等于动态等价。"""
 import csv
+import argparse
 import hashlib
 import json
 from audit_outer_reachable_functions import ROOT, EVIDENCE
@@ -22,11 +23,33 @@ REVIEWED = {
     0xdfbc: 'GetEnvironmentStringsW获取原环境块，计算含末尾空项长度，分配并复制；释放Windows环境块，返回副本或空',
 }
 
+TERMINATION_REVIEWED = {
+    0xb884: '锁4保护下将全局locale引用回退默认值，再解锁',
+    0xb900: '构造锁编号4的locale清理包装器',
+    0xe248: '校验描述符并清除句柄记录，特定应用模式下清空标准句柄；无效输入errno9',
+    0xfc50: '通过fb28固定flush参数，关闭额外流，再释放三个标准流缓冲和锁，释放全局指针表',
+    0x11a38: '锁8下遍历编号3起的流，关闭已打开项，逐项删除锁并释放流对象；返回成功关闭数',
+    0x11aec: '按流标志释放归属缓冲，清空指针及计数并清除缓冲相关位',
+    0x11ce0: '空流指针记录errno22；可用流加锁后调用11d5c再解锁；特殊标志流走释放状态分支',
+    0x11d5c: '刷新流、释放缓冲、关闭底层描述符，成功时释放附加字段，最终清除流状态',
+    0x11e04: '机器码保留64位RCX并传给11ce0；伪代码32位参数及全局覆盖为错误推断；维护并回写线程错误上下文',
+    0x11ef4: '检查全局句柄排除-1/-2哨兵后调用CloseHandle',
+    0x11fd0: '锁定描述符后再次检查打开标志，调用1210c或记录errno9，最后解锁',
+    0x12048: '区分-2特殊描述符及其他无效输入，记录errno9；有效输入构造锁定关闭上下文',
+    0x1210c: '机器码确认stdout/stderr同句柄时跳过CloseHandle，随后仍清除当前描述符；CloseHandle失败映射错误并返回-1',
+}
+
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--terminators', action='store_true', help='记录静态终止表引出的13项差集')
+    args = parser.parse_args()
     directory = ROOT / 'dist'
-    baseline = json.loads((directory / 'outer-reachable-with-initializers.json').read_text('utf8'))
-    expanded = json.loads((directory / 'outer-reachable-with-initializers-thunks.json').read_text('utf8'))
+    baseline_name = 'outer-reachable-with-initializers-thunks.json' if args.terminators else 'outer-reachable-with-initializers.json'
+    expanded_name = 'outer-reachable-with-initializers-thunks-terminators.json' if args.terminators else 'outer-reachable-with-initializers-thunks.json'
+    reviewed = TERMINATION_REVIEWED if args.terminators else REVIEWED
+    baseline = json.loads((directory / baseline_name).read_text('utf8'))
+    expanded = json.loads((directory / expanded_name).read_text('utf8'))
     if baseline['sha256'] != expanded['sha256']:
         raise ValueError('调用图映像身份不一致')
     old = {r['begin'] for r in baseline['reachable_functions']}
@@ -40,18 +63,18 @@ def main():
         folder = EVIDENCE / 'decompiled-memory/functions' if rva < 0x6000 else directory / 'outer-ghidra-remaining'
         path = folder / f'{int(expanded["image_base"], 16) + rva:#x}.c'
         body = path.read_bytes() if path.exists() else None
-        if rva in REVIEWED and not body:
+        if rva in reviewed and not body:
             raise ValueError(f'已审读正文缺失: {rva:#x}')
         rows.append({'rva': hex(rva), 'provider_name': names.get(rva), 'body': str(path),
                      'body_sha256': hashlib.sha256(body).hexdigest() if body else None,
-                     'observation': REVIEWED.get(rva),
+                     'observation': reviewed.get(rva),
                      'warning_lines': [line.strip() for line in body.decode('utf8').splitlines()
                                        if 'WARNING:' in line] if body else []})
     report = {'source_sha256': expanded['sha256'], 'rows': rows,
               'limitations': ['仅记录两张调用图差集，不代表全部函数',
                               '无精确正文可能是展开分块，不能直接按缺失功能计数',
                               '人工语义记录不代表机器码动态验证或产品等价']}
-    output = directory / 'outer-thunk-coverage.json'
+    output = directory / ('outer-termination-coverage.json' if args.terminators else 'outer-thunk-coverage.json')
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf8')
     print(json.dumps({'report': str(output), 'new_ranges': len(rows),
                       'reviewed': sum(r['observation'] is not None for r in rows),
