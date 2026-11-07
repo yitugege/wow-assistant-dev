@@ -4,8 +4,8 @@
 
 ## 当前可核对身份
 
-- 源码：本表生成前基线083068b。当前业务构建对应a5c3f93，之后的提交为测试和记录。
-- 本地业务EXE：c7d6abbae6a4b659f17ac01fe1ea0aa4e351c26c66a213c4d650a22537de88db；单文件外层：717e7230396c54c9f57c99d174f5cdae8e228257cf5b2b3777f5a844b4ca0546。
+- 源码：本表生成前基线083068b。当前业务构建对应32bb8a9，包含两处int64解析修复。
+- 本地业务EXE：21aecb2152be5eb3265d73775e32ca1569f0d081779e6278eab7b8b13d5f5b8f；单文件外层：6276a424c1523d87ec84ffd35b295cf7dfc2b002651888b17d14688e54aea56f。
 - 公开v0.2.6与这些本地摘要不同。公开发布说明见RELEASE-0.2.6.md；本地构建验收见BUILD-CURRENT-VALIDATION.md。
 - 本轮Win32进程列表未检测到Wow、WowB或WowClassic。没有启动游戏或触碰用户助手；真实游戏验证需要角色就绪。
 

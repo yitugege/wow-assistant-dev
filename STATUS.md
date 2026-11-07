@@ -1,5 +1,7 @@
 # 当前公开版本 v0.2.6
 
+最新本地目录版和单文件已重建至32bb8a9，纳入两处int64解析修复；冻结入口/后端、六种自检输入及三个外层缓存场景通过。详见BUILD-CURRENT-VALIDATION.md。公开v0.2.6未变，下文两处“尚未打包”为本轮构建前记录；真实游戏仍未验收。
+
 候选引擎位图解析源码修复：核对原03b800并以原Qt对照，消除NUL/内部NBSP引起的26组判断差异；340组引擎判断、17组统计显示及134项核心回归通过。尚未打包，详见AVAILABILITY-DISPLAY-PARITY.md。
 
 可用技能统计源码修复：原Qt对照发现长整数3组异常、NUL/内部NBSP两组差异，修复presentation._mask后17组对照及134项核心回归通过。仅统计显示路径，本轮未重构EXE，详见AVAILABILITY-DISPLAY-PARITY.md。

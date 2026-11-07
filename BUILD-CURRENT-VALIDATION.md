@@ -1,6 +1,21 @@
 # 当前源码本地构建验收
 
-## 最新构建：源码a5c3f93
+## 最新构建：源码32bb8a9
+
+已将可用技能统计和候选引擎的int64解析修复打入目录客户端及单文件外层。版本字段仍为0.2.6，本次是本地测试构建，未覆盖公开附件。
+
+|产物|SHA256|
+|---|---|
+|dist/desktop/WowBuddyDev/WowBuddyDev.exe|21aecb2152be5eb3265d73775e32ca1569f0d081779e6278eab7b8b13d5f5b8f|
+|dist/outer/WowBuddyDev-Outer.exe|6276a424c1523d87ec84ffd35b295cf7dfc2b002651888b17d14688e54aea56f|
+
+构建前后源码摘要一致，目录版冻结GUI和系统后端构造自检通过。隔离副本六种规则输入自检通过，各自1进程、最终活动数0，12个启动环境字段及正常退出核对通过；原构建规则未改。报告dist/frozen-native-selftest-current.json，隔离目录.local/frozen-selftest-xxcrs__f。
+
+外层259个成员校验通过；首次解包、缓存复用、缺失ready标记三个场景均通过，每次3进程最终全部退出。报告dist/frozen-outer-check.json，隔离目录.local/frozen-outer-中文 & mijy72eg，缓存键dacbcb0f108fcd9d。日志为.local/build-int64-desktop.log、.local/build-int64-outer.log、.local/check-int64-frozen.log和.local/check-int64-outer.log。
+
+本轮没有重复窗口人工交互或在线升级验证。解析边界的原Qt对照仍为源码测试，冻结自检不等于冻结程序逐项重跑该边界集；构建清单证明修复源码已纳入。全部游戏行为和完整还原仍未验收。
+
+## 历史构建：源码a5c3f93
 
 已重新构建目录客户端及单文件外层，纳入插件更新回调生命周期、Win32启动环境字段和自检非对象specs修复。版本字段暂为0.2.6，这是后续源码的本地测试构建，摘要不同于公开v0.2.6；未覆盖GitHub附件。
 
