@@ -12,6 +12,60 @@ from wowbuddy.dev_protocol import DEV_VERSION
 
 
 class AddonRenderIntegrationTests(unittest.TestCase):
+    def test_spec_query_fault_closes_render_gate_and_recovers(self):
+        lua=full_load.AddonFullLoadTests().world_fixture('MAGE',8,1482)
+        g=lua.globals()
+        g.EmitFixtureEvent('PLAYER_ENTERING_WORLD',True,False)
+        g.AdvanceFixtureTime(15)
+        lua.execute('''
+          function IsSpellKnown() return false end
+          savedSpecialization=GetSpecialization
+          combat=true;WowBuddyDev.DB.masterSwitch=true;WowBuddyDev.DB.autoTarget=true
+          local found=0
+          for _,frame in ipairs(frames) do
+            local callback=frame.scripts.OnUpdate
+            if callback and debug.getinfo(callback,'S').source=='@PixelBar.lua' then
+              found=found+1
+              RenderFaultFixture=function() now=now+1;callback(frame,1) end
+            end
+          end
+          assert(found==1)
+        ''')
+        pipeline=Assets.load(ROOT/'assets').pipeline()
+        def render():
+            g.RenderFaultFixture()
+            pixels=[[0x0d0d0d]*24 for _ in range(1200)]
+            for rect in g.visiblePixelRectangles().values():
+                rgb=(round(rect.r*255)<<16)|(round(rect.g*255)<<8)|round(rect.b*255)
+                for y in range(int(rect.y),int(rect.y+rect.height)):
+                    for x in range(int(rect.x),int(rect.x+rect.width)):
+                        self.assertTrue(0<=x<24 and 0<=y<1200)
+                        pixels[y][x]=rgb
+            result=pipeline.prepare(RGBImage(pixels))
+            self.assertTrue(result.frame.ok,result.frame.status)
+            self.assertEqual(result.frame.spec_id,'1482')
+            return result.frame
+        from wowbuddy.auto_target import parse_auto_target
+        initial=render()
+        self.assertEqual(initial.values['master_switch'],'ON')
+        self.assertEqual(parse_auto_target(float(initial.values['ttd'])).state,2)
+        for body in ('error("fixture specialization unavailable",0)','return "unknown"'):
+            with self.subTest(body=body):
+                lua.execute('function GetSpecialization() '+body+' end')
+                failed=render()
+                self.assertEqual(failed.values['master_switch'],'OFF')
+                # 完整Core职责查询先被callBoolSafe拦截，返回合法的停发包，
+                # 并非隔离AutoTarget测试中“固定远程职责”下的直接取包异常。
+                stopped=parse_auto_target(float(failed.values['ttd']))
+                self.assertIsNotNone(stopped)
+                self.assertEqual(stopped.state,0)
+                # 存储的用户开关保持开启；关闭的是发给桌面的当帧门控。
+                self.assertTrue(g.WowBuddyDev.DB.masterSwitch)
+                lua.execute('GetSpecialization=savedSpecialization')
+                recovered=render()
+                self.assertEqual(recovered.values['master_switch'],'ON')
+                self.assertEqual(parse_auto_target(float(recovered.values['ttd'])).state,2)
+
     def test_nine_classes_full_load_render_and_decode_state_transitions(self):
         assets = Assets.load(ROOT / 'assets')
         for token, class_id, spec, _ in full_load.AddonFullLoadTests.CLASS_CASES:

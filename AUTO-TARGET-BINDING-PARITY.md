@@ -18,3 +18,13 @@
 第一层GetSpecialization并没有pcall保护。它抛错或返回非数字字符串时，原包与独立版的GetAutoTargetPacket均抛错；错误调用还会消耗递增序号，恢复后的完整包仍逐步一致。模块注释中的“安全读取”不等于已经保护所有调用。
 
 这是条件性原行为，不是已证明的现场原因。没有擅自改变原状态机，也没有把回执增加当作游戏宏已执行、选中怪物或施法成功的证据。完整插件调用者是否吞掉这些异常、定制客户端实际API返回，以及真实连续换怪仍需独立验证。
+
+## 后续：完整插件绘制链的异常与恢复
+
+新增 `test_addon_render_integration.py::test_spec_query_fault_closes_render_gate_and_recovers`，完整加载独立插件TOC、法师登录及进世界初始化，调用实际PixelBar主OnUpdate，将真实纹理颜色送入桌面pipeline解码。只替换游戏API，不替换Core、AutoTarget或PixelBar方法。
+
+正常战斗目标时，总开关ON、选怪状态2。将GetSpecialization分别改为抛错或返回非数字字符串后，渲染仍完成，解码有效、专精仍为1482，总开关OFF，选怪包合法且状态0；DB.masterSwitch仍为true。恢复原API后，总开关ON、选怪状态2，两种异常分别验证恢复。
+
+首次断言错误地预期异常后ttd为0，实际结果为合法的状态0包。复核调用路径：完整Core职责判断先触发异常，由AutoTarget的callBoolSafe捕获并复位会话，所以不会走到隔离宿主固定IsRangedDamageSpec返回true时的裸查询分支。PixelBar另外用pcall保护总开关门控，把异常变成当帧OFF。修正的是测试期望，没有改产品行为。
+
+本轮渲染测试共2项通过，3.521秒，包含此前九职业54帧检查及本次法师5帧。只证明当前独立插件在该宿主和所列场景下的绘制/解码；本轮没有替换为原完整插件进行同范围对照，没有操作游戏或证明真实施法恢复。上节单模块异常结论仍成立，但不能外推为完整插件绘制必然中断。
