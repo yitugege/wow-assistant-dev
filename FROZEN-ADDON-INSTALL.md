@@ -1,5 +1,16 @@
 # 冻结 EXE 插件安装链验证
 
+## 后续：实际文件锁触发提交失败与回滚
+
+在相同7b0eaa1产物上扩展检查，共十个场景通过。新增的两种场景分别在目录版与单文件中执行：
+
+- **记录提交失败**：用真实 `CreateFileW` 打开隔离安装记录，允许其他进程读写，但不允许删除/替换。在旧插件额外加入包中不存在的 `local-change.lua`，然后启动真实安装命令。失败报告明确指向暂存 `install-record.json` 替换 `.wowbuddy-install.json`，与已读安装器代码的目录交换后提交位置一致。返回后旧目录逐文件摘要恢复，自定义文件保留，记录字节及既有备份摘要不变，没有遗留暂存目录。
+- **解除文件锁后重试**：释放测试持有的句柄，再运行相同EXE安装成功，85个发布文件与包一致；新增备份与失败前旧目录完全相同，包括自定义文件。
+
+最新根目录为 `.local/frozen-addon-中文 & msx4_8qd`，日志 `.local/frozen-addon-install-rollback.log`；十场景报告仍写入 `dist/frozen-addon-install.json`，另归档为 `dist/local-7b0eaa1/frozen-addon-install-rollback.json`。每个Job最终活动进程数为零。下文六场景为前一轮历史记录，其报告保留在 `dist/local-7b0eaa1/frozen-addon-install.json`。
+
+故障来自Windows实际共享规则，没有替换Python安装函数，也没有修改冻结程序。此次验证正常进程存活期间的异常回滚，不覆盖断电、强制终止、回滚本身再次失败或全部文件系统异常。测试仍仅写入新建隔离目录，没有真实游戏目录变更，也没有重新构建产品。
+
 `tools/check_frozen_addon_install.py` 实际运行本地 7b0eaa1 目录版及单文件客户端的 `--install-addon` 入口。测试不通过 Python 源码函数替代安装过程；每个 EXE 在自有 Windows Job 中运行，等待 Job 内进程全部退出后检查结果。
 
 ## 产物与范围

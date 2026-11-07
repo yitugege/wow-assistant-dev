@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import ctypes as C
+from contextlib import contextmanager
 from check_frozen_outer import ROOT, run, file_sha256
 from build_addon import build
 from wowbuddy.dev_addon_install import read_package
@@ -12,6 +14,22 @@ from wowbuddy.dev_addon_install import read_package
 def snapshot(path):
     return {p.relative_to(path).as_posix():file_sha256(p)
             for p in path.rglob('*') if p.is_file()}
+
+
+@contextmanager
+def prevent_record_replacement(path):
+    """允许读取安装记录，但用实际 Windows 共享模式拒绝替换/删除。"""
+    from ctypes import wintypes as W
+    kernel=C.WinDLL('kernel32',use_last_error=True)
+    kernel.CreateFileW.argtypes=[W.LPCWSTR,W.DWORD,W.DWORD,C.c_void_p,W.DWORD,W.DWORD,W.HANDLE]
+    kernel.CreateFileW.restype=W.HANDLE
+    kernel.CloseHandle.argtypes=[W.HANDLE];kernel.CloseHandle.restype=W.BOOL
+    # GENERIC_READ / FILE_SHARE_READ|FILE_SHARE_WRITE / OPEN_EXISTING。
+    handle=kernel.CreateFileW(str(path),0x80000000,3,None,3,0x80,None)
+    if handle==C.c_void_p(-1).value:raise C.WinError(C.get_last_error())
+    try:yield
+    finally:
+        if not kernel.CloseHandle(handle):raise C.WinError(C.get_last_error())
 
 
 def check():
@@ -94,11 +112,38 @@ def check():
         cases.append({'mode':mode,'scenario':'reinstall_random' if random_directory else 'reinstall',
                       'files':count,'backup_exact':True,'identity_preserved':True,'passed':True,**outcome})
 
+        # 在目录交换之后、身份记录提交处触发真实共享冲突。
+        # 旧目录加入包中没有的文件，避免“重装成功”被误判为“旧目录已恢复”。
+        (addons/'WowBuddyDev/local-change.lua').write_bytes(b'-- preserve rollback sentinel')
+        rollback_before=snapshot(addons/'WowBuddyDev')
+        backup_before=snapshot(backup_root)
+        record=addons.parent.parent/'.wowbuddy-install.json'
+        record_before=record.read_bytes()
+        with prevent_record_replacement(record):
+            outcome=invoke(addons,1)
+            failure=report.read_text('utf8')
+            assert 'install-record.json' in failure and '.wowbuddy-install.json' in failure,failure
+            assert snapshot(addons/'WowBuddyDev')==rollback_before
+            assert record.read_bytes()==record_before
+            assert snapshot(backup_root)==backup_before
+            assert not list(addons.glob('.wowbuddy-install-*'))
+        cases.append({'mode':mode,'scenario':'record_commit_locked','passed':True,
+                      'old_directory_restored':True,'record_unchanged':True,
+                      'existing_backups_unchanged':True,**outcome})
+
+        outcome=invoke(addons,0)
+        count=verify_payload(package)
+        retry_backups=list(backup_root.iterdir());assert len(retry_backups)==2
+        new_backups=[p for p in retry_backups if p not in backups];assert len(new_backups)==1
+        assert snapshot(new_backups[0])==rollback_before
+        cases.append({'mode':mode,'scenario':'retry_after_unlock','files':count,
+                      'old_custom_file_backed_up':True,'passed':True,**outcome})
+
         installed_before=snapshot(addons)
         occupied=home/'occupied';occupied.write_bytes(b'unchanged')
         outcome=invoke(occupied,1)
         assert occupied.read_bytes()==b'unchanged'
-        assert snapshot(addons)==installed_before and len(list(backup_root.iterdir()))==1
+        assert snapshot(addons)==installed_before and len(list(backup_root.iterdir()))==2
         cases.append({'mode':mode,'scenario':'occupied_target','passed':True,**outcome})
     return {'passed':True,'test_root':str(root),'cases':cases,
             'business_sha256':directory_build['executable_sha256'],'outer_sha256':outer_build['sha256'],
