@@ -42,7 +42,7 @@ class FocusSortNativeTests(unittest.TestCase):
         cls.merge_native=C.CFUNCTYPE(None,C.c_void_p,C.c_void_p,C.c_int64,
                                     C.c_void_p,C.c_int64,C.c_void_p)(address+0x326d0-base)
 
-    def order(self,values):
+    def order(self,values,capacity=None):
         indexes=(C.c_int32*len(values))(*range(len(values)))
         health=(C.c_double*len(values))(*values)
         array=(C.c_void_p*3)(None,C.addressof(health),len(values))
@@ -50,11 +50,23 @@ class FocusSortNativeTests(unittest.TestCase):
         if len(values)<=32:
             self.native(C.byref(result),C.addressof(indexes),C.addressof(indexes)+C.sizeof(indexes),C.byref(array))
         else:
-            size=(len(values)+1)//2
+            size=(len(values)+1)//2 if capacity is None else capacity
             buffer=(C.c_int32*size)()
             self.merge_native(C.addressof(indexes),C.addressof(indexes)+C.sizeof(indexes),
                               len(values),C.addressof(buffer),size,C.byref(array))
         return list(indexes)
+
+    def test_reduced_and_zero_buffer(self):
+        rng=random.Random(309)
+        for count in (33,34,63,64,65,127,257):
+            for capacity in (0,1,2,8,16,31,32):
+                samples=[list(range(count)),list(range(count))[::-1],[20.0]*count]
+                samples += [[rng.choice([0.,10.,20.,50.,99.,float('nan')]) for _ in range(count)]
+                            for _ in range(10)]
+                for case,values in enumerate(samples):
+                    with self.subTest(count=count,capacity=capacity,case=case):
+                        self.assertEqual(health_order(values,buffer_capacity=capacity),
+                                         self.order(values,capacity))
 
     def test_large_groups_against_original_merge(self):
         rng=random.Random(326)

@@ -40,8 +40,10 @@ def _buffered(items, health):
     return chunks[0] if chunks else []
 
 
-def _merge_trimmed(left, right, health):
+def _merge_trimmed(left, right, health, capacity=None):
     # 0308a0先裁剪已就位的前后缀；其比较顺序对NaN有可观察影响。
+    if not left or not right:
+        return left + right
     first = 0
     while first < len(left) and not health[left[first]] > health[right[0]]:
         first += 1
@@ -56,6 +58,37 @@ def _merge_trimmed(left, right, health):
         return prefix + right + left + suffix
     if len(left) == 1:
         return prefix + right + left + suffix
+    if capacity is not None and capacity < min(len(left), len(right)):
+        # 0309f0：两侧均放不下时二分切割；0307a0旋转后分别合并。
+        if len(right) < len(left):
+            right_cut = len(right) // 2
+            value = health[right[right_cut]]
+            start, count = 0, len(left)
+            while count:
+                half = count // 2
+                # 030cb4/comisd + jbe：unordered 也推进下界。
+                if not health[left[start + half]] > value:
+                    start += half + 1
+                    count -= half + 1
+                else:
+                    count = half
+            left_cut = start
+        else:
+            left_cut = len(left) // 2
+            value = health[left[left_cut]]
+            start, count = 0, len(right)
+            while count:
+                half = count // 2
+                if health[right[start + half]] < value:
+                    start += half + 1
+                    count -= half + 1
+                else:
+                    count = half
+            right_cut = start
+        return (prefix
+                + _merge_trimmed(left[:left_cut], right[:right_cut], health, capacity)
+                + _merge_trimmed(left[left_cut:], right[right_cut:], health, capacity)
+                + suffix)
     if len(left) <= len(right):
         # 0309f0左缓冲：首个右项和最后左项已由裁剪比较定位。
         output = [right[0]]
@@ -86,11 +119,24 @@ def _merge_trimmed(left, right, health):
     return prefix + output + suffix
 
 
-def health_order(health):
+def health_order(health, *, buffer_capacity=None):
+    """buffer_capacity 指定原临时缓冲区容量，用于受限容量路径对照。
+
+    Python 中间列表仍需内存；容量为零不代表本实现零内存分配。
+    """
+    if buffer_capacity is not None and (not isinstance(buffer_capacity, int) or buffer_capacity < 0):
+        raise ValueError('排序缓冲区容量必须是非负整数')
     items = list(range(len(health)))
+    return _sort(items, health, buffer_capacity)
+
+
+def _sort(items, health, capacity):
     if len(items) <= 32:
         return _insertion(items, health)
     # 0326d0正常缓冲区足够容纳ceil(n/2)，各半独立块归并后裁剪合并。
     middle = (len(items) + 1) // 2
+    if capacity is not None and capacity < middle:
+        return _merge_trimmed(_sort(items[:middle], health, capacity),
+                              _sort(items[middle:], health, capacity), health, capacity)
     return _merge_trimmed(_buffered(items[:middle], health),
-                          _buffered(items[middle:], health), health)
+                          _buffered(items[middle:], health), health, capacity)
