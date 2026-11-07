@@ -2,6 +2,10 @@
 
 ## 自动选怪离线联测补充
 
+后续纹理编码验证：新增`tests/test_auto_target_pixel_encoding.py`从PixelBar.lua提取并执行未改写的取包pcall段、rgbFromInt、普通number上色段及setTextureColor；纹理对象为记录颜色的替身。81按键×5状态×32回执×31序号，共401,760种有效整数包全部经过Lua取包、RGB赋色及桌面parse_auto_target解码，无字段丢失。取包函数缺失、抛错、返回字符串/布尔/表五种情况均写零，桌面不识别为选怪包。执行Core.lua实际COMMON_PIXEL_DATA定义，确认ttd为第20格（零基19）、number类型，与旧契约一致。
+
+此轮7项选怪测试通过，日志`.local/auto-target-texture.log`；未修改产品代码或发布包。只执行所列真实源码片段，不能称为完整PixelBar每帧回调、RebuildPixelBars布局执行或真实GPU纹理渲染验证；可读协议的完整插件绘制也未由此覆盖。精确整数包验证不包括任意非有限或小数输入。
+
 `tests/test_auto_target_bridge.py`现在把真实AutoTarget.lua输出贯穿到旧/可读两种合成像素条，再进入DecisionPipeline、Scheduler和ActionDispatcher；仅发送后端记录按键，不操作游戏。此前桥接测试只执行Lua并解析整数包，调度测试则手工构造字段，本次补齐两者之间的链路。
 
 两种协议分别核对：有有效目标时选择寒冰箭；战斗中目标死亡后Lua状态为1，客户端发送Lua绑定的选怪键，且该动作可绕过先前技能的本地GCD；150毫秒后仍处于400毫秒抑制窗口，不重复发送；模拟安全按钮点击回执及新目标后，回执变为1、清除等待状态并恢复技能候选；键盘焦点占用、Lua总开关关闭和脱战后不再产生选怪发送。总开关分支保留合成像素master_switch为ON，单独验证Lua选怪闸门生效；完整像素总开关OFF的监控链路由test_dev_monitor_protocol.py覆盖。
