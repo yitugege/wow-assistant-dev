@@ -15,6 +15,42 @@ from wowbuddy import github_client
 
 
 class ManualUpdateTests(unittest.TestCase):
+    def test_exited_or_timed_out_helper_restores_retry_even_with_bad_report(self):
+        from test_dev_tray import TrayTests
+        from PySide6.QtCore import QTimer
+        import time
+        def exercise(window):
+            with TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                staged = {'staged': str(root / 'verified-stage')}
+                for index, (exit_code, content) in enumerate((
+                    (1, None), (None, None), (1, '{"error":"helper failed"}'),
+                    (1, '{'), (1, '[]'), (1, '{"error":42}'),
+                )):
+                    with self.subTest(exit_code=exit_code, report=content):
+                        job = root / ('job' + str(index) + '.json')
+                        if content is not None:
+                            job.with_suffix('.result.json').write_text(content, 'utf8')
+                        window._client_update_staged = staged
+                        window._handoff = {'job': str(job), 'process': SimpleNamespace(poll=lambda: exit_code)}
+                        window._handoff_timer = QTimer(window)
+                        window._handoff_timer.start(100)
+                        window._handoff_deadline = time.monotonic() - 1
+                        window.ui.update_check_button.setEnabled(False)
+                        window.ui.update_apply_button.setEnabled(False)
+                        with patch.object(window, '_quit_development_app') as quit_app:
+                            window._poll_update_handoff()
+                            quit_app.assert_not_called()
+                        self.assertTrue(job.with_suffix('.cancel.json').is_file())
+                        self.assertIsNone(window._handoff)
+                        self.assertFalse(window._handoff_timer.isActive())
+                        self.assertIs(window._client_update_staged, staged)
+                        self.assertTrue(window.ui.update_check_button.isEnabled())
+                        self.assertTrue(window.ui.update_apply_button.isEnabled())
+                        self.assertEqual(window.ui.update_apply_button.text(), '重试安装')
+                        self.assertIn('保持运行', window.ui.update_status.text())
+        TrayTests.run_window(self, False, exercise)
+
     def test_buttons_download_verify_then_retry_failed_handoff(self):
         from test_dev_tray import TrayTests
         with TemporaryDirectory() as temporary:

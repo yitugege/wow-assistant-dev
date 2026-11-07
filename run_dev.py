@@ -242,11 +242,21 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 cancel_handoff(self._handoff,'界面等待交接失败')
                 detail='交接进程未就绪，当前助手保持运行；未替换程序。'
                 result=job.with_suffix('.result.json')
-                if result.is_file():detail+=' '+json.loads(result.read_text('utf8')).get('error','')
+                if result.is_file():
+                    try:
+                        report=json.loads(result.read_text('utf8'))
+                        if not isinstance(report,dict):raise ValueError('交接结果不是对象')
+                        error=report.get('error','')
+                        if not isinstance(error,str):raise ValueError('交接错误详情不是文本')
+                        detail+=' '+error
+                    except (OSError,ValueError,TypeError) as error:
+                        detail+=' 无法读取交接错误详情：'+str(error)
                 self.ui.update_status.setText(detail)
                 self.logger.append(detail)
                 self._handoff=None
                 self.ui.update_check_button.setEnabled(True)
+                self.ui.update_apply_button.setText('重试安装')
+                self.ui.update_apply_button.setEnabled(bool(getattr(self,'_client_update_staged',None)))
 
         def shutdown(self):
             if getattr(self,'_native_dump_session',None) is not None:
