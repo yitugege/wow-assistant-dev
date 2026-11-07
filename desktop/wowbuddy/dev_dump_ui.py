@@ -4,6 +4,20 @@ from PySide6.QtCore import QTimer
 from .cli_dump_ui import make_runner_for_window
 
 
+class NativeDumpSession:
+    """05d290→057ac0：窗口显示后延迟导出，完成后不退出应用。"""
+    def __init__(self, window, options, output_dir):
+        self.runner=make_runner_for_window(window,options,application_dir=output_dir)
+        self.delay=QTimer(window)
+        self.delay.setSingleShot(True)
+        self.delay.timeout.connect(self.runner.start)
+        self.delay.start(2600)
+
+    def close(self):
+        self.delay.stop()
+        self.runner.close()
+
+
 def run_dump(app, window, options, output_dir):
     errors=[]
     warnings=[]

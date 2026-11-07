@@ -13,6 +13,7 @@ from PySide6.QtCore import QCoreApplication, QEvent
 from wowbuddy.assets import Assets
 from wowbuddy.desktop import NoSystemBackend
 from wowbuddy.dev_staged_startup import create_staged_startup
+from wowbuddy.cli_dump_ui import DumpUiOptions
 from test_dev_watch import Windows
 import run_dev
 
@@ -92,13 +93,17 @@ class StagedStartupTests(unittest.TestCase):
             host.delays[0].timeout.emit()
             self.assertTrue(host.stages.main_window.isVisible())
             self.assertFalse(host.stages.main_window.session.is_active())
+            self.assertTrue(host.stages.main_window._native_dump_session.delay.isActive())
+            self.assertEqual(host.stages.main_window._native_dump_session.delay.interval(),2600)
             return 0
         with TemporaryDirectory() as directory, patch('wowbuddy.dev_staged_startup.create_staged_startup',side_effect=create), patch('wowbuddy.game_windows.CtypesWindowBackend',return_value=Windows()), patch('wowbuddy.capture.make_win32_capture',return_value=NoSystemBackend()), patch('wowbuddy.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()), patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=False), patch.object(QApplication,'exec',side_effect=event_loop):
-            self.assertEqual(run_dev.launch(directory,staged=True,hub_online=False,client_online=False,addon_online=False),0)
+            self.assertEqual(run_dev.launch(directory,staged=True,hub_online=False,client_online=False,addon_online=False,
+                                           native_dump=(DumpUiOptions(),Path(directory))),0)
             window=hosts[0].stages.main_window
             self.assertTrue(window._closed)
             self.assertFalse(window.poll_timer.isActive())
             self.assertFalse(window.watch_timer.isActive())
+            self.assertFalse(window._native_dump_session.delay.isActive())
 
 
 if __name__=='__main__':unittest.main()

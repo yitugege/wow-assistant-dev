@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT/'desktop'))
 from wowbuddy.dev_startup import record as startup_record
 
 
-def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False, staged=False):
+def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, watch=False, dump_ui=None, hub_online=True, client_online=True, addon_online=True, no_update=False, staged=False, native_dump=None):
     if selftest and (auto_start or watch):
         raise ValueError('自检不能同时自动开始监控')
     if dump_ui is not None and (selftest or auto_start or watch):
@@ -196,6 +196,8 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 self.ui.update_check_button.setEnabled(True)
 
         def shutdown(self):
+            if getattr(self,'_native_dump_session',None) is not None:
+                self._native_dump_session.close()
             notice_timer=getattr(self,'_update_notice_timer',None)
             if notice_timer is not None:notice_timer.stop()
             addon_timer=getattr(self,'_addon_refresh_timer',None)
@@ -520,9 +522,15 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             window.hub_timer.start()
         return window
 
+    def after_main(window):
+        if native_dump is not None:
+            from wowbuddy.dev_dump_ui import NativeDumpSession
+            options,output_dir=native_dump
+            window._native_dump_session=NativeDumpSession(window,options,output_dir)
+
     if staged and not selftest and dump_ui is None:
         from wowbuddy.dev_staged_startup import create_staged_startup
-        startup=create_staged_startup(app,ROOT/'assets',windows,construct_window,startup_record,auto_start=auto_start)
+        startup=create_staged_startup(app,ROOT/'assets',windows,construct_window,startup_record,auto_start=auto_start,after_main=after_main)
         try:
             startup.start()
             return app.exec()
@@ -541,6 +549,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
     window=construct_window(assets)
     window.show()
     startup_record('独立主窗口已显示')
+    after_main(window)
     if dump_ui is not None:
         from wowbuddy.dev_dump_ui import run_dump
         try:
@@ -625,7 +634,8 @@ def main():
     watch_options.add_argument('--no-watch',action='store_true',help='本次启动不自动连接游戏窗口，改为手动开始监控')
     parser.add_argument('--install-addon',action='store_true',help='无主窗安装自有插件包并退出')
     parser.add_argument('--install-addon-dir',default=None,help='直接安装目标目录，原版格式为 --install-addon-dir=路径')
-    parser.add_argument('--dump-ui',action='store_true',help='离屏导出界面诊断到data-dir后退出，不抓屏或发键')
+    parser.add_argument('--dump-ui',action='store_true',help='普通GUI启动后延迟写原界面报告，保持运行')
+    parser.add_argument('--desktop-dump-ui',dest='dump_ui',action='store_true',help='独立离屏导出界面诊断并退出')
     parser.add_argument('--hub-selftest',action='store_true',help='检查本地循环库并报告缺失动作，不联网')
     parser.add_argument('--hub-fetch',action='store_true',help='与 --hub-selftest 合用，从自有GitHub拉取循环库')
     parser.add_argument('--engine-selftest',action='store_true',help='运行原引擎离线自检并记录失败/跳过计数')
@@ -642,16 +652,20 @@ def main():
     from wowbuddy.native_cli import parse_native_cli
     from wowbuddy.dev_native_commands import command_data_dir
     native=parse_native_cli(sys.argv)
-    strict_commands={'--desktop-selftest','--selftest-backends','--engine-selftest','--help','-h'}
-    if native.command=='gui' and native.dump_ui is None and not strict_commands.intersection(sys.argv[1:]):
+    strict_commands={'--desktop-selftest','--selftest-backends','--engine-selftest','--desktop-dump-ui','--help','-h'}
+    if native.command=='gui' and not strict_commands.intersection(sys.argv[1:]):
         if '--watch' in sys.argv and '--no-watch' in sys.argv:
             parser.error('--watch 与 --no-watch 不能同时使用')
         try:
             data_dir=command_data_dir(sys.argv,APP_ROOT/'.local')
         except ValueError as error:
             parser.error(str(error))
+        extra={}
+        if native.dump_ui is not None:
+            from wowbuddy.cli_dump_ui import DumpUiOptions
+            extra['native_dump']=(DumpUiOptions.parse(sys.argv),command_data_dir(sys.argv,APP_ROOT))
         return launch(data_dir,auto_start=native.auto_start,watch='--no-watch' not in sys.argv,
-                      no_update=native.suppress_auto_update,staged=True)
+                      no_update=native.suppress_auto_update,staged=True,**extra)
     args=parser.parse_args()
     if args.hub_fetch and not args.hub_selftest:
         parser.error('--hub-fetch 需要 --hub-selftest')

@@ -11,7 +11,7 @@ ROOT=Path(__file__).resolve().parents[1]
 class DumpUiTests(unittest.TestCase):
     def test_cli_generates_ui_and_showall_then_exits(self):
         with TemporaryDirectory() as directory:
-            result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--dump-ui',
+            result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--desktop-dump-ui',
                 '--spec=1482','--spec=1484','--talent=10/0/0','--toggle-showall',
                 '--data-dir',directory],cwd=ROOT,capture_output=True,timeout=20)
             self.assertEqual(result.returncode,0,result.stderr.decode('utf8',errors='replace'))
@@ -27,7 +27,7 @@ class DumpUiTests(unittest.TestCase):
             self.assertIn('--toggle-showall off',showall)
 
     def test_diagnostic_parameter_conflicts_rejected_before_launch(self):
-        for args in (['--dump-ui','--watch'],['--dump-ui','--desktop-selftest']):
+        for args in (['--desktop-dump-ui','--watch'],['--desktop-dump-ui','--desktop-selftest']):
             with self.subTest(args=args):
                 result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),*args],
                     cwd=ROOT,capture_output=True,timeout=10)
@@ -36,7 +36,7 @@ class DumpUiTests(unittest.TestCase):
     def test_report_write_failure_returns_nonzero(self):
         with TemporaryDirectory() as directory:
             (Path(directory)/'_ui.txt').mkdir()
-            result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--dump-ui',
+            result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--desktop-dump-ui',
                 '--data-dir',directory],cwd=ROOT,capture_output=True,timeout=20)
             self.assertEqual(result.returncode,1)
             report=json.loads((Path(directory)/'dump-ui.json').read_text('utf8'))

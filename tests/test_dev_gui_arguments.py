@@ -36,5 +36,18 @@ class GuiArgumentsTests(unittest.TestCase):
         self.assertEqual(call.args,(Path('second'),))
         self.assertFalse(call.kwargs['watch'])
 
+    def test_native_dump_keeps_gui_and_exact_argument_sequence(self):
+        call=self.launch_options(['--dump-ui','--auto','--unknown','--spec=1482',
+                                  '--spec=1484','--talent=','--rotation','ignored'])
+        self.assertTrue(call.kwargs['auto_start'])
+        self.assertTrue(call.kwargs['watch'])
+        self.assertTrue(call.kwargs['no_update'])
+        self.assertNotIn('dump_ui',call.kwargs)
+        options,output=call.kwargs['native_dump']
+        self.assertEqual(options.specs,('1482','1484'))
+        self.assertEqual(options.talent,'')
+        self.assertEqual(options.rotation_key,'')
+        self.assertEqual(output,run_dev.APP_ROOT)
+
 
 if __name__=='__main__':unittest.main()
