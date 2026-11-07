@@ -2,6 +2,8 @@
 
 ## 最新本地构建：0.2.8，源码03a6169
 
+0.2.8已于提交11b9837公开发布，六个附件齐全。通过客户端实际下载模块回读公开目录包、随机插件包和单文件EXE：清单与本地一致，随机名称检查通过，目录版和单文件版下载后冻结自检通过，外层测试Job三个进程最终归零。报告 `dist/public-release-028-check.json`，日志 `.local/check-public-028.log`。本次未重新验证旧版本自动更新交接，未进行游戏实测。
+
 最终顶层回归251项通过，用时138.192秒；核心回归153项通过，用时1.379秒，共404项。日志 `.local/regression-028-verbose.log` 与 `.local/regression-core-028.log`。顶层首次运行被人工结束后使用详细日志重跑；90秒定时堆栈是诊断输出，不代表测试超时失败。核心首次调用遗漏 PYTHONPATH，修正运行环境后通过。
 
 成套产物摘要见 RELEASE-0.2.8.md。冻结六组输入、三组缓存、两次隔离 GUI 启动及设置保留通过。报告保留为 `dist/frozen-selftest-028.json`、`dist/frozen-outer-028.json`、`dist/outer-gui-028.json`。`tools/check_release_consistency.py` 对实际发布包核验：版本一致、成员摘要一致、59个 Lua 与源码一致且可编译、TOC/XML 引用完整、单文件身份与业务 EXE 摘要一致。未安装到游戏目录，未执行真实游戏施法。
