@@ -31,9 +31,17 @@ def dispatch_native_command(arguments,*,assets,application,packages,frozen):
         return run_development_install(arguments,package,data)
     if options.command=='check_update':
         from .github_client import run_check_command
+        from .dev_cli_update import current_outer_target
+        if current_outer_target(frozen) is not None:
+            from .github_outer import check_latest
+            return run_check_command(data,check=check_latest)
         return run_check_command(data)
     if options.command=='update_now':
-        from .dev_cli_update import run_update_now
+        from .dev_cli_update import run_update_now,run_outer_update_now,current_outer_target
+        outer=current_outer_target(frozen)
+        if outer is not None:
+            import sys
+            return run_outer_update_now(data,sys.executable,outer,arguments[1:])
         return run_update_now(data,application,arguments[1:],frozen=frozen)
     from .dev_native_hub import run_native_hub
     return run_native_hub(data,command_data_dir(arguments,application),fetch_online=options.hub_fetch)

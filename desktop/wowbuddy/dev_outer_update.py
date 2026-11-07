@@ -11,7 +11,8 @@ import json
 
 def install_outer(staged,inner,outer,*,current_version=VERSION,arguments=(),
                   quit_callback=lambda:None,on_status=lambda text:None,on_log=lambda text:None,
-                  on_replaced=lambda text:None,restart=True,backend_factory=QtWin32HandoffBackend):
+                  on_replaced=lambda text:None,restart=True,schedule_restart_exit=True,
+                  backend_factory=QtWin32HandoffBackend):
     """调用者须在GUI线程调用并阻止重入；仅验证过的自有外层是替换目标。"""
     inner=Path(inner)
     target=validated_outer_target(str(outer),inner)
@@ -44,7 +45,7 @@ def install_outer(staged,inner,outer,*,current_version=VERSION,arguments=(),
         scope=TestProgramScope(str(target.parent),str(target))
         return backend_factory(scope).execute(verified,application_arguments=['WowBuddyDev',*arguments],
             quit_callback=quit_callback,on_status=on_status,on_log=on_log,
-            on_replaced=on_replaced,restart=restart)
+            on_replaced=on_replaced,restart=restart,schedule_restart_exit=schedule_restart_exit)
     except BaseException:
         # 只清除本次建立且仍与候选摘要一致的part；异常后不删不明内容。
         if part.is_file() and not part.is_symlink() and file_sha256(part)==manifest['sha256']:part.unlink()
