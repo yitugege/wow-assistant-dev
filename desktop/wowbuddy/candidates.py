@@ -12,6 +12,7 @@ import re
 from typing import Mapping, Sequence
 
 from .auto_target import parse_auto_target
+from .focus_sort import health_order
 from .expressions import EvaluationContext, UnsupportedSemantics, _double, _int, _string, _trim, evaluate
 
 
@@ -190,24 +191,7 @@ def _reorder_focus_health(candidates: list[Candidate], context: EvaluationContex
         if len(health_values) != len(indexes):
             continue  # 原生任何一条不满足就保留整组原序。
         priorities = [candidates[index].priority for index in indexes]
-        offsets = list(range(len(indexes)))
-        if len(offsets) <= 32:
-            # 原031570的小组插入排序有首项快速路径。NaN不满足全序，
-            # Python TimSort与原比较顺序会产生不同的治疗目标顺序。
-            for position in range(1, len(offsets)):
-                item = offsets[position]
-                if health_values[offsets[0]] > health_values[item]:
-                    offsets[1:position + 1] = offsets[:position]
-                    offsets[0] = item
-                else:
-                    slot = position
-                    while slot > 0 and health_values[offsets[slot - 1]] > health_values[item]:
-                        offsets[slot] = offsets[slot - 1]
-                        slot -= 1
-                    offsets[slot] = item
-        else:
-            # 有限值保持稳定升序；>32项且含NaN的原归并路径尚待单独对照。
-            offsets.sort(key=health_values.__getitem__)
+        offsets = health_order(health_values)
         ordered = [candidates[indexes[offset]] for offset in offsets]
         for index, priority, candidate in zip(indexes, priorities, ordered):
             candidates[index] = replace(candidate, priority=priority)
