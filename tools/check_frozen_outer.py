@@ -15,7 +15,8 @@ from wowbuddy.launcher import ChildLaunch,WindowsLauncherProcess,release_directo
 from wowbuddy.release_identity import read_release_identity,CACHE_NAMESPACE,file_sha256
 
 
-def run(target,root,environment,*,arguments=None,on_running=None,expected_exit=0):
+def run(target,root,environment,*,arguments=None,on_running=None,expected_exit=0,timeout_seconds=45):
+    if not 1<=timeout_seconds<=180:raise ValueError('测试Job期限必须在1至180秒之间')
     backend=WindowsLauncherProcess();k=backend.k
     class Accounting(C.Structure):
         _fields_=[('user',C.c_int64),('kernel',C.c_int64),('period_user',C.c_int64),('period_kernel',C.c_int64),
@@ -35,7 +36,7 @@ def run(target,root,environment,*,arguments=None,on_running=None,expected_exit=0
         process=backend.create(request)
         if not k.AssignProcessToJobObject(job,process.process):raise C.WinError(C.get_last_error())
         if k.ResumeThread(process.thread)==0xffffffff:raise C.WinError(C.get_last_error())
-        deadline=time.monotonic()+45;early=False
+        deadline=time.monotonic()+timeout_seconds;early=False
         while True:
             active,total=count()
             if k.WaitForSingleObject(process.process,0)==0 and active:early=True
