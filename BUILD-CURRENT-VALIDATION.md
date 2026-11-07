@@ -1,5 +1,17 @@
 # 当前源码本地构建验收
 
+## 最新本地构建：源码43a7350
+
+已纳入治疗候选NaN处理及小组/大组排序修复。完整独立测试集231项通过，用时139.141秒，进程退出码0；日志.local/regression-healing-current.log。该数量不包括另行运行的tests/core套件，不能混称所有测试目录已递归覆盖。
+
+目录业务EXE位于dist/desktop/WowBuddyDev/WowBuddyDev.exe，SHA256为`1add58374521beb00d457b7c72204c3f5b090ab619fc88d01c0fc83221ecc232`。单文件位于dist/outer/WowBuddyDev-Outer.exe，SHA256为`f2f66682686290b4f5cb74608b6b67962faff485ac6a17c18763194586895b03`。构建前后源码摘要一致，冻结窗口及系统后端自检通过。
+
+六种规则输入的冻结自检通过，每次1进程最终0。单文件首次解包、缓存复用、缺失ready恢复通过，每次3进程最终0。两次正常GUI启动后只关闭测试Job内窗口，设置保留及旧缓存清理通过，每次3进程最终0；关闭PID分别18928、26980。
+
+隔离目录为.local/frozen-selftest-nnhh197e、.local/frozen-outer-中文 & 08hl8zzu、.local/outer-gui-orioab4w。报告为dist/healing-frozen-selftest.json、dist/healing-frozen-outer.json、dist/healing-outer-gui.json；日志为.local/build-healing-{desktop,outer}.log及.local/check-healing-{selftest,outer,gui}.log。
+
+版本字段仍为0.2.7，这是本地构建，与公开0.2.7附件不同；没有覆盖公开附件。未执行本地包在线升级、逐项冻结排序对照或真实游戏验收。
+
 ## 最新公开构建：0.2.7（44b9004）
 
 源码及六个发布附件已公开：https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.7 。业务EXE SHA256为`3922a921ea13fd53de8ace505fad577e46cc2ea6525d5bd38af0fe0369e4afca`，单文件EXE为`e9c50f46cf3473510cd593d2fae91398fff4329d14cb36c9c6f05d625f15d008`。构建前后源码摘要一致。

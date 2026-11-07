@@ -4,8 +4,9 @@
 
 ## 当前可核对身份
 
-- 当前公开版本v0.2.7，发布源码44b9004。其后的治疗候选NaN排序源码修复尚未重新打包，见FOCUS-SORT-PARITY.md。
-- 业务EXE：3922a921ea13fd53de8ace505fad577e46cc2ea6525d5bd38af0fe0369e4afca；单文件外层：e9c50f46cf3473510cd593d2fae91398fff4329d14cb36c9c6f05d625f15d008。
+- 当前公开版本v0.2.7，发布源码44b9004。其后的治疗候选NaN排序修复已在43a7350本地构建，尚未公开发布，见FOCUS-SORT-PARITY.md。
+- 公开业务EXE：3922a921ea13fd53de8ace505fad577e46cc2ea6525d5bd38af0fe0369e4afca；单文件外层：e9c50f46cf3473510cd593d2fae91398fff4329d14cb36c9c6f05d625f15d008。
+- 最新本地业务EXE：1add58374521beb00d457b7c72204c3f5b090ab619fc88d01c0fc83221ecc232；外层：f2f66682686290b4f5cb74608b6b67962faff485ac6a17c18763194586895b03。231项独立测试及本地冻结自检/GUI验证通过。
 - 六个公开附件已上传，客户端实际下载模块读取公开包、校验摘要和启动自检通过。见RELEASE-0.2.7.md及BUILD-CURRENT-VALIDATION.md。
 - 本轮未安装游戏插件或进行真实游戏验收；0.2.6到0.2.7的CLI及GUI自动更新交接通过，手动更新按钮未测。完整还原仍未完成。
 
