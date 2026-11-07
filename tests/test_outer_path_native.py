@@ -51,8 +51,14 @@ class OuterPathNativeTests(unittest.TestCase):
         cls.kernel = k
         cls.cpu_flags = C.c_uint32.from_address(address+0x21094)
         C.memmove(address+start, code, len(code))
-        # 私有映像RVA21094保留为0，明确只测基线CPU分支；不启动原CRT或SDK。
+        # AVX2尾块掩码来自原映像；能力位由各测试显式选择。
+        mask = pe.get_data(0x16bb0, 0x40)
+        if len(mask) != 0x40:
+            raise ValueError('AVX2掩码表不完整')
+        C.memmove(address+0x16bb0, mask, len(mask))
         previous = C.c_ulong()
+        if not k.VirtualProtect(address+0x16000, 0x1000, 2, C.byref(previous)):
+            raise C.WinError(C.get_last_error())
         if not k.VirtualProtect(address+0x4000, 0x1000, 0x20, C.byref(previous)):
             raise C.WinError(C.get_last_error())
         cls.native = C.CFUNCTYPE(C.c_void_p, C.c_void_p, C.c_void_p, C.c_uint16)(address+start)
@@ -79,6 +85,38 @@ class OuterPathNativeTests(unittest.TestCase):
         self.cpu_flags.value = 4
         self.check_reverse_search_and_module_directory()
 
+    def require_avx2(self):
+        k = self.kernel
+        k.IsProcessorFeaturePresent.argtypes = [C.c_ulong]
+        k.IsProcessorFeaturePresent.restype = C.c_int
+        if not all(k.IsProcessorFeaturePresent(feature) for feature in (39, 40)):
+            self.skipTest('Windows未报告AVX/AVX2可用')
+        # 独立CPUID探针，保存非易失RBX，将EAX/EBX/ECX/EDX写入调用者数组。
+        code = bytes.fromhex('53 49 89 d0 89 c8 31 c9 0f a2 41 89 00 41 89 58 04 41 89 48 08 41 89 50 0c 5b c3')
+        address = k.VirtualAlloc(None, 0x1000, 0x3000, 4)
+        if not address:
+            raise C.WinError(C.get_last_error())
+        try:
+            C.memmove(address, code, len(code))
+            previous = C.c_ulong()
+            if not k.VirtualProtect(address, 0x1000, 0x20, C.byref(previous)):
+                raise C.WinError(C.get_last_error())
+            probe = C.CFUNCTYPE(None, C.c_uint32, C.POINTER(C.c_uint32))(address)
+            registers = (C.c_uint32 * 4)()
+            probe(0x80000000, registers)
+            if registers[0] < 0x80000001:
+                self.skipTest('无扩展CPUID特性叶')
+            probe(0x80000001, registers)
+            if not registers[2] & (1 << 5):
+                self.skipTest('CPU未报告LZCNT支持')
+        finally:
+            k.VirtualFree(address, 0, 0x8000)
+
+    def test_avx2_reverse_search_and_module_directory(self):
+        self.require_avx2()
+        self.cpu_flags.value = 0x24
+        self.check_reverse_search_and_module_directory()
+
     def check_reverse_search_and_module_directory(self):
         values = ['', '.', 'x.exe', '/', '\\', 'C:\\x.exe', 'C:/x.exe',
                   '\\\\server\\share\\x.exe', 'C:\\中文/😀\\x.exe',
@@ -103,6 +141,14 @@ class OuterPathNativeTests(unittest.TestCase):
 
     def test_sse2_guarded_buffer_boundaries(self):
         self.cpu_flags.value = 4
+        self.check_guarded_buffer_boundaries()
+
+    def test_avx2_guarded_buffer_boundaries(self):
+        self.require_avx2()
+        self.cpu_flags.value = 0x24
+        self.check_guarded_buffer_boundaries()
+
+    def check_guarded_buffer_boundaries(self):
         k = self.kernel
         address = k.VirtualAlloc(None, 0x3000, 0x3000, 4)
         if not address:

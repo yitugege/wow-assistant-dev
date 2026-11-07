@@ -6,7 +6,7 @@ import json
 from audit_outer_reachable_functions import ROOT, EVIDENCE
 
 REVIEWED = {
-    0x4ad0: 'UTF16反向单字符搜索；已读完整正文和机器码，基线及SSE2原码对照通过，AVX2未动态验证',
+    0x4ad0: 'UTF16反向单字符搜索；已读完整正文和机器码，基线/SSE2/AVX2所列原码对照及向量保护页边界通过；不代表完整路径获取或任意输入等价',
     0xab84: '检查主模块PE头与CLR目录，按模式执行退出回调；根据进程策略进入终止路径；未动态验证',
     0xac68: '按标志先尝试TerminateProcess，随后CLR退出入口与ExitProcess；未执行原终止函数',
     0xac98: '仅在mscoree.dll已加载时取得CorExitProcess并间接调用，随后释放模块引用',
