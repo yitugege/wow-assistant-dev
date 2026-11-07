@@ -15,7 +15,7 @@ from wowbuddy.launcher import ChildLaunch,WindowsLauncherProcess,release_directo
 from wowbuddy.release_identity import read_release_identity,CACHE_NAMESPACE,file_sha256
 
 
-def run(target,root,environment,*,arguments=None,on_running=None):
+def run(target,root,environment,*,arguments=None,on_running=None,expected_exit=0):
     backend=WindowsLauncherProcess();k=backend.k
     class Accounting(C.Structure):
         _fields_=[('user',C.c_int64),('kernel',C.c_int64),('period_user',C.c_int64),('period_kernel',C.c_int64),
@@ -45,7 +45,7 @@ def run(target,root,environment,*,arguments=None,on_running=None):
             time.sleep(0.025)
         code=W.DWORD()
         if not k.GetExitCodeProcess(process.process,C.byref(code)):raise C.WinError(C.get_last_error())
-        assert code.value==0,code.value
+        assert code.value==expected_exit,(code.value,expected_exit)
         return {'outer_exit':code.value,'processes_observed':total,'job_active_at_end':active,'outer_exited_before_job_empty':early}
     finally:
         k.TerminateJobObject(job,1)
