@@ -183,13 +183,32 @@ def _reorder_focus_health(candidates: list[Candidate], context: EvaluationContex
             health = context.number("health_" + unit)
             if health is None:
                 health = context.number(unit + "_health_pct")
-            if health is None or not 0 <= health < no_value:
+            # 0495c7/0495e1使用ja/jae；unordered(NaN)不会拒绝整组。
+            if health is None or health < 0 or health >= no_value:
                 break
             health_values.append(health)
         if len(health_values) != len(indexes):
             continue  # 原生任何一条不满足就保留整组原序。
         priorities = [candidates[index].priority for index in indexes]
-        ordered = [candidates[indexes[offset]] for offset in sorted(range(len(indexes)), key=health_values.__getitem__)]
+        offsets = list(range(len(indexes)))
+        if len(offsets) <= 32:
+            # 原031570的小组插入排序有首项快速路径。NaN不满足全序，
+            # Python TimSort与原比较顺序会产生不同的治疗目标顺序。
+            for position in range(1, len(offsets)):
+                item = offsets[position]
+                if health_values[offsets[0]] > health_values[item]:
+                    offsets[1:position + 1] = offsets[:position]
+                    offsets[0] = item
+                else:
+                    slot = position
+                    while slot > 0 and health_values[offsets[slot - 1]] > health_values[item]:
+                        offsets[slot] = offsets[slot - 1]
+                        slot -= 1
+                    offsets[slot] = item
+        else:
+            # 有限值保持稳定升序；>32项且含NaN的原归并路径尚待单独对照。
+            offsets.sort(key=health_values.__getitem__)
+        ordered = [candidates[indexes[offset]] for offset in offsets]
         for index, priority, candidate in zip(indexes, priorities, ordered):
             candidates[index] = replace(candidate, priority=priority)
 
