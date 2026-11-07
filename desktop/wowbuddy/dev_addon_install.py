@@ -132,5 +132,13 @@ def _install_package(package, addons, backup_root, record_path):
             if backup is not None:
                 backup.rename(previous)
             raise
+    # 原安装成功后才清理；清理失败不回滚已经完成的新插件安装。
+    from .dev_addon_cleanup import cleanup_addons_directory
+    from .addon_actions import CleanupResult
+    try:
+        cleanup=cleanup_addons_directory(addons,installed_name)
+    except (OSError,ValueError) as error:
+        cleanup=CleanupResult(notes=f'旧插件清理未完成：{error}')
     return {'target': str(target), 'backup': str(backup) if backup else None,
-            'files': len(payload), 'addon_directory':installed_name,'game_verified': False}
+            'files': len(payload), 'addon_directory':installed_name,'game_verified': False,
+            'cleanup_deleted':cleanup.deleted,'cleanup_notes':cleanup.notes}

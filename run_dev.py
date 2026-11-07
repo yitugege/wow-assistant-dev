@@ -411,6 +411,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                     raise ValueError('下载期间监控已启动；请停止监控后重新安装')
                 result = install_package(release['package'],self._download_client)
                 status = f"GitHub {release['tag']} 已安装：{result['target']}；请重新加载游戏插件列表。"
+                status += f"\n清理旧目录：{result['cleanup_deleted']} 个；{result['cleanup_notes']}"
             except Exception as error:
                 status = 'GitHub插件更新失败：' + str(error)
             self.ui.addon_status.setText(status)
@@ -438,6 +439,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 status = f"已安装{result['files']}个文件：{result['target']}"
                 if result['backup']:
                     status += f"；旧开发版备份：{result['backup']}"
+                status += f"\n清理旧目录：{result['cleanup_deleted']} 个；{result['cleanup_notes']}"
                 self.ui.addon_status.setText(status)
                 self.logger.append(status)
             except (OSError, ValueError, KeyError, BadZipFile) as error:

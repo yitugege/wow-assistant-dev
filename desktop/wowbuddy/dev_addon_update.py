@@ -42,6 +42,8 @@ def apply_release(release, pending, *, games, installed_name, on_log=None, insta
     def reinstall(path):
         try:
             result=install_addons_directory(release['package'],path)
+            if on_log:
+                on_log(f"清理旧目录：{result['cleanup_deleted']} 个；{result['cleanup_notes']}")
             return ReinstallResult(True,result['addon_directory'])
         except Exception as error:
             return ReinstallResult(False,error=str(error))

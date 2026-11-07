@@ -36,6 +36,7 @@ def run_development_install(arguments,package,data_dir,*,detect=None):
             result=install_addons_directory(package,target)
             detail=f"已写入 {result['files']} 个文件 → {result['target']}\n"
             if result['backup']:detail+=f"旧开发插件备份：{result['backup']}\n"
+            detail+=f"清理旧目录：{result['cleanup_deleted']} 个\n{result['cleanup_notes']}\n"
             return CliAddonInstallOutcome(True,result['addon_directory'],detail)
         except (OSError,ValueError,KeyError,BadZipFile) as error:
             return CliAddonInstallOutcome(False,error=str(error))

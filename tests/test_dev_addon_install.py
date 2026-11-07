@@ -13,6 +13,42 @@ from wowbuddy.dev_addon_install import install_package, client_directory
 from tools.build_addon import build
 
 class InstallTests(unittest.TestCase):
+    def legacy(self):
+        from wowbuddy.addon_install import SIGNATURE_FILES
+        directory=self.client/'Interface/AddOns/legacy'
+        directory.mkdir(parents=True,exist_ok=True)
+        for name in SIGNATURE_FILES:(directory/name).write_text('-- legacy','utf8')
+        return directory
+
+    def test_success_cleans_legacy_only_after_record_is_committed(self):
+        legacy=self.legacy()
+        from wowbuddy.dev_addon_cleanup import cleanup_addons_directory
+        def check(addons,keep):
+            record=json.loads((self.client/'.wowbuddy-install.json').read_text('utf8'))
+            self.assertEqual(record['addon_directory'],keep)
+            self.assertTrue((self.target/'Core.lua').is_file())
+            return cleanup_addons_directory(addons,keep)
+        with patch('wowbuddy.dev_addon_cleanup.cleanup_addons_directory',side_effect=check):
+            result=install_package(self.package,self.client)
+        self.assertEqual(result['cleanup_deleted'],1)
+        self.assertFalse(legacy.exists());self.assertTrue(self.target.is_dir())
+
+    def test_install_failure_never_runs_cleanup(self):
+        legacy=self.legacy()
+        self.package.write_bytes(b'bad')
+        with patch('wowbuddy.dev_addon_cleanup.cleanup_addons_directory') as cleanup:
+            with self.assertRaises(ValueError):install_package(self.package,self.client)
+            cleanup.assert_not_called()
+        self.assertTrue(legacy.exists())
+
+    def test_cleanup_failure_does_not_reclassify_successful_install(self):
+        legacy=self.legacy()
+        with patch('wowbuddy.addon_actions._remove_plugin_directory',side_effect=OSError('locked')):
+            result=install_package(self.package,self.client)
+        self.assertEqual(result['cleanup_deleted'],0)
+        self.assertIn('删除失败',result['cleanup_notes'])
+        self.assertTrue(legacy.exists());self.assertTrue((self.target/'Core.lua').exists())
+
     def setUp(self):
         self.temporary=TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
