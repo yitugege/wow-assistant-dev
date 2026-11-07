@@ -5,10 +5,14 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
+from dataclasses import asdict
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.windows_keys import CtypesWin32Backend,KeySender
+from wowbuddy.dispatch import ActionDispatcher
+from wowbuddy.candidates import Candidate
 
 
 def check():
@@ -53,8 +57,13 @@ def check():
         if not hwnd:raise C.WinError(C.get_last_error())
         assert not user.IsWindowVisible(hwnd)
         class Backend(CtypesWin32Backend):
+            def __init__(self):
+                super().__init__()
+                self.SetForegroundWindow=self.reject_activation
             def SendInput(self,events):
                 raise AssertionError('后台路径不应产生全局输入')
+            def reject_activation(self,handle):
+                raise AssertionError('后台路径不应激活窗口')
         backend=Backend()
         sender=KeySender(backend,hwnd=int(hwnd),force_background=True,
                          allow_activation=False,interval_ms=60000,hold_ms=30)
@@ -75,12 +84,57 @@ def check():
         assert received==expected,{'received':received,'expected':expected}
         assert sender.success_count==len(cases)
         assert sender.failure_count==1
+        basic_received=list(received)
+        dispatch_cases=[]
+        class DispatchBackend(Backend):
+            def __init__(self):
+                super().__init__();self.sleeps=[];self.posts=[]
+                self.native_sleep=self.Sleep;self.native_post=self.PostMessageW
+                self.Sleep=self.record_sleep;self.PostMessageW=self.record_post
+            def record_sleep(self,milliseconds):
+                self.sleeps.append(milliseconds)
+                return self.native_sleep(milliseconds)
+            def record_post(self,handle,message,key,value):
+                self.posts.append((message,key,time.perf_counter()))
+                return self.native_post(handle,message,key,value)
+        for label,pre,known in [('focus_then_heal','CTRL-F2',False),
+                                ('confirmed_focus','CTRL-F2',True),('invalid_pre_still_heals','INVALID-KEY',False)]:
+            received.clear();dispatch_backend=DispatchBackend()
+            channel=KeySender(dispatch_backend,hwnd=int(hwnd),hold_ms=100,
+                              force_background=True,allow_activation=False,interval_ms=30)
+            dispatcher=ActionDispatcher(channel)
+            candidate=Candidate(action='heal_fixture',key='F1',pre_key=pre,pre_action='focus_party1',
+                                hold_ms=30000,expect_off=('renew',))
+            result=dispatcher.dispatch(candidate,hwnd=int(hwnd),fields={'player_succeeded_generation':'8'},
+                                       focus_known=known,observed_focus=1 if known else -1)
+            while user.PeekMessageW(C.byref(message),hwnd,0,0,1):user.DispatchMessageW(C.byref(message))
+            wanted=([[0x100,17,1],[0x100,113,1],[0x101,113,0xc0000001],[0x101,17,0xc0000001]]
+                    if label=='focus_then_heal' else [])+[[0x100,112,1],[0x101,112,0xc0000001]]
+            assert result.success and received==wanted,(label,asdict(result),received)
+            assert dispatcher.state.success_count==1
+            assert dispatcher.state.auras.sent_generation['heal_fixture']==8
+            assert dispatcher.state.local_gcd_until_ms==result.sent_at_ms+1500
+            assert channel.force_background and not channel.allow_activation
+            wait_gap=None
+            if label=='focus_then_heal':
+                assert result.pre_success and not result.pre_skipped
+                assert dispatch_backend.sleeps==[10,40,10]
+                wait_gap=(dispatch_backend.posts[4][2]-dispatch_backend.posts[3][2])*1000
+                assert wait_gap>=35,wait_gap
+                assert channel.success_count==2
+            else:
+                assert dispatch_backend.sleeps==[10]
+                assert result.pre_skipped==known
+                assert result.pre_success is (None if known else False)
+                assert channel.success_count==1
+            dispatch_cases.append({'case':label,'result':asdict(result),'received':list(received),
+                'sleep_requests_ms':dispatch_backend.sleeps,'pre_up_to_main_down_ms':wait_gap})
         user.DestroyWindow(hwnd);hwnd=None
         assert not sender.send('TAB',bypass_interval=True)
         assert sender.failure_count==2
         return {'passed':True,'backend':'CtypesWin32Backend',
                 'receiver':'本进程 HWND_MESSAGE 隐藏窗口',
-                'cases':[key for key,_ in cases],'received':received,
+                'cases':[key for key,_ in cases],'received':basic_received,'dispatch_cases':dispatch_cases,
                 'success_count':sender.success_count,'failure_count':sender.failure_count,
                 'channel':sender.channel,'global_input_used':False,
                 'game_acceptance_verified':False}
