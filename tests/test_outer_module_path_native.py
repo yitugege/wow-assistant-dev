@@ -53,6 +53,21 @@ class ModulePathNativeTests(unittest.TestCase):
                         raise ValueError('原向量函数未知调用')
                 elif not 0x1300 <= target < 0x148c:
                     raise ValueError('原向量函数跳转越界')
+        string_blocks=[]
+        for start,end in [(0x11a0,0x120a),(0x1210,0x12fa)]:
+            block=pe.get_data(start,end-start)
+            decoded=list(decoder.disasm(block,pe.OPTIONAL_HEADER.ImageBase+start))
+            if sum(i.size for i in decoded)!=len(block):
+                raise ValueError('字符串依赖解码不完整')
+            for i in decoded:
+                if i.mnemonic=='call' or i.group(capstone.CS_GRP_JUMP):
+                    op=i.operands[0]
+                    if op.type!=capstone.x86.X86_OP_IMM:
+                        raise ValueError('字符串依赖意外间接控制流')
+                    target=op.imm-pe.OPTIONAL_HEADER.ImageBase
+                    if not (start<=target<end or target in {0x11a0,0x4d50,0x12660,0x1a90,0x1ba0,0xaa44}):
+                        raise ValueError('字符串依赖未知控制流')
+            string_blocks.append((start,block))
         k = C.WinDLL('kernel32',use_last_error=True)
         k.VirtualAlloc.argtypes=[C.c_void_p,C.c_size_t,C.c_ulong,C.c_ulong]
         k.VirtualAlloc.restype=C.c_void_p
@@ -91,10 +106,6 @@ class ModulePathNativeTests(unittest.TestCase):
                 count+=1
             return count
 
-        def construct(output,pointer,units):
-            cls.state['text']=C.string_at(pointer,units*2).decode('utf-16le','surrogatepass')
-            return output
-
         def release(pointer):
             cls.state['freed'].append(pointer)
 
@@ -108,11 +119,11 @@ class ModulePathNativeTests(unittest.TestCase):
 
         C.memmove(address+0x25a0,code,len(code))
         C.memmove(address+0x1300,resize_code,len(resize_code))
+        for start,block in string_blocks:
+            C.memmove(address+start,block,len(block))
         C.memmove(address+0x14478,pe.get_data(0x14478,4),4)
         install(0x4d50,C.c_void_p,[C.c_size_t],allocate)
-        install(0x11a0,C.c_void_p,[C.c_size_t],allocate)
         install(0xad90,C.c_size_t,[C.c_void_p],length)
-        install(0x1210,C.c_void_p,[C.c_void_p,C.c_void_p,C.c_size_t],construct)
         install(0x4d8c,None,[C.c_void_p],release)
         target=install(0x8000,C.c_uint32,[C.c_void_p,C.c_void_p,C.c_uint32],module)
         C.c_uint64.from_address(address+0x14078).value=target
@@ -120,7 +131,7 @@ class ModulePathNativeTests(unittest.TestCase):
         for rva,name in [(0x12d00,'memset'),(0x12660,'memcpy')]:
             target=C.cast(getattr(cls.ucrt,name),C.c_void_p).value
             C.memmove(address+rva,b'\x48\xb8'+target.to_bytes(8,'little')+b'\xff\xe0',12)
-        for rva in (0xaa44,0x1a90,0x1bc0):
+        for rva in (0xaa44,0x1a90,0x1ba0,0x1bc0):
             C.memmove(address+rva,b'\xcc',1)
         for page in (0x1000,0x2000,0x4000,0x8000,0xa000,0x12000):
             old=C.c_ulong()
@@ -128,7 +139,15 @@ class ModulePathNativeTests(unittest.TestCase):
                 raise C.WinError(C.get_last_error())
         cls.native=C.CFUNCTYPE(C.c_void_p,C.c_void_p)(address+0x25a0)
         cls.resize=C.CFUNCTYPE(None,C.c_void_p,C.c_size_t)(address+0x1300)
+        cls.construct=C.CFUNCTYPE(None,C.c_void_p,C.c_void_p,C.c_size_t)(address+0x1210)
+        cls.aligned_allocate=C.CFUNCTYPE(C.c_void_p,C.c_size_t)(address+0x11a0)
         cls.allocate=staticmethod(allocate)
+
+    def decode_string(self,output):
+        fields=(C.c_uint64*4).from_buffer(output)
+        pointer=C.addressof(output) if fields[3]<=7 else fields[0]
+        self.assertEqual(C.c_uint16.from_address(pointer+fields[2]*2).value,0)
+        return C.string_at(pointer,fields[2]*2).decode('utf-16le','surrogatepass')
 
     def test_growth_failure_utf16_and_return_count(self):
         cases=[[(0,'')],[(1,'.')],[(10,'C:\\中文\\😀.exe')],[(1022,'x'*1022)],
@@ -150,7 +169,7 @@ class ModulePathNativeTests(unittest.TestCase):
                         expected_calls.append(capacity)
                         returned,text=pending.pop(0)
                         return WideBufferResult(returned,text)
-                self.assertEqual(self.state['text'],read_module_path(API()))
+                self.assertEqual(self.decode_string(output),read_module_path(API()))
                 self.assertEqual(self.state['calls'],expected_calls)
                 self.assertEqual(len(self.state['freed']),len(expected_calls))
                 self.assertEqual(self.state['answers'],[])
@@ -160,8 +179,8 @@ class ModulePathNativeTests(unittest.TestCase):
         self.state.update(buffers=[],calls=[],freed=[],live=True)
         output=C.create_string_buffer(32)
         self.assertEqual(self.native(output),C.addressof(output))
-        self.assertEqual(self.state['text'],read_module_path(WindowsHostAPI()))
-        self.assertTrue(self.state['text'].lower().endswith('.exe'))
+        self.assertEqual(self.decode_string(output),read_module_path(WindowsHostAPI()))
+        self.assertTrue(self.decode_string(output).lower().endswith('.exe'))
         self.assertEqual(self.state['calls'],[1024])
         self.assertEqual(len(self.state['freed']),1)
 
@@ -192,6 +211,28 @@ class ModulePathNativeTests(unittest.TestCase):
                     self.assertEqual(len(self.state['freed'])-previous_frees,int(growing and bool(old_start)))
                     if not growing:self.assertEqual(vector[0],old_start)
                     elif old_start:self.assertNotEqual(vector[0],old_start)
+
+    def test_original_string_layout_and_large_alignment(self):
+        self.state.clear()
+        self.state.update(buffers=[],freed=[])
+        for units in (0,1,7,8,9,15,16,31,2040,2048,4096):
+            with self.subTest(units=units):
+                raw=b''.join((i%65536).to_bytes(2,'little') for i in range(units))
+                source=C.create_string_buffer(raw)
+                output=C.create_string_buffer(b'\xa5'*32,32)
+                self.construct(output,source,units)
+                fields=(C.c_uint64*4).from_buffer(output)
+                self.assertEqual(fields[2],units)
+                self.assertEqual(fields[3],7 if units<8 else units|7)
+                self.assertEqual(self.decode_string(output).encode('utf-16le','surrogatepass'),raw)
+                if (fields[3]+1)*2>=4096:
+                    self.assertEqual(fields[0]%32,0)
+                    original=C.c_uint64.from_address(fields[0]-8).value
+                    self.assertLessEqual(fields[0]-original-8,31)
+        for size in (0,1,4095,4096,4097,8192):
+            pointer=self.aligned_allocate(size)
+            if not size:self.assertIsNone(pointer)
+            elif size>=4096:self.assertEqual(pointer%32,0)
 
 
 if __name__=='__main__':unittest.main()
