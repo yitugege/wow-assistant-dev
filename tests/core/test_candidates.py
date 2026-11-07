@@ -65,6 +65,23 @@ class CandidateEngineTests(unittest.TestCase):
         self.assertEqual([(c.action, c.priority) for c in output], [("a", 1000), ("c", 990)])
         self.assertEqual([c.priority for c in engine.generate(1, {}, selected_rules=[{}, rule("a")])], [1000])
 
+    def test_missing_and_disabled_actions_skip_expression_but_consume_priority(self):
+        engine = CandidateEngine(document([action('a'), action('disabled',key=''), action('b')]))
+        # 未提供未知可用性策略，若执行avail将抛UnsupportedSemantics。
+        rules = [rule('missing',['avail',999]), rule('a'),
+                 rule('disabled',['avail',999]), rule('b')]
+        output = engine.generate(1, {}, selected_rules=rules)
+        self.assertEqual([(c.action,c.priority) for c in output],[('a',995),('b',985)])
+        output = engine.generate(1, {}, selected_rules=rules,key_overrides={'a':''})
+        self.assertEqual([(c.action,c.priority) for c in output],[('b',985)])
+
+    def test_missing_pre_action_keeps_main_candidate_and_pre_identity(self):
+        engine = CandidateEngine(document([action('heal')]))
+        output = engine.generate(1, {}, selected_rules=[rule('heal',pre='focus_party2')])
+        self.assertEqual(len(output),1)
+        self.assertEqual((output[0].action,output[0].pre_action,output[0].pre_key),
+                         ('heal','focus_party2',''))
+
     def test_key_overrides_empty_disables_and_duplicate_actions_last_wins(self):
         engine = CandidateEngine(document([action(key="old"), action(key="new")]))
         self.assertEqual(engine.generate(1, {}, selected_rules=[rule()])[0].key, "new")
