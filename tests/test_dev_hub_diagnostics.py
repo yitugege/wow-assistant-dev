@@ -53,8 +53,11 @@ class HubDiagnosticTests(unittest.TestCase):
             self.assertFalse(report['report_written'])
             self.assertTrue(report['report_error'])
 
-    def test_network_flag_and_conflicting_modes_rejected(self):
+    def test_native_hub_ignores_gui_modes_without_starting_game(self):
         for extra in ('--watch','--dump-ui'):
-            result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--hub-selftest',extra],
-                cwd=ROOT,capture_output=True,timeout=10)
-            self.assertEqual(result.returncode,2)
+            with TemporaryDirectory() as directory:
+                result=subprocess.run([sys.executable,str(ROOT/'run_dev.py'),'--hub-selftest',extra,'--data-dir',directory],
+                    cwd=ROOT,capture_output=True,timeout=10)
+                self.assertEqual(result.returncode,0,result.stderr)
+                report=json.loads((Path(directory)/'hub-selftest.json').read_text('utf8'))
+                self.assertFalse(report['network_used'])

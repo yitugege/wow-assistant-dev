@@ -6,11 +6,11 @@
 |---|---|---|
 |正常GUI启动|默认即时和5秒监视已恢复，`--auto`额外单次启动仍保留|真实游戏启动/关闭/重连对照；默认修正尚未发布|
 |`--selftest`|源码已恢复原引擎自检，默认程序目录追加_selftest.txt及原返回码；GUI构建自检改为--desktop-selftest|尚未发布；原Qt QHash专精遍历顺序仍未复现|
-|命令组合|迁入native_cli保留原固定优先级和未知参数忽略；独立argparse仍拒绝部分组合及未知项|不能以单命令通过宣称组合兼容|
+|命令组合|五个已接早期命令现直接按native_cli的固定优先级分派，忽略无关附加项|GUI模式仍采用独立参数校验；crash-test尚未执行接入|
 |`--dump-ui`|已接专精、天赋、循环方案和显示全部诊断|独立版离屏并自动退出，与原GUI命令生命周期不同|
 |`--install-addon`|已接独立ZIP安装、备份、安装后清理和结果报告|原包格式/安装身份策略与用户指定独立发布方案有明确差异|
 |`--check-update`、`--update-now`|自有GitHub检查及目录交接已实现，公开旧版升级验证通过|目录版替换与原单文件更新不同，跨启动结果恢复尚未发布|
-|`--hub-selftest`、`--hub-fetch`|已接离线和自有GitHub诊断|独立严格参数检查、额外JSON和失败退出码差异见HUB-ONLINE.md|
+|`--hub-selftest`、`--hub-fetch`|已接离线和自有GitHub诊断，按原优先级忽略无关GUI参数|额外JSON、种子缓存和失败退出码差异仍保留|
 |`--crash-test` / `--crash-test=throw`|原优先级在native_cli中保留，独立入口未接|崩溃诊断实际入口及外层处理未整体接回|
 |`--no-stealth`|原窗口身份模块存在；独立产品窗口仍固定可读名称|原窗口身份和工具窗样式未作为独立入口行为接入|
 
@@ -25,3 +25,13 @@
 构建脚本已经改用 `--desktop-selftest` 验证GUI，Win32后端构造仍用 `--selftest-backends`。原生文本默认写程序目录，显式 `--data-dir` 是独立扩展。资源使用本工程assets；专精顺序确定为本地规则键顺序，不声称等同原Qt QHash进程顺序。未知参数和crash-test优先级等仍未全部恢复，不能据本次改动宣布CLI整体一致。
 
 恢复自检入口后104项独立回归通过。冻结EXE构建使用新GUI诊断参数通过；另实际运行冻结EXE的--selftest，确认引擎报告追加和返回0，结果记录于dist/frozen-native-selftest.json。此前一项旧GUI冲突测试不再符合恢复后的优先级，已改用--desktop-selftest验证GUI冲突，并以新测试覆盖--selftest优先于更新和GUI参数。真实游戏和用户正在运行的助手未操作。
+
+## 早期命令分派补充
+
+独立main现在先调用 `parse_native_cli`，按 `selftest > install-addon > check-update > update-now > hub-selftest` 的固定顺序选择一个命令，与参数排列顺序无关；仅该命令被执行。未参与该命令的GUI参数、未知项以及不完整的无关GUI参数不会交给argparse报错。安装目录继续使用原 `--install-addon-dir=路径` 格式、重复项取最后值，不再把空格取值自动转换为原参数。`--data-dir 路径` / `--data-dir=路径` 是明确保留的独立扩展。
+
+测试覆盖五命令全部325种非空排列组合，核对只有原优先命令执行、没有GUI调用；另验证原始安装参数完整传递、hub-fetch只给循环库分支、大小写敏感以及crash-test不会误落到安装分支。真实子进程的hub-selftest与--watch/--dump-ui组合已改为验证正常离线报告，而非沿用旧冲突错误预期。
+
+崩溃命令仍由原解析器识别但执行尚未接入；GUI路径仍使用独立参数检查，原Qt自身参数处理也未穷尽复现。不要将这一阶段称为整个命令行一比一完成。
+
+本轮108项独立回归及冻结EXE构建自检通过。实际冻结EXE同时携带hub-selftest、check-update、selftest、watch和未知附加项，结果只生成引擎自检报告，未生成低优先命令报告；验证记录为dist/frozen-native-dispatch.json。未操作真实游戏或用户正在运行的助手。

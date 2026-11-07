@@ -153,7 +153,7 @@ EXE自动更新开关现已恢复：开启且距上次成功检查超过6小时�
 
 `WowBuddyDev.exe --hub-selftest --data-dir D:/wowbuddy-hub-diagnostics` 检查该目录hub/rotations.json，首次缺少缓存时与独立GUI一样初始化内置快照，已有文件不覆盖。生成原格式_hub.txt和补充hub-selftest.json。命令不创建窗口、游戏后端或网络客户端，显式隔离旧WOWBUDDY_HOME和服务器环境变量；--hub-fetch未接入，传入会报参数错误。
 
-原文本中的PASS仅表示存在方案；补充JSON将cache_check_passed与profiles_with_missing_actions分开。当前41套方案能加载，18套有缺失动作；二者可以同时成立，不代表全部方案可用。缓存损坏、空库或原文本报告写入失败返回非零码，已有缓存保留不修复。独立版只允许--hub-selftest与--data-dir配合；首次种子快照、额外JSON、报告失败返回码和严格参数检查均为明确的独立入口差异。
+原文本中的PASS仅表示存在方案；补充JSON将cache_check_passed与profiles_with_missing_actions分开。当前41套方案能加载，18套有缺失动作；二者可以同时成立，不代表全部方案可用。缓存损坏、空库或原文本报告写入失败返回非零码，已有缓存保留不修复。当前源码按原早期命令优先级处理--hub-selftest，并忽略无关GUI参数；首次种子快照、额外JSON和报告失败返回码仍是明确的独立入口差异。
 
 ## 引擎离线自检
 

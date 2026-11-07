@@ -579,6 +579,9 @@ def main():
         if not FROZEN:return 2
         from wowbuddy.dev_update_handoff import run_handoff
         return run_handoff(sys.argv[2])
+    from wowbuddy.dev_native_commands import dispatch_native_command
+    native_result=dispatch_native_command(sys.argv,assets=ROOT/'assets',application=APP_ROOT,packages=PACKAGE_DIR,frozen=FROZEN)
+    if native_result is not None:return native_result
     parser=argparse.ArgumentParser(description='WowBuddyDev源码开发入口',allow_abbrev=False)
     parser.add_argument('--selftest', action='store_true',help='运行原引擎自检并追加_selftest.txt，不启动GUI')
     parser.add_argument('--desktop-selftest',action='store_true',help='独立离屏GUI构建自检')
@@ -604,49 +607,17 @@ def main():
     parser.add_argument('--rotation',default='',help='界面诊断的专精ID|子分类|方案名')
     parser.add_argument('--toggle-showall',action='store_true',help='同时导出显示全部切换诊断')
     args=parser.parse_args()
-    if args.selftest:
-        from wowbuddy.dev_native_selftest import run_native_selftest
-        explicit_data=any(a=='--data-dir' or a.startswith('--data-dir=') for a in sys.argv[1:])
-        output=args.data_dir if explicit_data else APP_ROOT
-        output.mkdir(parents=True,exist_ok=True)
-        return run_native_selftest(ROOT/'assets',output,sys.argv)
-    if args.check_update or args.update_now:
-        if (args.desktop_selftest or args.selftest_backends or args.install_addon or args.install_addon_dir is not None
-                or args.dump_ui or args.hub_selftest or args.hub_fetch or args.engine_selftest or args.auto or args.watch
-                or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall
-                or (args.check_update and args.update_now)):
-            parser.error('--check-update / --update-now 各自仅与 --data-dir 配合使用')
-        if args.update_now:
-            from wowbuddy.dev_cli_update import run_update_now
-            return run_update_now(args.data_dir,APP_ROOT,sys.argv[1:],frozen=FROZEN)
-        from wowbuddy.github_client import run_check_command
-        return run_check_command(args.data_dir)
     if args.hub_fetch and not args.hub_selftest:
         parser.error('--hub-fetch 需要 --hub-selftest')
-    if args.install_addon:
-        if (args.desktop_selftest or args.selftest_backends or args.dump_ui or args.auto or args.watch
-                or args.hub_selftest or args.engine_selftest or args.spec or args.talent is not None
-                or args.rotations or args.rotation or args.toggle_showall):
-            parser.error('--install-addon 仅与 --install-addon-dir 和 --data-dir 配合使用')
-        from wowbuddy.dev_cli_install import run_development_install
-        package=PACKAGE_DIR/'WowBuddyDev-addon.zip'
-        if not package.exists():package=PACKAGE_DIR/'WowBuddyDev-dev.zip'
-        arguments=['WowBuddyDev','--install-addon']
-        if args.install_addon_dir is not None:
-            arguments.append('--install-addon-dir='+args.install_addon_dir)
-        return run_development_install(arguments,package,args.data_dir)
     if args.install_addon_dir is not None:
         parser.error('--install-addon-dir 需要 --install-addon')
-    if args.hub_selftest or args.engine_selftest:
+    if args.engine_selftest:
         if (args.dump_ui or args.desktop_selftest or args.selftest_backends or args.auto or args.watch
                 or args.spec or args.talent is not None or args.rotations or args.rotation or args.toggle_showall
                 or (args.hub_selftest and args.engine_selftest)):
             parser.error('--hub-selftest / --engine-selftest 各自仅与 --data-dir 配合使用')
-        if args.engine_selftest:
-            from wowbuddy.dev_engine_diagnostics import run_engine_diagnostics
-            return run_engine_diagnostics(ROOT/'assets',args.data_dir)
-        from wowbuddy.dev_hub_diagnostics import run_hub_diagnostics
-        return run_hub_diagnostics(ROOT/'assets',args.data_dir,fetch_online=args.hub_fetch)
+        from wowbuddy.dev_engine_diagnostics import run_engine_diagnostics
+        return run_engine_diagnostics(ROOT/'assets',args.data_dir)
     if args.dump_ui:
         if args.desktop_selftest or args.selftest_backends or args.auto or args.watch:
             parser.error('--dump-ui 不能与自检或自动监控参数同时使用')
