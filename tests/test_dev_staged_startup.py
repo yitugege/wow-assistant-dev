@@ -87,6 +87,38 @@ class StagedStartupTests(unittest.TestCase):
                 startup.close()
                 if startup.stages.main_window:startup.stages.main_window.close()
 
+    def test_optional_readable_resources_do_not_block_old_protocol(self):
+        import itertools
+        sys.path.insert(0,str(ROOT/'tests/core'))
+        from test_old_protocol import render_old
+        # 原05e240丢弃两个可选加载器结果；真实资源解析后仍应使用旧协议。
+        for contract_state,rules_state in itertools.product(('missing','invalid','valid'),repeat=2):
+            with self.subTest(contract=contract_state,rules=rules_state), TemporaryDirectory() as directory:
+                root=Path(directory)
+                for name in ('contract.json','rules.json'):
+                    (root/name).write_bytes((ROOT/'assets'/name).read_bytes())
+                for name,state in (('contract_readable.json',contract_state),('rules_readable.json',rules_state)):
+                    if state!='missing':
+                        (root/name).write_bytes((ROOT/'assets'/name).read_bytes() if state=='valid' else b'{broken')
+                backend=Windows();backend.handle=123
+                received=[]
+                def construct(assets):
+                    received.append(assets)
+                    return QWidget()
+                startup=create_staged_startup(self.app,root,backend,construct,lambda _:None,auto_start=True)
+                try:
+                    startup.start();startup.timer.stop()
+                    for _ in range(8):startup.stages.tick()
+                    self.assertEqual(startup.stages.phase,'shown')
+                    self.assertEqual(len(received),1)
+                    self.assertEqual([timer.interval() for timer in startup.delays],[600])
+                    frame=received[0].pipeline().prepare(render_old(1482,{})[0]).frame
+                    self.assertTrue(frame.ok,frame.status)
+                    self.assertEqual((frame.protocol,frame.spec_id),('old','1482'))
+                finally:
+                    startup.close()
+                    if startup.stages.main_window:startup.stages.main_window.close()
+
     def test_cancel_stops_pending_warning_without_main(self):
         startup=create_staged_startup(self.app,ROOT/'assets',Windows(),lambda _:self.fail('取消后创建主窗口'),lambda _:None)
         try:
