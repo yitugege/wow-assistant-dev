@@ -93,6 +93,21 @@ class BindingLifecycleTests(unittest.TestCase):
         self.assertEqual(len(g.queue),0)
         self.assertTrue(g.WowBuddyDev.CheckMacroBindings()[0])
 
+    def test_queued_refresh_entering_combat_defers_all_protected_writes(self):
+        g=self.lua.globals();g.WowBuddyDev.RefreshMacroBindings()
+        self.lua.execute("WowBuddyDev.ACTION_TO_KEY={second='F2'};event('UPDATE_BINDINGS')")
+        self.assertEqual(len(g.queue),1)
+        before=g.writes
+        self.lua.execute('combat=true;flush()')
+        self.assertEqual(g.writes,before)
+        self.assertIsNotNone(g.bound.F1)
+        self.assertIsNone(g.bound.F2)
+        self.assertTrue(g.frames.WowBuddyDevOverrideOwner.pendingMacroBindings)
+        self.lua.execute("combat=false;event('PLAYER_REGEN_ENABLED')")
+        self.assertIsNone(g.bound.F1)
+        self.assertIsNotNone(g.bound.F2)
+        self.assertTrue(g.WowBuddyDev.CheckMacroBindings()[0])
+
     def test_rejected_action_reports_failure_while_other_actions_survive(self):
         g=self.lua.globals()
         self.lua.execute("rejected='F1';WowBuddyDev.ACTION_TO_KEY={first='F1',second='F2'};WowBuddyDev.RefreshMacroBindings()")

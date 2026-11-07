@@ -1,0 +1,9 @@
+# 受保护操作调用补验
+
+用户此前截图提示插件调用仅暴雪UI允许的功能，具体被拦函数尚无游戏记录。本轮没有改变安全执行机制，也没有把改名当作弹窗修复。
+
+阅读Core安全按钮创建及刷新路径：CreateSecureButton与ApplyMacros_Internal先检查InCombatLockdown，战斗中仅记录pendingMacroBindings；脱战事件再刷新。已有测试覆盖直接战斗刷新和九职业241动作。本轮新增UPDATE_BINDINGS已排队、定时回调执行前进入战斗的场景：实际Core片段执行后保护写入计数不增加、旧F1保留、新F2尚未绑定；脱战事件后旧键清除、新键绑定，检查通过。9项生命周期测试通过，日志.local/security-queued-binding.log。
+
+另外实际生成随机命名ZIP，从压缩包找出未改变内容的SecurityDiagnostics模块，确认TOC引用该随机文件且保留诊断SavedVariables。以发布目录随机名执行模块，固定旧名事件被忽略，归属于实际随机名的FORBIDDEN事件记录函数SetAttribute和该名称。2项诊断测试通过，日志.local/security-random-package.log。
+
+边界：保护写入由显式Lua替身在战斗中拒绝，事件由测试主动调用；并未模拟WoW污点传播、硬件事件许可或实际宏执行。静态路径和上述测试未复现用户弹窗，根因仍未确定，需实际客户端拦截事件及调用栈。本次仅测试，无插件产品修改或重新发布。
