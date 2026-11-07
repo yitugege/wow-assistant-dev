@@ -543,7 +543,12 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
 
     if staged and not selftest and dump_ui is None:
         from wowbuddy.dev_staged_startup import create_staged_startup
-        startup=create_staged_startup(app,ROOT/'assets',windows,construct_window,startup_record,auto_start=auto_start,after_main=after_main)
+        def cleanup_after_authorization():
+            if FROZEN:
+                from wowbuddy.cache_cleanup_host import cleanup_source_release
+                cleanup_source_release(Path(sys.executable),os.environ.get('WOWBUDDY_EXE',''),record=startup_record)
+        startup=create_staged_startup(app,ROOT/'assets',windows,construct_window,startup_record,
+            auto_start=auto_start,after_main=after_main,after_authorization=cleanup_after_authorization)
         try:
             startup.start()
             return app.exec()
