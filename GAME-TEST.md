@@ -2,6 +2,12 @@
 
 ## 自动选怪离线联测补充
 
+进一步完整模块验证：`tests/test_pixelbar_full_module.py`加载未经截取的ActionKeyCheck.lua、AutoTarget.lua和PixelBar.lua，以及Core.lua实际29项COMMON_PIXEL_DATA定义，执行RebuildPixelBars和注册的OnUpdate回调。测试宿主`tests/pixelbar_host.lua`显式提供游戏API/纹理替身，未知方法不自动补默认值；专精字段列表为空、无治疗曲线与叠层，不能扩大为全职业渲染覆盖。
+
+该连续场景实际观察到ttd纹理4×4、左上位置(0,76)，定位块为(4,128)的洋红纹理；取自纹理赋色记录的整数等于回调值并能按桌面协议解析。目标存活→死亡→点击回执→键盘焦点占用→脱战→取包函数异常的状态、序号和回执均核对通过。整体隐藏调用实际ToggleAllOverlayVisibility，关闭总开关并隐藏容器；之后帧回调仍执行，但主开关颜色为红。报告日志`.local/pixelbar-full-module.log`。
+
+测试开发时遇到的GetFrameLevel、StaticPopupDialogs、字体/阴影、单位施法查询、距离和音效API缺失均为宿主替身缺口，未修改插件业务。完整模块测试不等于完整运行环境：C_Timer回调没有执行，UI尺寸/可见性只是记录，GPU混色、受保护值、战斗锁定和游戏宏均未验证。旧版“仅片段执行”的限制仍适用于前一轮401760包测试，本次新增的是上述公共字段场景。
+
 后续纹理编码验证：新增`tests/test_auto_target_pixel_encoding.py`从PixelBar.lua提取并执行未改写的取包pcall段、rgbFromInt、普通number上色段及setTextureColor；纹理对象为记录颜色的替身。81按键×5状态×32回执×31序号，共401,760种有效整数包全部经过Lua取包、RGB赋色及桌面parse_auto_target解码，无字段丢失。取包函数缺失、抛错、返回字符串/布尔/表五种情况均写零，桌面不识别为选怪包。执行Core.lua实际COMMON_PIXEL_DATA定义，确认ttd为第20格（零基19）、number类型，与旧契约一致。
 
 此轮7项选怪测试通过，日志`.local/auto-target-texture.log`；未修改产品代码或发布包。只执行所列真实源码片段，不能称为完整PixelBar每帧回调、RebuildPixelBars布局执行或真实GPU纹理渲染验证；可读协议的完整插件绘制也未由此覆盖。精确整数包验证不包括任意非有限或小数输入。
