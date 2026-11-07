@@ -7,6 +7,81 @@ from wowbuddy.hub_sync import HubSynchronizer,Response
 from wowbuddy.dev_hub_online import BackupHubFiles,HUB_URL
 
 class OnlineHubTests(unittest.TestCase):
+    def test_real_http_updates_selected_rules_and_preserves_them_on_errors(self):
+        from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
+        from threading import Thread
+        import time
+        from PySide6.QtTest import QTest
+        from test_dev_tray import TrayTests
+        from wowbuddy.qt_network import QtHubClient
+        from wowbuddy.hub_sync import cache_path
+        sys.path.insert(0,str(ROOT/'tests/core'))
+        from test_old_protocol import render_old
+        responses=[];requests=[]
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self,*args):pass
+            def do_GET(self):
+                requests.append((self.path,self.headers.get('User-Agent')))
+                status,payload=responses.pop(0)
+                self.send_response(status)
+                self.send_header('Content-Type','application/json')
+                self.send_header('Content-Length',str(len(payload)))
+                self.end_headers();self.wfile.write(payload)
+        server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+        thread=Thread(target=server.serve_forever,daemon=True);thread.start()
+        url=f'http://127.0.0.1:{server.server_port}/rotations.json'
+        def exercise(window):
+            frame=window.controller.prepare(render_old(1482)[0]).frame
+            self.assertTrue(frame.ok)
+            window._render_selection();window.ui.rotation_combo.setCurrentIndex(1)
+            selected=window.controller.selection.active_profile
+            self.assertIsNotNone(selected)
+            original=(ROOT/'assets/rotations.json').read_bytes()
+            changed=json.loads(original)
+            entry=next(p for p in changed['rotations']
+                       if f"{p['specId']}|{p.get('subKey','')}|{p['profileName']}"==selected.key)
+            entry['rules'][0]['reason']='真实HTTP更新规则'
+            payload=json.dumps(changed,ensure_ascii=False).encode('utf8')
+            empty=json.dumps({'format':'wowbuddy-rotation-hub','rotations':[]}).encode()
+            responses.extend([(200,payload),(200,b'{bad'),(503,b'unavailable'),(200,empty)])
+            window.hub.files=BackupHubFiles()
+            window.hub_client=QtHubClient(window.hub,window)
+            cache=Path(cache_path(window.hub.environment,window.hub.application_dir,window.hub.files))
+            old=cache.read_bytes()
+            def fetch():
+                window.hub_client.refresh(url)
+                deadline=time.monotonic()+5
+                while window.hub_client.pending and time.monotonic()<deadline:QTest.qWait(10)
+                self.assertFalse(window.hub_client.pending,'本机Qt请求超时')
+            fetch()
+            self.assertEqual(window.ui.rotation_combo.currentData(),selected.key)
+            active=window.controller.selection.active_profile
+            self.assertEqual(active.rules[0].reason,'真实HTTP更新规则')
+            self.assertEqual(cache.read_bytes(),payload)
+            self.assertEqual((cache.parent/'backups'/(hashlib.sha256(old).hexdigest()+'.json')).read_bytes(),old)
+            fetch()
+            self.assertEqual(window.controller.selection.active_profile,active)
+            self.assertEqual(cache.read_bytes(),payload)
+            self.assertIn('不是合法 JSON',window.hub.status)
+            fetch()
+            self.assertEqual(window.controller.selection.active_profile,active)
+            self.assertEqual(cache.read_bytes(),payload)
+            self.assertIn('继续用本地快照',window.hub.status)
+            fetch()
+            # 原0999f0/080f60：没有可选项时保留已经应用的规则。
+            self.assertEqual(window.controller.selection.active_profile,active)
+            self.assertTrue(window.controller.selection.preserve_active)
+            self.assertEqual(window.controller.hub.profiles,())
+            self.assertEqual(window.ui.rotation_combo.currentData(),'')
+            self.assertEqual(cache.read_bytes(),empty)
+            self.assertFalse(window.hub_client._request_managers)
+        try:
+            TrayTests.run_window(self,False,exercise)
+            self.assertEqual(requests,[('/rotations.json','WOWBattleAssistant')]*4)
+        finally:
+            server.shutdown();server.server_close();thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+
     def test_replace_backup_failure_and_offline_retention(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);cache=root/'hub/rotations.json';cache.parent.mkdir()
