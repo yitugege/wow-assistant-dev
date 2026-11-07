@@ -4,14 +4,14 @@
 
 ## 当前交付与源码身份
 
-最新本地构建9fa2008已包含交接等待后清单复核及此前目录创建前缀UTF16等修复，保存于dist/local-9fa2008/WowBuddyDev-Outer.exe。48项相关源码回归及本轮冻结清单变化、启动、缓存检查通过，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
+最新本地构建04cd6be已包含近期DirectCast五个子模块、Core职业宏查询修复及此前交接清单/目录创建修复，保存于dist/local-04cd6be/WowBuddyDev-Outer.exe。实际启动、后端初始化、规则输入、缓存及设置保留检查通过，内嵌插件83文件与当前源码逐字节一致，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
 
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码新增DirectCast的Slots、Guards、Actions、Keeper、Movement子模块，并修复读取Core真实职业宏登记的缺口，与9fa2008构建内嵌插件已不同，尚未重新构建EXE；最新本地插件包见dist/directcast-keeper。历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前产品源码与04cd6be构建相符；最新本地随机插件包见dist/directcast-keeper。旧9fa2008 EXE不含DirectCast子模块；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
 
 |对象|当前状态|证据|
 |---|---|---|
 |公开下载|v0.2.8，发布提交11b9837；六个附件，公开下载及启动验证通过|RELEASE-0.2.8.md、BUILD-CURRENT-VALIDATION.md|
-|最新本地EXE|源码9fa2008，版本字段仍为0.2.8；包含交接等待后清单复核，未覆盖公开附件|dist/local-9fa2008/WowBuddyDev-Outer.exe；SHA256 8808d010d9f1c37ac2c2c6b4d159cb6badeb64f147fb735612a9afcfc688e6a6|
+|最新本地EXE|源码04cd6be，版本字段仍为0.2.8；含近期DirectCast子模块，未覆盖公开附件|dist/local-04cd6be/WowBuddyDev-Outer.exe；SHA256 91d3fe6976c4a607dbe8854106c49c5a2efe7b5b8d16c88b6cc829434eff9ef6|
 |最近源码对照|原路径、目录创建、文件写入、字符搜索机器码对照；目录创建发现并修复四个场景差异|OUTER-MKDIR-NATIVE-PARITY.md、OUTER-MODULE-PATH-NATIVE-PARITY.md、OUTER-WRITE-NATIVE-PARITY.md|
 
 ## 明确未完成项

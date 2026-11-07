@@ -1,14 +1,17 @@
 # 当前源码本地构建验收
 
-最新插件源码已接入DirectCastKeeper.lua的自Buff续挂调度；本地随机包为dist/directcast-keeper/WowBuddyDev-addon.zip。46项相关源码测试通过，但未重建EXE、未公开发布、未游戏安装或施法验收。
+## 最新本地构建：04cd6be，未公开发布
 
-最新源码又加入DirectCastMovement.lua的移动意图及停步补发计时器；本地插件包更新到dist/directcast-movement/WowBuddyDev-addon.zip，未发布或安装，EXE仍未重建。下列旧插件包保留供版本对照。
+已将DirectCast的Slots、Guards、Actions、Keeper、Movement五个子模块及Core职业宏查询修复打入目录版和单文件。版本字段仍为0.2.8，公开0.2.8附件未覆盖。前轮46项相关源码测试通过，本轮没有改动产品源码，执行实际打包程序验证。
 
-当前差异：c943f73之后源码新增DirectCastSlots.lua、DirectCastGuards.lua、DirectCastActions.lua及TOC入口，现有9fa2008 EXE和公开0.2.8均不包含这些子模块。下述源码摘要一致结论只适用于对应构建当时的源码，当前插件改动尚未重新构建EXE。本地随机插件包dist/directcast-actions/WowBuddyDev-addon.zip已生成，未安装或公开发布，身份见DIRECT-CAST-ORIGINAL-FINDINGS.md。
+- 单文件：`dist/local-04cd6be/WowBuddyDev-Outer.exe`，SHA256 `91d3fe6976c4a607dbe8854106c49c5a2efe7b5b8d16c88b6cc829434eff9ef6`。
+- 目录版：`dist/desktop/WowBuddyDev/WowBuddyDev.exe`，SHA256 `46a70ebd5f544b56ea7b308cd3060cc5aaf17a42f935f233a1b842aca9156bcc`，须保留相邻依赖。
+- 内嵌固定目录插件包SHA256 `6c429fc8735347c7d9e947ffc4272e8b6a5d501b6b3c556e3fa39b528a8ae0f2`。83个文件与源码及目录版_internal/addon逐字节相同，64个Lua文件编译通过。
+- GUI和系统后端初始化、6种规则输入、264个外层成员与身份资源、3种缓存场景、2次自有窗口启动/退出及设置保留检查通过。每个测试Job最终进程数均为0。
 
-随后又修复Core私有宏登记与DirectCast的接入缺口，最新本地插件包为dist/directcast-integration/WowBuddyDev-addon.zip。此前directcast-actions包不含此修复；EXE仍未重建。
+报告及构建清单已归档到`dist/local-04cd6be/`，另有`dist/addon-embedded-04cd6be.json`；日志位于`.local/build-04cd6be-{desktop,outer}.log`和`.local/check-04cd6be-{selftest,outer,gui}.log`。原directcast-actions/integration/movement/keeper本地包保留供对照，当前随机插件包仍为keeper版本。未安装游戏插件、未公开发布、未执行真实游戏施法；按钮自动挂钩等缺项继续见COMPLETENESS.md。
 
-## 最新本地构建：9fa2008，未公开发布
+## 历史本地构建：9fa2008，未公开发布
 
 已将父进程退出后再次核对清单摘要的修复打入目录版和单文件；公开0.2.8未覆盖，版本字段仍为0.2.8。产品源码摘要与两份构建清单一致。此前48项相关源码回归通过，本轮执行实际打包程序检查，没有重跑全部源码回归。
 
