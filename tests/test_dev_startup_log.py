@@ -18,10 +18,14 @@ class StartupLogTests(unittest.TestCase):
 
     def test_crash_selection_precedes_other_commands_without_in_process_crash(self):
         for argument,target in (('--crash-test','trigger_null_write'),('--crash-test=throw','trigger_cpp_runtime_error')):
-            with tempfile.TemporaryDirectory() as tmp,patch('wowbuddy.crash_diagnostics.'+target,side_effect=RuntimeError('test sentinel')) as trigger:
+            with tempfile.TemporaryDirectory() as tmp,patch('wowbuddy.crash_diagnostics.'+target,side_effect=RuntimeError('test sentinel')) as trigger,patch('wowbuddy.dev_startup.prepare_crash_runtime') as runtime:
                 with patch('builtins.print') as main:
                     code=run_logged(main,application=Path(tmp),arguments=['app','--selftest',argument,'--data-dir',tmp])
                     self.assertEqual(code,1);trigger.assert_called_once();main.assert_not_called()
+                    runtime.assert_called_once()
+                    text=(Path(tmp)/'startup.log').read_text('utf8')
+                    expected='--crash-test：即将制造一次空指针解引用' if target=='trigger_null_write' else '--crash-test=throw：即将抛出未捕获异常'
+                    self.assertIn(expected,text)
 
     def test_order_normal_exit_and_append(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -17,10 +17,22 @@ def log_path():return _active.path if _active is not None else ''
 
 
 def qt_ready():
-    record(QT_READY)
     if _active is not None:
         try:_active.qt_environment()
         except Exception as error:record('Qt环境信息读取失败：'+str(error))
+    record(QT_READY)
+
+
+def prepare_crash_runtime(arguments):
+    """原075960在检查崩溃参数之前已构造QApplication并设置全局样式。"""
+    from PySide6.QtWidgets import QApplication
+    from .ui_layout import NATIVE_STYLESHEET
+    record('main() 进入，准备构造 QApplication')
+    app=QApplication.instance() or QApplication([arguments[0]])
+    qt_ready()
+    app.setStyleSheet(NATIVE_STYLESHEET)
+    record(STYLE_READY)
+    return app
 
 
 def run_logged(main,*,application,arguments):
@@ -50,7 +62,9 @@ def run_logged(main,*,application,arguments):
             command=parse_native_cli(arguments).command
             if command in ('crash_null','crash_throw'):
                 from .crash_diagnostics import trigger_null_write,trigger_cpp_runtime_error
-                record('执行显式崩溃诊断：'+command)
+                crash_app=prepare_crash_runtime(arguments)
+                record('--crash-test：即将制造一次空指针解引用' if command=='crash_null'
+                       else '--crash-test=throw：即将抛出未捕获异常')
                 (trigger_null_write if command=='crash_null' else trigger_cpp_runtime_error)()
                 raise RuntimeError('崩溃诊断意外返回')
             code=main()
