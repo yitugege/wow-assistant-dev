@@ -10,7 +10,10 @@ from audit_outer_reachable_functions import ROOT, EVIDENCE
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--termination', action='store_true', help='导出终止路径三处ABI存疑函数的完整展开范围')
+    parser.add_argument('--string-search', action='store_true', help='导出字符集合搜索四个函数的完整展开范围')
     args = parser.parse_args()
+    if args.termination and args.string_search:
+        parser.error('两个导出模式不能同时指定')
     source = EVIDENCE / 'original-27ac1127fc/probe/outer-memory-analysis.exe'
     payload = source.read_bytes()
     digest = hashlib.sha256(payload).hexdigest()
@@ -26,6 +29,9 @@ def main():
     if args.termination:
         ends = {e.struct.BeginAddress:e.struct.EndAddress for e in pe.DIRECTORY_ENTRY_EXCEPTION}
         spans = [(start, ends[start]) for start in (0xfc50, 0x11e04, 0x1210c)]
+    if args.string_search:
+        ends = {e.struct.BeginAddress:e.struct.EndAddress for e in pe.DIRECTORY_ENTRY_EXCEPTION}
+        spans = [(start, ends[start]) for start in (0x4430, 0x4610, 0x4830, 0x4970)]
     for start, end in spans:
         code = pe.get_data(start, end-start)
         rows = []
@@ -40,7 +46,18 @@ def main():
             raise ValueError(f'指令解码未覆盖整个请求范围: {start:#x}')
         ranges.append({'start': hex(start), 'end_exclusive': hex(end),
                        'sha256': hashlib.sha256(code).hexdigest(), 'instructions': rows})
+    if args.string_search:
+        by_address = {int(row['rva'],16): row for item in ranges for row in item['instructions']}
+        for compare, branch, opcode in [(0x4690,0x4696,'jb'), (0x46df,0x46e5,'jae'),
+                                         (0x474c,0x4752,'jae'), (0x476f,0x4775,'jae'),
+                                         (0x47ce,0x47d4,'jae'), (0x47ef,0x47f5,'jae')]:
+            if by_address[compare]['mnemonic'] != 'pcmpestri' or by_address[branch]['mnemonic'] != opcode:
+                raise ValueError('字符集合比较的条件跳转与已审读机器码不符')
+        if by_address[0x485e]['operands'] != 'ymm2, ymm0':
+            raise ValueError('集合位图返回寄存器与原机器码不符')
     output = ROOT / ('dist/outer-termination-machine.json' if args.termination else 'dist/outer-initializer-machine.json')
+    if args.string_search:
+        output = ROOT / 'dist/outer-string-search-machine.json'
     output.write_text(json.dumps({'source': str(source), 'source_sha256': digest,
                                  'ranges': ranges, 'limitations': ['仅指定机器码区间；没有执行回调或验证独立版动态等价']},
                                 ensure_ascii=False, indent=2), encoding='utf8')

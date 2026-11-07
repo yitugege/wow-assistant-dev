@@ -6,6 +6,10 @@ import json
 from audit_outer_reachable_functions import ROOT, EVIDENCE
 
 REVIEWED = {
+    0x4430: 'UTF16字符集合反向搜索分派；标量256项表或集合内循环，按CPU/长度及字符范围选择SSE4.2或AVX2；未动态执行',
+    0x4610: 'SSE4.2 pcmpestri集合查找；六处CF分支经机器码确认，伪代码地址比较及删除块警告不能照搬；未动态执行',
+    0x4830: 'AVX2每批8个UTF16单位反向筛选，尾块复制并屏蔽无效位，LZCNT取最后匹配；4970返回YMM0位图',
+    0x4970: '构造256位字符集合位图，小集合直接累加，大集合经256字节临时表；YMM0返回而非伪代码uint64返回',
     0x4ad0: 'UTF16反向单字符搜索；已读完整正文和机器码，基线/SSE2/AVX2所列原码对照及向量保护页边界通过；不代表完整路径获取或任意输入等价',
     0xab84: '检查主模块PE头与CLR目录，按模式执行退出回调；根据进程策略进入终止路径；未动态验证',
     0xac68: '按标志先尝试TerminateProcess，随后CLR退出入口与ExitProcess；未执行原终止函数',
