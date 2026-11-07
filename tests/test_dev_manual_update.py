@@ -51,6 +51,47 @@ class ManualUpdateTests(unittest.TestCase):
                         self.assertIn('保持运行', window.ui.update_status.text())
         TrayTests.run_window(self, False, exercise)
 
+    def test_cancel_write_failure_recovers_only_after_helper_exit(self):
+        from test_dev_tray import TrayTests
+        from PySide6.QtCore import QTimer
+        from unittest.mock import Mock
+        def exercise(window):
+            with TemporaryDirectory() as temporary:
+                for initially_running in (False, True):
+                    with self.subTest(running=initially_running):
+                        job=Path(temporary)/('running.json' if initially_running else 'stopped.json')
+                        process=Mock()
+                        process.poll.return_value=None if initially_running else 1
+                        process.terminate.side_effect=PermissionError('cannot terminate helper')
+                        window._handoff={'job':str(job),'process':process}
+                        window._client_update_staged={'staged':'verified-stage'}
+                        window._handoff_timer=QTimer(window)
+                        window._handoff_timer.start(100)
+                        window._handoff_deadline=0
+                        window.ui.update_check_button.setEnabled(False)
+                        window.ui.update_apply_button.setEnabled(False)
+                        with patch('wowbuddy.dev_update_handoff.write_json',side_effect=OSError('read only')), \
+                             patch.object(window,'_quit_development_app') as quit_app:
+                            window._poll_update_handoff()
+                            if initially_running:
+                                self.assertIsNotNone(window._handoff)
+                                self.assertTrue(window._handoff_timer.isActive())
+                                self.assertFalse(window.ui.update_apply_button.isEnabled())
+                                job.with_suffix('.ready.json').write_text('{}','utf8')
+                                window._poll_update_handoff()
+                                quit_app.assert_not_called()
+                                process.terminate.assert_called_once()
+                                process.poll.return_value=1
+                                window._poll_update_handoff()
+                            quit_app.assert_not_called()
+                        self.assertIsNone(window._handoff)
+                        self.assertFalse(window._handoff_timer.isActive())
+                        self.assertTrue(window.ui.update_check_button.isEnabled())
+                        self.assertTrue(window.ui.update_apply_button.isEnabled())
+                        self.assertEqual(window.ui.update_apply_button.text(),'重试安装')
+                        self.assertIn('无法保存取消记录',window.ui.update_status.text())
+        TrayTests.run_window(self,False,exercise)
+
     def test_buttons_download_verify_then_retry_failed_handoff(self):
         from test_dev_tray import TrayTests
         with TemporaryDirectory() as temporary:

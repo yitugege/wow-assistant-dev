@@ -231,7 +231,10 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
 
         def _poll_update_handoff(self):
             import time
+            import subprocess
             job=Path(self._handoff['job'])
+            if self._handoff.get('cancel_failed') and self._handoff['process'].poll() is None:
+                return
             if job.with_suffix('.ready.json').is_file() and self._handoff['process'].poll() is None:
                 self._handoff_timer.stop()
                 self._quit_development_app()
@@ -239,8 +242,20 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             if self._handoff['process'].poll() is not None or time.monotonic()>self._handoff_deadline:
                 self._handoff_timer.stop()
                 from wowbuddy.dev_update_handoff import cancel_handoff
-                cancel_handoff(self._handoff,'界面等待交接失败')
+                cancel_error=''
+                try:
+                    cancel_handoff(self._handoff,'界面等待交接失败')
+                except (OSError,subprocess.TimeoutExpired) as error:
+                    cancel_error=' 无法保存取消记录：'+str(error)
+                    if self._handoff['process'].poll() is None:
+                        self._handoff['cancel_failed']=True
+                        detail='更新交接取消失败，仍在等待交接进程退出；当前助手保持运行。'+cancel_error
+                        self.ui.update_status.setText(detail)
+                        self.logger.append(detail)
+                        self._handoff_timer.start(1000)
+                        return
                 detail='交接进程未就绪，当前助手保持运行；未替换程序。'
+                detail+=cancel_error
                 result=job.with_suffix('.result.json')
                 if result.is_file():
                     try:
