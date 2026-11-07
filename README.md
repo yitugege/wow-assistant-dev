@@ -27,15 +27,15 @@
 
 独立开发插件不复制或加载DirectCast.lua。SecurityDiagnostics.lua监听ADDON_ACTION_BLOCKED和ADDON_ACTION_FORBIDDEN，仅记录本插件的事件、函数名、战斗状态和诊断栈，最多保留50条到WowBuddyDevDiagnostics。记录器的栈不保证等于最初污染源，需要结合事件函数名继续排查。
 
-尚未在游戏中验证弹窗已消失，不宣称已修复所有受保护操作。独立入口已停用旧更新来源和原安装流程；自有远程发布流程尚未配置。
+尚未在游戏中验证弹窗已消失，不宣称已修复所有受保护操作。独立入口已停用旧更新来源和原安装流程；自有插件更新使用本仓库 GitHub Releases。
 
 ## 独立插件打包
 
-在项目根目录运行 `python tools/build_addon.py`，生成 `dist/WowBuddyDev-dev.zip` 及成员SHA256清单。仅使用此工程内的插件源码，不调用旧EXE或原安装器；ZIP内固定为WowBuddyDev目录，不再生成随机插件目录名。
+在项目根目录运行 `python tools/build_addon.py`，生成 `dist/WowBuddyDev-dev.zip` 及成员SHA256清单。仅使用此工程内的插件源码，不调用旧EXE或原安装器；此离线包内固定为WowBuddyDev目录；公开发布请使用 build_github_release.py 生成随机命名包。
 
 构建检查TOC引用、目录边界、禁止文件和每个ZIP成员的摘要。诊断和打包测试使用 `python -m unittest discover -s tests -v`，其中诊断测试需要Lua 5.1执行器 `lupa`。静态Lua语法检查及隔离测试不能证明WoW安全执行环境中的调用已通过。
 
-手动游戏测试：关闭游戏后，将ZIP内WowBuddyDev文件夹放入目标客户端的Interface/AddOns。进入游戏前禁用旧助手插件，只启用WowBuddyDev。若仍弹出受保护操作提示，正常退出游戏或重载UI后，在对应账号WTF目录的SavedVariables/WowBuddyDev.lua中查看WowBuddyDevDiagnostics。此工程没有自动执行这些安装或启停操作。
+手动游戏测试：关闭游戏后，将ZIP内WowBuddyDev文件夹放入目标客户端的Interface/AddOns。进入游戏前禁用旧助手插件，只启用WowBuddyDev。若仍弹出受保护操作提示，正常退出游戏或重载UI后，在对应账号WTF目录的SavedVariables/WowBuddyDev.lua中查看WowBuddyDevDiagnostics。客户端提供安装按钮；游戏插件启停仍需在游戏内确认。
 
 ## 独立桌面源码入口
 
@@ -45,7 +45,7 @@
 
 依赖安装：`python -m pip install -r requirements.txt`；运行Lua诊断测试时使用 `requirements-dev.txt`。版本来自本机已验证环境，不代表其他Python版本和系统均已测试。
 
-当前入口不创建程序更新、插件更新或循环库网络客户端，不调用旧插件随机安装/清理入口；安装按钮使用本工程的本地插件包，另有按钮打开包目录。首次启动将内置离线循环库复制到数据目录的hub/rotations.json，已有文件不覆盖。当前快照可解析为41套方案，来自此前本地测试目录，保留原方案内容和作者信息；数量不代表各方案均经过游戏验证。自有远程循环库来源尚未配置。
+当前入口不创建程序更新、插件更新或循环库网络客户端，不调用旧插件随机安装/清理入口；离线安装按钮使用本工程的本地插件包，“GitHub下载更新”按钮下载本仓库最新配套发布包。首次启动将内置离线循环库复制到数据目录的hub/rotations.json，已有文件不覆盖。当前快照可解析为41套方案，来自此前本地测试目录，保留原方案内容和作者信息；数量不代表各方案均经过游戏验证。自有远程循环库来源尚未配置。
 
 `python run_dev.py --selftest` 使用禁止抓屏和发键的后端进行离屏GUI构造/关闭检查，输出dist/desktop-selftest.json。请以此入口启动开发工程，不直接运行迁入的legacy desktop模块，以免混入旧默认配置。
 
