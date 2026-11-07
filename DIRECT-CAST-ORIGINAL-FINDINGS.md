@@ -76,3 +76,13 @@ b7bc7e3后加入DirectCastActions.lua，在Guards之后加载。恢复EnsureSlot
 新测试执行完整插件并登录：九职业逐个非空宏键与实际按钮文本一致；法师class_NUMPAD5及小写命令进入UseAction替身；成功重绑后使用新宏及新目标，失败重绑后返回no-macro而不使用已清除登记；战斗中延迟重绑仍读取当前已登记宏。36项DirectCast/加载/打包测试通过（6.782秒），17项既有绑定/宏注册/控制设置/职业重载回归通过（0.158秒）。仍无真实游戏施法证据。
 
 当前本地插件包更新为`dist/directcast-integration/WowBuddyDev-addon.zip`，目录`w89b13f7af55f`，SHA256 `5254ff4535dd499024e0d098cfe1b888d33bea236b9d876dc49a0d27bac2ff27`。旧directcast-actions包保留且不含本次修复；两个本地包都未公开发布或安装，现有EXE也不含本轮改动。
+
+## 后续迁入：移动意图与停步补发
+
+761516d后增加DirectCastMovement.lua，注册0.1秒计时器，并将Actions的宏查询作为共享只读入口。MovementGate能解析原DEFAULT_MACROS及已修复的实际Core职业宏；读条技能移动时记住技能、单位和时间，停步连续两拍后按原槽位优先/API回退路径尝试补发。普通按钮尚无挂钩调用MovementGate，因此不能称为已实现普通按键的自动拦截。
+
+5项新测试对照原addon.bin完整模块的移动计时器：8秒及8.001秒边界，死亡/普通读条/引导/冷却/off，重新移动后静止计数复位，单次意图不重复发出，瞬发/停步/无技能ID/关闭状态，以及UseAction抛错回退而返回false不回退。完整插件法师登录后，class_numpad5能产生意图，执行实际Movement计时器两次后到达UseAction替身。相关41项测试通过，耗时7.132秒。
+
+有意保留原行为并在`/dc`帮助中提示：off不清已有意图；引导状态不阻止补发；普通读条会保留意图等待；超过8秒或死亡/冷却会丢弃。实际游戏权限仍由游戏决定，没有新增内存写入、污染标记修改或解锁手段。本轮未游戏实测，也未接入自Buff续挂或按钮挂钩。
+
+最新本地随机包为`dist/directcast-movement/WowBuddyDev-addon.zip`，目录`wf1c9f2648bcb`，SHA256 `64ed6bfc600dc6a2546c9da5101faeedd5bf30641eddc4deff8463d1a49a415e`。旧包、EXE及公开Release未覆盖；本包未安装。

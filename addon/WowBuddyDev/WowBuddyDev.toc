@@ -66,4 +66,5 @@ BuildCompat.lua
 DirectCastSlots.lua
 DirectCastGuards.lua
 DirectCastActions.lua
+DirectCastMovement.lua
 DecisionBridge.lua

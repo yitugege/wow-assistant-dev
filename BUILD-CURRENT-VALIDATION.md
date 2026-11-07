@@ -1,5 +1,7 @@
 # 当前源码本地构建验收
 
+最新源码又加入DirectCastMovement.lua的移动意图及停步补发计时器；本地插件包更新到dist/directcast-movement/WowBuddyDev-addon.zip，未发布或安装，EXE仍未重建。下列旧插件包保留供版本对照。
+
 当前差异：c943f73之后源码新增DirectCastSlots.lua、DirectCastGuards.lua、DirectCastActions.lua及TOC入口，现有9fa2008 EXE和公开0.2.8均不包含这些子模块。下述源码摘要一致结论只适用于对应构建当时的源码，当前插件改动尚未重新构建EXE。本地随机插件包dist/directcast-actions/WowBuddyDev-addon.zip已生成，未安装或公开发布，身份见DIRECT-CAST-ORIGINAL-FINDINGS.md。
 
 随后又修复Core私有宏登记与DirectCast的接入缺口，最新本地插件包为dist/directcast-integration/WowBuddyDev-addon.zip。此前directcast-actions包不含此修复；EXE仍未重建。
