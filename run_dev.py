@@ -136,6 +136,8 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                                              and self.ui.auto_update_check.isChecked() and FROZEN)
                     if self._client_auto_chain:QTimer.singleShot(0,self.download_update)
                 elif self._client_update_phase=='handoff':
+                    from wowbuddy.dev_update_notice import remember_handoff
+                    remember_handoff(data_dir,APP_ROOT,result)
                     self._handoff=result
                     import time
                     self._handoff_deadline=time.monotonic()+30
@@ -193,6 +195,8 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
                 self.ui.update_check_button.setEnabled(True)
 
         def shutdown(self):
+            notice_timer=getattr(self,'_update_notice_timer',None)
+            if notice_timer is not None:notice_timer.stop()
             addon_timer=getattr(self,'_addon_refresh_timer',None)
             if addon_timer is not None:addon_timer.stop()
             for name in ('_addon_refresh_executor','_download_executor'):
@@ -207,6 +211,30 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
             executor=getattr(self,'_client_update_executor',None)
             if executor is not None:executor.shutdown(wait=False,cancel_futures=True)
             super().shutdown()
+
+        def _restore_update_notice(self):
+            from wowbuddy.dev_update_notice import poll_notice
+            notice=poll_notice(data_dir,APP_ROOT)
+            timer=getattr(self,'_update_notice_timer',None)
+            if notice is None:
+                if timer is not None:timer.stop()
+                return
+            self.ui.update_status.setText(notice['text'])
+            if notice['complete']:
+                self.logger.append(notice['text'])
+                if timer is not None:timer.stop()
+            elif timer is None:
+                self._update_notice_attempts=0
+                self._update_notice_timer=QTimer(self)
+                self._update_notice_timer.timeout.connect(self._restore_update_notice)
+                self._update_notice_timer.start(200)
+            else:
+                self._update_notice_attempts+=1
+                if self._update_notice_attempts>=150:
+                    timer.stop()
+                    status='上次更新结果尚未返回，记录保留供下次启动检查。'
+                    self.ui.update_status.setText(status)
+                    self.logger.append(status)
 
         def refresh_hub(self):
             try:
@@ -470,6 +498,7 @@ def launch(data_dir, *, selftest=False, real_backends=False, auto_start=False, w
     window._configure_automatic_client_update(client_online and not selftest and dump_ui is None,no_update)
     window._configure_addon_refresh(addon_online and not selftest and dump_ui is None)
     window.ui.update_status.setText('插件更新：在插件页点击“GitHub下载更新”；客户端请下载配套Release。')
+    if not selftest and dump_ui is None:window._restore_update_notice()
     if hub_online and not selftest and dump_ui is None:
         from wowbuddy.qt_network import QtHubClient
         from wowbuddy.dev_hub_online import BackupHubFiles

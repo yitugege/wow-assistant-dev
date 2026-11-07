@@ -21,6 +21,8 @@ def run_update_now(data_dir,current,arguments,*,frozen,check=check_latest,
             staged=download(info,current.parent/'WowBuddyDev-updates')
             lines.append('安装包已校验，准备退出后替换。')
             handoff=prepare(staged['staged'],current,arguments,restart='WOWBUDDY_UPDATE_NO_RESTART' not in os.environ)
+            from .dev_update_notice import remember_handoff
+            remember_handoff(data_dir,current,handoff)
             result['job']=handoff['job']
             result['final_report']=str(Path(handoff['job']).with_suffix('.result.json'))
             wait_ready(handoff)
