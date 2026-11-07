@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import sys
 import unittest
+from types import SimpleNamespace
 from lupa.lua51 import LuaRuntime
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -11,6 +12,8 @@ from wowbuddy.auto_target import parse_auto_target
 from wowbuddy.dev_protocol import DEV_VERSION
 from wowbuddy.assets import Assets
 from wowbuddy.pixel_geometry import RGBImage
+from wowbuddy.scheduler import Scheduler
+from wowbuddy.dispatch import ActionDispatcher
 
 
 class PixelBarModuleTests(unittest.TestCase):
@@ -131,6 +134,14 @@ class PixelBarModuleTests(unittest.TestCase):
             spell_index=list(g.WowBuddyDev.actionAvailSpellIDs.values()).index(116)
             profiles=json.loads((ROOT/'assets/rotations.json').read_text('utf8'))['rotations']
             profile=next(p for p in profiles if p['id']==1 and p['specId']==1482)
+            clock=[10000]
+            sent=[]
+            def send(key,**kwargs):
+                sent.append(key)
+                return True
+            sender=SimpleNamespace(send=send,status='测试投递',channel='fixture',
+                backend=SimpleNamespace(now_ms=lambda:clock[0],Sleep=lambda ms:None))
+            scheduler=Scheduler(pipeline,ActionDispatcher(sender),lambda:clock[0])
             def skill_tick(script,known,in_range,ready):
                 lua.execute(script)
                 tick()
@@ -141,11 +152,25 @@ class PixelBarModuleTests(unittest.TestCase):
                 # pipeline已将开发协议位图转换为原引擎保留bit0的格式。
                 self.assertEqual(bool(int(frame.values['action_avail']) & (1 << (spell_index+1))),ready)
                 # 使用实际完整冰霜练级方案；不为测试另造寒冰箭规则。
-                decision=pipeline.generate(pipeline.prepare_frame(frame,selected_profile=profile))
+                clock[0]+=3000
+                sent_before=len(sent)
+                result=scheduler.process(pipeline.prepare_frame(frame,selected_profile=profile),
+                                         hwnd=123,send_interval_ms=100)
+                decision=result.decision
                 actions=[candidate.action for candidate in decision.candidates]
                 expected=(known=='ON' and in_range!='OFF' and ready and bool(g.targetAlive))
                 self.assertEqual('spell_116' in actions,expected,
                                  (script,actions,dict(decision.fields)))
+                if expected:
+                    self.assertEqual(result.status,'sent')
+                    self.assertEqual(result.selected.action,'spell_116')
+                    self.assertEqual(sent[sent_before:],[result.selected.key])
+                elif not g.targetAlive:
+                    self.assertEqual(result.status,'sent')
+                    self.assertEqual(result.selected.action,'auto_target')
+                    self.assertEqual(sent[sent_before:],[parse_auto_target(g.PermesValues.ttd).key])
+                else:
+                    self.assertEqual(len(sent),sent_before,(script,result.status,actions))
             skill_tick('knownRank=nil','OFF','OFF',False)
             skill_tick('knownRank=116','ON','ON',True)
             skill_tick('rangeResult=false','ON','OFF',True)
