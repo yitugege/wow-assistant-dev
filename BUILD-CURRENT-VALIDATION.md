@@ -1,6 +1,16 @@
 # 当前源码本地构建验收
 
-## 最新构建：源码f33b078
+## 最新公开构建：0.2.7（44b9004）
+
+源码及六个发布附件已公开：https://github.com/yitugege/wow-assistant-dev/releases/tag/v0.2.7 。业务EXE SHA256为`3922a921ea13fd53de8ace505fad577e46cc2ea6525d5bd38af0fe0369e4afca`，单文件EXE为`e9c50f46cf3473510cd593d2fae91398fff4329d14cb36c9c6f05d625f15d008`。构建前后源码摘要一致。
+
+134项核心测试通过。目录包独立解压自检通过；插件78个文件、59个随机命名Lua编译及TOC/XML引用检查通过。单文件首次解包、缓存复用、缺失ready恢复均通过，每次三个测试进程最终全部退出。
+
+发布后通过客户端实际下载模块从公开GitHub下载目录包、插件和单文件，核对清单及SHA256；目录版和隔离单文件启动自检通过。随机插件目录为`w64cfe25c40c6`。证据为`dist/release-027-local-check.json`、`dist/frozen-outer-check.json`和`dist/public-release-027-check.json`；日志为`.local/validate-027.log`、`.local/check-027-outer.log`和`.local/check-public-027.log`。
+
+本版没有执行0.2.6到0.2.7的运行中升级交接，也未安装至用户游戏目录或完成真实游戏验收。历史GUI/数值边界测试仍按各自源码基线记录，不能混称为本版全部重新执行。
+
+## 历史构建：源码f33b078
 
 已纳入回执解析967c037、Qt初始化12f2fee、治疗自检6a8cdf2和打断判断f33b078。目录版SHA256为`3ccecfff4ebac232b72a375e170af499b84e4b66fc1af8b785dc44f3b3ccf2eb`，单文件为`16779aa07a81be3bee930271969efe722a26b421726746bc991e5d50d6b17561`，位置仍为下表对应路径。版本字段0.2.6，未覆盖公开发布。
 
