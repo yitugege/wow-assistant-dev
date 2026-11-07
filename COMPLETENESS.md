@@ -32,7 +32,7 @@
 
 ## 用户指定变更及原包问题
 
-插件逐文件审计见ADDON-MIGRATION-DIFFERENCES.md。尤其DirectCast.lua原TOC确实加载，但独立版目前缺失；天赋导入前清理及SaveBindings调用也有变化。这些不是已经证明完成的原功能，不能与卡号默认通过等用户明确指定差异混为一谈。需要继续处理并单独验收。
+插件逐文件审计见ADDON-MIGRATION-DIFFERENCES.md。DirectCast.lua原TOC确实加载，但独立版目前缺失；天赋导入清理已按独立名前缀恢复，仍保留范围差异；控制键清除后的SaveBindings调用已恢复并完成12组原Lua对照。真实游戏效果尚未验收，不能与卡号默认通过等用户明确指定差异混为一谈。
 
 双协议来源另见ADDON-PROTOCOL-ORIGIN.md：原内置插件78成员已与参考源码逐字节核对，TOC版本9.9.6；readable契约标注20.0.1。PanelV2名字不能证明它就是readable发送端。客户端双协议消费仍属验收范围，但readable真实发送端绘制需要对应来源证据，不能以新造发送端代替。
 

@@ -428,7 +428,7 @@ local function createKeyBindingRow(parentFrame, labelText, bindingAction, yOffse
         WowBuddyDev.DB.aoeKey = nil
       end
       refreshKeyButtonText()
-      -- 这三个键由DB保存并由PixelBar轮询；未修改游戏绑定表，无需SaveBindings。
+      SaveBindings(GetCurrentBindingSet())
     else
       WowBuddyDev.waitingForKey = bindingAction
       captureHintText:SetText(WowBuddyDev.L("请按下要绑定的按键（ESC取消）"))
