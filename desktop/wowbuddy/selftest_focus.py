@@ -1,7 +1,7 @@
 """059020/05acb0/05bb60/05c6a0焦点自测共用构图与原断言。"""
 from dataclasses import dataclass
 import re
-from .candidates import CandidateEngine, _array, _object
+from .candidates import CandidateEngine, _array, _object, _decimal_int
 from .expressions import _int, _string, _trim
 from .thresholds import promote_profile, apply_thresholds
 from .selftest_inputs_focus import BASE_FIELDS, AURAS_12, AURAS_34, HEALTH_UNITS, MINIMUM_CASES
@@ -93,10 +93,9 @@ def _health(fields, pre):
         unit = pre[6:]
     else:
         return -1
-    text = _trim(fields.get('health_'+unit,''))
-    if not re.fullmatch(r'[+-]?[0-9]+',text): return -1
-    value = int(text)
-    return value if -(2**31) <= value < 2**31 else -1
+    # 原05c150直接toInt，不先Unicode trimmed，也不拆字段尾注。
+    value = _decimal_int(fields.get('health_'+unit,''))
+    return value if value is not None else -1
 
 
 def evaluate_minimum(rules, profile, spec, talents, label, case):

@@ -9,6 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.aura_probe import field_integer,spell_id_from_action,AuraProbeLedger,Receipt,ProbeResult
 from wowbuddy.send_gates import focus_index,should_skip_focus
+from wowbuddy.selftest_focus import _health
 from test_availability_display_native import QString
 
 
@@ -53,6 +54,18 @@ class ReceiptIntegerNativeTests(unittest.TestCase):
                 self.assertEqual(focus_index(action),expected)
                 self.assertEqual(should_skip_focus(action,last_action='',last_switch_ms=0,
                     now_ms=4000,focus_known=True,observed_index=2),expected==2)
+        health_samples=['25','0','-1','100','+25',' 25 ','25\0ignored','\u00a025\u00a0',
+                        '0'*5000+'25','9'*5000,str(2**31-1),str(2**31),'25 extra']
+        for index,text in enumerate(health_samples):
+            raw=text.encode('utf-16-le');buf=C.create_string_buffer(raw+b'\0\0')
+            source=QString(None,C.addressof(buf),len(raw)//2);ok=C.c_bool()
+            number=convert32(C.byref(source),C.byref(ok),10)
+            for unit in ('player','party1','party2','party3','party4'):
+                with self.subTest(index=index,kind='selftest_health',unit=unit):
+                    self.assertEqual(_health({'health_'+unit:text},'focus_'+unit),
+                                     number if ok.value else -1)
+        for action in ('focus_party01','focus_party+1','focus_party1\0','focus_party5','focus_unknown'):
+            self.assertEqual(_health({'health_party1':'25'},action),-1)
 
     def test_receipt_conversion_changes_probe_ledger(self):
         for spell,receipt,result,deadline in (
