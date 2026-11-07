@@ -1,4 +1,4 @@
-"""执行源码/发布包完整 TOC 顶层；不模拟登录、定时器或受保护执行。"""
+"""执行源码/发布包 TOC 与指定登录事件；不模拟定时器或受保护执行。"""
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -12,11 +12,21 @@ SOURCE = ROOT / 'addon/WowBuddyDev'
 
 
 class AddonFullLoadTests(unittest.TestCase):
-    def load(self, directory, addon_name):
+    CLASS_CASES = (
+        ('MAGE', 8, 1482, 21), ('DRUID', 11, 1484, 42),
+        ('HUNTER', 3, 1485, 23), ('PALADIN', 2, 1486, 29),
+        ('PRIEST', 5, 1487, 32), ('ROGUE', 4, 1488, 18),
+        ('SHAMAN', 7, 1489, 28), ('WARLOCK', 9, 1490, 20),
+        ('WARRIOR', 1, 1491, 28),
+    )
+
+    def load(self, directory, addon_name, prelude=None):
         lua = LuaRuntime(unpack_returned_tuples=True,
                          register_eval=False, register_builtins=False)
         for host in ('pixelbar_host.lua', 'addon_load_host.lua'):
             lua.execute((ROOT / 'tests' / host).read_text('utf8'))
+        if prelude:
+            lua.execute(prelude)
         shared = lua.table()
         loaded = []
         for line in (directory / f'{addon_name}.toc').read_text('utf-8-sig').splitlines():
@@ -42,6 +52,63 @@ class AddonFullLoadTests(unittest.TestCase):
     def test_source_complete_toc_loads(self):
         self.load(SOURCE, 'WowBuddyDev')
 
+    def login_fixture(self, token, class_id, spec, combat=False):
+        prelude = (f"fixtureClass='{token}';fixtureClassID={class_id};fixtureSpecID={spec}\n"
+                   + (ROOT/'tests/addon_login_host.lua').read_text('utf8'))
+        lua, _ = self.load(SOURCE, 'WowBuddyDev', prelude)
+        lua.globals().combat = combat
+        lua.globals().EmitFixtureEvent('ADDON_LOADED', 'WowBuddyDev')
+        lua.globals().EmitFixtureEvent('PLAYER_LOGIN')
+        return lua
+
+    def assert_login_bindings(self, lua, token, spec, used_count):
+        addon = lua.globals().WowBuddyDev
+        self.assertEqual(addon.DB.currentSpecID, spec)
+        self.assertEqual(addon.DB.currentClass, token)
+        self.assertTrue(addon.isClassActive)
+        self.assertGreater(len(addon.pixelData), 0)
+        self.assertEqual(addon.GetClassMacroInfo(), (token, 192, used_count))
+        self.assertEqual(len(addon.errorLogs), 0)
+        keys = list(addon.GetClassMacroKeys().values())
+        self.assertEqual(len(keys), used_count)
+        for key in keys:
+            button = addon.GetSecureButton('class_'+key)
+            self.assertIsNotNone(button, key)
+            self.assertEqual(button.template, 'SecureActionButtonTemplate')
+            self.assertEqual(button.attributes['type'], 'macro')
+            expected = addon.LocalizeMacroBody(addon.GetClassDefaultMacro(key))
+            self.assertEqual(button.attributes.macrotext, expected)
+            self.assertEqual(button.bindings[key].button, button.name)
+        auto = addon.GetSecureButton('auto_target')
+        self.assertIsNotNone(auto)
+        self.assertEqual(auto.attributes.macrotext,
+                         '/targetenemy [combat,nochanneling,noexists][combat,nochanneling,dead]')
+        auto_keys = list(auto.bindings.keys())
+        self.assertEqual(len(auto_keys), 1)
+        self.assertNotIn(auto_keys[0], keys)
+        self.assertEqual(auto.bindings[auto_keys[0]].button, auto.name)
+        # 登录分支已切换为正常事件分发，而非只执行到中途。
+        login_receivers = [f for _, f in lua.globals().frames.items()
+                           if f.events and f.events['PLAYER_LOGIN']]
+        self.assertEqual(login_receivers, [])
+
+    def test_nine_class_login_builds_macros_and_separate_auto_target_binding(self):
+        for token, class_id, spec, used_count in self.CLASS_CASES:
+            with self.subTest(token=token):
+                lua = self.login_fixture(token, class_id, spec)
+                self.assert_login_bindings(lua, token, spec, used_count)
+
+    def test_combat_login_defers_binding_until_regen_enabled(self):
+        lua = self.login_fixture('MAGE', 8, 1482, combat=True)
+        addon = lua.globals().WowBuddyDev
+        self.assertIsNone(addon.GetSecureButton('class_NUMPAD5'))
+        self.assertIsNone(addon.GetSecureButton('auto_target'))
+        self.assertFalse(any(list(f.bindings.keys()) for _, f in lua.globals().frames.items()
+                             if f.bindings))
+        lua.globals().combat = False
+        lua.globals().EmitFixtureEvent('PLAYER_REGEN_ENABLED')
+        self.assert_login_bindings(lua, 'MAGE', 1482, 21)
+
     def test_randomized_package_loads_and_records_actual_addon_identity(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -49,7 +116,11 @@ class AddonFullLoadTests(unittest.TestCase):
             name = manifest['addon_directory']
             with zipfile.ZipFile(root/'addon.zip') as archive:
                 archive.extractall(root/'unpacked')
-            lua, loaded = self.load(root/'unpacked'/name, name)
+            lua, loaded = self.load(root/'unpacked'/name, name,
+                                    (ROOT/'tests/addon_login_host.lua').read_text('utf8'))
+            lua.globals().EmitFixtureEvent('ADDON_LOADED', name)
+            lua.globals().EmitFixtureEvent('PLAYER_LOGIN')
+            self.assert_login_bindings(lua, 'MAGE', 1482, 21)
             self.assertTrue(all(Path(entry).name.startswith('f') for entry in loaded))
             lua.globals().actualAddonName = name
             lua.execute('''
