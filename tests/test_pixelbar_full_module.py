@@ -14,9 +14,19 @@ from wowbuddy.assets import Assets
 from wowbuddy.pixel_geometry import RGBImage
 from wowbuddy.scheduler import Scheduler
 from wowbuddy.dispatch import ActionDispatcher
+from wowbuddy.expressions import EvaluationContext
 
 
 class PixelBarModuleTests(unittest.TestCase):
+    def test_all_action_bits_survive_real_lua_render_and_desktop_decode(self):
+        totals = []
+        for name, spec in (('Mage',1482),('Druid',1484),('Hunter',1485),
+                           ('Paladin',1486),('Priest',1487),('Rogue',1488),
+                           ('Shaman',1489),('Warlock',1490),('Warrior',1491)):
+            with self.subTest(class_name=name):
+                totals.append(self.exercise(name, spec, walk_skills=True))
+        print('action bitmap coverage: '+json.dumps(totals))
+
     def test_full_module_rebuild_and_onupdate_write_auto_target_texture(self):
         self.exercise()
 
@@ -30,7 +40,7 @@ class PixelBarModuleTests(unittest.TestCase):
             with self.subTest(class_name=name,spec_id=spec):
                 self.exercise(name,spec)
 
-    def exercise(self,class_name=None,spec_id=1482):
+    def exercise(self,class_name=None,spec_id=1482,*,walk_skills=False):
         lua=LuaRuntime(unpack_returned_tuples=True)
         lua.execute((ROOT/'tests/pixelbar_host.lua').read_text('utf8'))
         lua.globals().WowBuddyDev.addonVersionCode=DEV_VERSION
@@ -112,6 +122,44 @@ class PixelBarModuleTests(unittest.TestCase):
                 self.assertFalse(frame.ok)
             return parse_auto_target(value)
         self.assertEqual(tick().state,0)
+        if walk_skills:
+            ids = list(g.WowBuddyDev.actionAvailSpellIDs.values())
+            cases = [[], ids] + [[spell] for spell in ids]
+            for selected in cases:
+                with self.subTest(class_name=class_name, forced=selected):
+                    g.WowBuddyDev.forceAvailableState = lua.table_from({spell: True for spell in selected})
+                    tick()
+                    frame = captured_frame()
+                    expected = [bool(g.WowBuddyDev.IsSpellReady(spell)) for spell in ids]
+                    raw = sum(1 << index for index, ready in enumerate(expected) if ready)
+                    self.assertEqual(g.PermesValues.action_avail, raw)
+                    self.assertEqual(int(frame.values['action_avail']), 1 | (raw << 1))
+                    context = EvaluationContext(frame.values, ids, allow_unknown_availability=False)
+                    for spell, ready in zip(ids, expected):
+                        self.assertEqual(context.availability(spell), int(ready))
+            lua.execute('''WowBuddyDev.forceAvailableState={}
+            function IsSpellKnown(id) return fixtureKnown end
+            function WowBuddyDev.IsSpellUsable(id) return fixtureUsable end
+            function WowBuddyDev.GetSpellCooldownRemaining(id) return fixtureCooldown end
+            C_Spell={IsSpellInRange=function(id,unit) return fixtureRange end}''')
+            states = [(True, True, 0, True), (True, True, 3, False),
+                      (True, False, 0, True), (False, True, 0, True)]
+            for known, usable, cooldown, in_range in states:
+                with self.subTest(class_name=class_name, state=(known,usable,cooldown,in_range)):
+                    g.fixtureKnown, g.fixtureUsable = known, usable
+                    g.fixtureCooldown, g.fixtureRange = cooldown, in_range
+                    tick()
+                    frame = captured_frame()
+                    context = EvaluationContext(frame.values, ids, allow_unknown_availability=False)
+                    for spell in ids:
+                        self.assertEqual(bool(g.WowBuddyDev.IsSpellReadyRaw(spell)),
+                                         known and usable and cooldown == 0)
+                        self.assertEqual(context.availability(spell), int(bool(g.WowBuddyDev.IsSpellReady(spell))))
+                        if 'known_'+str(spell) in frame.values:
+                            self.assertEqual(frame.values['known_'+str(spell)], 'ON' if known else 'OFF')
+                        if known and 'range_'+str(spell) in frame.values:
+                            self.assertEqual(frame.values['range_'+str(spell)], 'ON' if in_range else 'OFF')
+            return {'class': class_name, 'actions': len(ids), 'frames': len(cases)+len(states)}
         lua.execute('combat=true')
         self.assertEqual(tick().state,2)
         if class_name:
