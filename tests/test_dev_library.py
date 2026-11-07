@@ -8,10 +8,37 @@ sys.path.insert(0, str(ROOT/'desktop'))
 from wowbuddy.dev_library import seed_library, profile_action_gaps, read_local_library
 import json
 from types import SimpleNamespace
-from wowbuddy.rotation_selection import load_snapshot
+from wowbuddy.rotation_selection import load_snapshot,SelectionState,apply_selection,refresh_library
 
 
 class LocalLibraryTests(unittest.TestCase):
+    def test_duplicate_key_selects_first_record_and_reload_uses_new_order(self):
+        payload=json.loads((ROOT/'assets/rotations.json').read_bytes())
+        hub=load_snapshot(json.dumps(payload).encode()).state
+        duplicate=[p for p in hub.profiles if p.id in (130,131)]
+        self.assertEqual([p.id for p in duplicate],[130,131])
+        self.assertEqual([len(p.rules) for p in duplicate],[5,6])
+        self.assertEqual(duplicate[0].key,duplicate[1].key)
+        key=duplicate[0].key
+        result=apply_selection(hub,SelectionState(spec_id='1487',current_key=key),{})
+        self.assertEqual(result.state.active_profile.id,130)
+        first_rules=result.state.active_profile.to_json()['rules']
+        left=next(i for i,p in enumerate(payload['rotations']) if p['id']==130)
+        right=next(i for i,p in enumerate(payload['rotations']) if p['id']==131)
+        payload['rotations'][left],payload['rotations'][right]=payload['rotations'][right],payload['rotations'][left]
+        changed=load_snapshot(json.dumps(payload).encode(),hub).state
+        changed,applied=refresh_library(changed,result.state,result.settings,'1487')
+        self.assertEqual(applied.state.current_key,key)
+        self.assertEqual(applied.state.active_profile.id,131)
+        self.assertEqual(len(applied.state.active_profile.rules),6)
+        self.assertNotEqual(applied.state.active_profile.to_json()['rules'],first_rules)
+        self.assertFalse(changed.changed_pending)
+        # 无新快照变化时不重复重建或重新应用。
+        _,unchanged=refresh_library(changed,applied.state,applied.settings,'1487')
+        self.assertEqual(unchanged.effect,'preserved')
+        self.assertFalse(unchanged.refresh_thresholds)
+        self.assertEqual(unchanged.state.active_profile.id,131)
+
     def test_reload_rejects_invalid_file_and_recognizes_updated_rules(self):
         previous=load_snapshot((ROOT/'assets/rotations.json').read_bytes()).state
         with TemporaryDirectory() as directory:
