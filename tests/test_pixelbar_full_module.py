@@ -1,5 +1,6 @@
 """整个PixelBar文件和真实回调；游戏API及UI纹理用显式替身。"""
 from pathlib import Path
+import json
 import sys
 import unittest
 from lupa.lua51 import LuaRuntime
@@ -128,6 +129,8 @@ class PixelBarModuleTests(unittest.TestCase):
             function WowBuddyDev.GetSpellCooldownRemaining() return cooldown end
             function WowBuddyDev.IsSpellUsable() return usable end''')
             spell_index=list(g.WowBuddyDev.actionAvailSpellIDs.values()).index(116)
+            profiles=json.loads((ROOT/'assets/rotations.json').read_text('utf8'))['rotations']
+            profile=next(p for p in profiles if p['id']==1 and p['specId']==1482)
             def skill_tick(script,known,in_range,ready):
                 lua.execute(script)
                 tick()
@@ -137,6 +140,12 @@ class PixelBarModuleTests(unittest.TestCase):
                 self.assertEqual(g.PermesValues.ready_116,ready)
                 # pipeline已将开发协议位图转换为原引擎保留bit0的格式。
                 self.assertEqual(bool(int(frame.values['action_avail']) & (1 << (spell_index+1))),ready)
+                # 使用实际完整冰霜练级方案；不为测试另造寒冰箭规则。
+                decision=pipeline.generate(pipeline.prepare_frame(frame,selected_profile=profile))
+                actions=[candidate.action for candidate in decision.candidates]
+                expected=(known=='ON' and in_range!='OFF' and ready and bool(g.targetAlive))
+                self.assertEqual('spell_116' in actions,expected,
+                                 (script,actions,dict(decision.fields)))
             skill_tick('knownRank=nil','OFF','OFF',False)
             skill_tick('knownRank=116','ON','ON',True)
             skill_tick('rangeResult=false','ON','OFF',True)
