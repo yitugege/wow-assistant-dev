@@ -1,5 +1,7 @@
 # 当前公开版本 v0.2.6
 
+打断表达式源码修复：按原03dc90和Qt toUInt处理UTF-16长度、NUL与ASCII空白，纠正NBSP误接受及旧测试预期。273组原Qt对照、134项核心回归通过，尚未打包，详见INTERRUPTIBLE-PARITY.md。
+
 治疗自检血量源码修复：按原05c150直接Qt int32语义，移除多余Unicode裁剪并消除长文本异常。65组血量对照和5种非法目标名、五项自检入口测试通过；影响自检诊断，尚未打包，详见SELFTEST-HEALTH-PARITY.md。
 
 Qt重复初始化源码修复：直接launch成功应用样式后补齐bootstrap标记，共享QApplication连续启动不再重复应用全局样式。修复前2次、修复后1次，五项启动测试通过；未重新测量完整回归耗时、未打包，详见QT-INITIALIZATION-PARITY.md。

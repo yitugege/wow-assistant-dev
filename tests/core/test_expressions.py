@@ -95,10 +95,10 @@ class ExpressionsTest(unittest.TestCase):
                 self.assertEqual(evaluate(["interruptible", "cast"], EvaluationContext({"cast": value})), expected)
 
     def test_interruptible_native_hex_conversion(self):
-        for value in ('#+0ff00', '# 0ff00', '#0ff00 ', '#\t0ff00', '#0xff00', '#0Xff00', '#\u00a00ff00'):
+        for value in ('#+0ff00', '# 0ff00', '#0ff00 ', '#\t0ff00', '#0xff00', '#0Xff00', '#ff00\0x'):
             with self.subTest(value=value):
                 self.assertTrue(evaluate(['interruptible', 'cast'], EvaluationContext({'cast': value})))
-        for value in ('#-0ff00', '#++ff00', '#0xgg00', '#00ff0_', '#0ff00'):
+        for value in ('#-0ff00', '#++ff00', '#0xgg00', '#00ff0_', '#0ff00', '#\u00a00ff00', '#ff00\0😀'):
             with self.subTest(value=value):
                 self.assertFalse(evaluate(['interruptible', 'cast'], EvaluationContext({'cast': value})))
 

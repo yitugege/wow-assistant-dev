@@ -199,10 +199,10 @@ def evaluate(expression: object, context: EvaluationContext) -> bool:
         return count >= minimum
     if op == "interruptible":
         value = context.raw(_string(args[0]) if args else "") or ""
-        if len(value) != 7 or not value.startswith("#"):
+        if len(value.encode('utf-16-le', 'surrogatepass')) != 14 or not value.startswith("#"):
             return False
-        # 原版检查总长和#后，QString::toUInt(base16)允许首尾空白、+及0x。
-        token = _trim(value[1:])
+        # 原版按UTF-16计长；toUInt在NUL终止，只允许ASCII空白、+及0x。
+        token = value[1:].split('\0', 1)[0].strip(' \t\n\r\v\f')
         if token.startswith("+"):
             token = token[1:]
         if not re.fullmatch(r"(?:0[xX])?[0-9A-Fa-f]+", token):
