@@ -27,6 +27,8 @@
 
 ## 最近新增证据及其范围
 
+完整源码TOC、登录和进世界初始化后，九职业实际PixelBar主回调生成的54帧纹理已送入桌面pipeline并成功解码，覆盖战斗、死亡目标、聊天门控和总开关恢复。没有替换插件方法或字段表；游戏API仍为替身且技能设为未学习，其他OnUpdate及周期调度未覆盖。见ADDON-LOAD-VALIDATION.md，不能替代真实抓屏或施法验收。
+
 2026-11-07对f1b6d86产品源码执行顶层完整回归：`python -m unittest discover -s tests -p 'test_*.py' -v`，342项测试通过，耗时196.010秒；日志为`.local/regression-f1b6d86.log`。本次不把历史153项核心专项计入同一轮，也不将离线宿主和本机工具检查计作游戏实测。迁移审计重新核对85个插件文件，具体拆分和差异见ADDON-MIGRATION-DIFFERENCES.md。
 
 原按钮hookButton新增4项隔离测试：在明确的“默认处理先于挂钩”模型下，原OnClick回调无法撤销已经发生的默认处理；战斗属性写入失败发生在直调尝试之后。用户定制客户端的实际顺序仍未取证，不能把模型当作实机结论；见DIRECT-CAST-HOOK-VALIDATION.md。产品挂钩仍未接入。
