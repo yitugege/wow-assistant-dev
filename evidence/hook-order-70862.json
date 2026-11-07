@@ -1,0 +1,210 @@
+{
+  "version": "1.60.1",
+  "build": "70862",
+  "interface": 16001,
+  "scope": "own-button-click-order; not-game-casting",
+  "addon": "WowBuddyDev",
+  "probe_text_sha256": "3a3b14cb8de5fbee83cbe5556290797b23cb727585312901d35c176e51df90eb",
+  "events": [
+    {
+      "sequence": 1,
+      "phase": "pre",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957992.961
+    },
+    {
+      "sequence": 1,
+      "phase": "default-marker",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957992.961
+    },
+    {
+      "sequence": 1,
+      "phase": "hook",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957992.961
+    },
+    {
+      "sequence": 1,
+      "phase": "post",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957992.961
+    },
+    {
+      "sequence": 2,
+      "phase": "pre",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957994.697
+    },
+    {
+      "sequence": 2,
+      "phase": "default-marker",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957994.697
+    },
+    {
+      "sequence": 2,
+      "phase": "hook",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957994.697
+    },
+    {
+      "sequence": 2,
+      "phase": "post",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957994.697
+    },
+    {
+      "sequence": 3,
+      "phase": "pre",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957994.791
+    },
+    {
+      "sequence": 3,
+      "phase": "hook",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957994.791
+    },
+    {
+      "sequence": 3,
+      "phase": "post",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957994.791
+    },
+    {
+      "sequence": 4,
+      "phase": "pre",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957995.544
+    },
+    {
+      "sequence": 4,
+      "phase": "default-marker",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957995.544
+    },
+    {
+      "sequence": 4,
+      "phase": "hook",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957995.544
+    },
+    {
+      "sequence": 4,
+      "phase": "post",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957995.544
+    },
+    {
+      "sequence": 5,
+      "phase": "pre",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957995.67
+    },
+    {
+      "sequence": 5,
+      "phase": "hook",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957995.67
+    },
+    {
+      "sequence": 5,
+      "phase": "post",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957995.67
+    },
+    {
+      "sequence": 6,
+      "phase": "pre",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957996.142
+    },
+    {
+      "sequence": 6,
+      "phase": "default-marker",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957996.142
+    },
+    {
+      "sequence": 6,
+      "phase": "hook",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957996.142
+    },
+    {
+      "sequence": 6,
+      "phase": "post",
+      "button": "LeftButton",
+      "down": true,
+      "inCombat": false,
+      "time": 957996.142
+    },
+    {
+      "sequence": 7,
+      "phase": "pre",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957996.28
+    },
+    {
+      "sequence": 7,
+      "phase": "hook",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957996.28
+    },
+    {
+      "sequence": 7,
+      "phase": "post",
+      "button": "LeftButton",
+      "down": false,
+      "inCombat": false,
+      "time": 957996.28
+    }
+  ]
+}
