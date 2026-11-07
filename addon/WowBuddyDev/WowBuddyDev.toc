@@ -3,7 +3,7 @@
 ## Notes: 独立开发版
 ## Author: Unknown
 ## Version: 0.2.8-dev
-## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics
+## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics, WowBuddyDevHookProbe
 
 ForeverCompat.lua
 ForeverTalentData.lua
@@ -15,6 +15,7 @@ Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua
 Libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua
 Core.lua
 SecurityDiagnostics.lua
+HookOrderProbe.lua
 Bindings.lua
 HealingNpcFocus.lua
 Locale.lua

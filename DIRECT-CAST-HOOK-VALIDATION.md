@@ -24,3 +24,17 @@
 只把布尔返回值换成GetSecureButton，不能据此宣称移动吞键或防重复已经修复。还需要当前游戏版本的事件顺序及安全执行证据，之后设计并验证默认宏与直调的互斥；不能靠HookScript宿主直接覆盖原回调来制造“只施放一次”的假象，也不能以修改污染标记代替合法执行机制。
 
 当前独立插件仍未装入自动按钮挂钩，完整还原未达成。现有04cd6be本地EXE与插件产品源码不因本次测试、文档增加而变化。
+
+## 后续：手动现场诊断按钮
+
+8637591后新增HookOrderProbe.lua及独立SavedVariables变量WowBuddyDevHookProbe。它不是DirectCast自动挂钩，不更改现有技能按钮或按键。
+
+安装包含此模块的插件并进入角色后，脱战输入`/wbdhookprobe`，手动点击中央按钮，再输入`/wbdhookprobe report`查看记录，`/wbdhookprobe hide`关闭。重新打开会清空上次记录；退出或重载UI后由游戏保存到WTF。未获得记录前不能认定现场顺序。
+
+诊断按钮继承SecureActionButtonTemplate，仅设置type=click和指向本插件记录按钮的clickbutton。它保留模板OnClick，另外记录PreClick、HookScript(OnClick)、PostClick；被委托的记录按钮只追加default-marker记录。此设计依据[客户端UI源码镜像的SECURE_ACTIONS.click](https://raw.githubusercontent.com/Gethe/wow-ui-source/live/Interface/AddOns/Blizzard_FrameXML/SecureTemplates.lua)，仍需验证定制客户端是否支持相同动作；若没有default-marker，报告明确提示不能判断顺序。
+
+按钮不设置宏、技能、目标或按键，不调用施法、切目标、动作条放置API。仅在用户输入命令后创建，不自动点击。保存实际插件目录名、游戏构建号、Interface、时间、战斗状态和最近60条阶段记录。战斗中拒绝创建/显示/关闭；已创建按钮的点击回调只记录，不写安全属性。
+
+3项记录器测试使用两种相反的显式宿主顺序，确认均如实记录而非固定预期；还覆盖默认动作缺失、记录上限、重复打开和战斗门控。与完整TOC及打包测试合计11项通过（4.475秒）。这些不是原生安全执行或实机点击证明；原模板源码也不能代替用户当前客户端的记录。
+
+本地随机包`dist/hook-order-probe/WowBuddyDev-addon.zip`，目录`wbc204a3dc89e`，SHA256 `53b1cd4012ce71e344f0e47f0788fee50f645b981b5c9add38e7e276ac12d031`。尚未安装、公开发布或重新构建EXE。

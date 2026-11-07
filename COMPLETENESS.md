@@ -6,7 +6,7 @@
 
 最新本地构建04cd6be已包含近期DirectCast五个子模块、Core职业宏查询修复及此前交接清单/目录创建修复，保存于dist/local-04cd6be/WowBuddyDev-Outer.exe。实际启动、后端初始化、规则输入、缓存及设置保留检查通过，内嵌插件83文件与当前源码逐字节一致，见BUILD-CURRENT-VALIDATION.md。公开0.2.8附件未覆盖。
 
-目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码又新增DirectCastProbe.lua，04cd6be EXE尚不含该入口；最新本地随机插件包见dist/directcast-probe。旧9fa2008 EXE不含DirectCast子模块；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
+目录创建修复的原机器码对照见OUTER-MKDIR-NATIVE-PARITY.md。当前插件源码又新增DirectCastProbe.lua及HookOrderProbe.lua，04cd6be EXE尚不含这些入口；最新本地随机插件包见dist/hook-order-probe。旧9fa2008 EXE不含DirectCast子模块；历史c29fe27不含等待后的清单复核，6bb86ed与公开0.2.8也不包含目录创建修复。
 
 |对象|当前状态|证据|
 |---|---|---|
@@ -27,6 +27,8 @@
 ## 最近新增证据及其范围
 
 原按钮hookButton新增4项隔离测试：在明确的“默认处理先于挂钩”模型下，原OnClick回调无法撤销已经发生的默认处理；战斗属性写入失败发生在直调尝试之后。用户定制客户端的实际顺序仍未取证，不能把模型当作实机结论；见DIRECT-CAST-HOOK-VALIDATION.md。产品挂钩仍未接入。
+
+已提供手动`/wbdhookprobe`现场诊断按钮，只委托点击本插件记录按钮，不施法或修改按键；当前尚未取得用户客户端的现场记录。记录器在两种相反宿主顺序下如实记录的测试通过，不代表实机顺序已验证。
 
 新增源码与随机命名包完整 TOC 顶层加载检查：各 57 个条目在 Lua 5.1 显式 API 宿主中通过，九职业注册及随机插件名安全诊断通过。未执行登录和周期回调，不能作为游戏加载或施法验收；见 ADDON-LOAD-VALIDATION.md。
 

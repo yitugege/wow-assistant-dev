@@ -37,6 +37,8 @@ DirectCastGuards.lua提供原宏文本解析与光环防重复判断，已由Act
 
 DirectCastProbe.lua保留原EnvCloakCast显式入口，仅在当前Lua环境尝试普通API调用；它不提供游戏权限解锁，不会在文件加载时施法。
 
+挂钩现场取证：脱战输入`/wbdhookprobe`，手动点击中央诊断按钮，输入`/wbdhookprobe report`查看顺序，`/wbdhookprobe hide`关闭。该按钮只点击本插件的记录按钮，不施法或改按键；详情见DIRECT-CAST-HOOK-VALIDATION.md。04cd6be EXE尚未包含此新增工具。
+
 ## 独立插件打包
 
 在项目根目录运行 `python tools/build_addon.py`，生成 `dist/WowBuddyDev-dev.zip` 及成员SHA256清单。仅使用此工程内的插件源码，不调用旧EXE或原安装器；此离线包内固定为WowBuddyDev目录；公开发布请使用 build_github_release.py 生成随机命名包。
