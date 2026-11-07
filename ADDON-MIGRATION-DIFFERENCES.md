@@ -12,6 +12,7 @@ DirectCast后续原文执行结果见DIRECT-CAST-ORIGINAL-FINDINGS.md：已确�
 |---|---|---|
 |DirectCast.lua及TOC|原包包含且TOC加载；独立打包拒绝原同名文件，改为加载六个可读子模块|槽位、宏解析、光环判断、显式施法入口、移动补发、自Buff续挂及环境入口已有原调用轨迹对照；自动按钮挂钩仍缺失，原生权限和施法结果待验收。环境入口本身不证明能解除游戏限制。|
 |Core.lua|增加只读GetBoundMacro查询，供DirectCast旧查询失败时回退|修复原模块无法访问局部宏注册表的问题；九职业绑定及重绑定离线检查通过。这是明确修复，不是原缺陷的逐字复现。|
+|PanelV2.lua|补齐圣印回显OnEvent的事件名形参；重建presenceRows时清空sealCastIndex|原回调把事件名当单位名并直接返回，原包失败用例已保留；独立事件处理和重建回归通过，真实游戏未验收。见PANEL-PRESENCE-VALIDATION.md。|
 |PixelBar.lua、Core.lua|技能位图由固定bit0标记、从bit1起编码改为从bit0起承载24项，并使用独立版本码|修复24项状态溢出、与独立客户端配套；是协议变更，不是字节级原样还原。原协议兼容与独立协议应分开验收。|
 |Druid-Bindings.lua|SHIFT-F2原空槽补为既有变换之力宏|原资源缺陷修复，见ROTATION-GAPS.md；不能将241动作均有宏的现状归称原包也是如此。|
 |SettingsUI.lua|恢复导入前清理，匹配范围改为独立WowBuddyDev_前缀|已恢复枚举、逐项pcall读取/删除、失败继续及先清理后校验顺序；旧MKL/P07483180名字不清理。范围差异仍保留，详见下节测试及限制。|

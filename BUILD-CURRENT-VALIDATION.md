@@ -1,5 +1,7 @@
 # 当前源码本地构建验收
 
+最新插件增量：修复PanelV2圣印回显事件参数及面板重建索引，随机包位于dist/seal-echo-fix/WowBuddyDev-addon.zip，85文件；详见PANEL-PRESENCE-VALIDATION.md。尚未安装或公开发布，本地04cd6be EXE不包含此修复。下述hook-order-probe仍是已安装版本。
+
 随后新增手动HookOrderProbe诊断按钮，最新本地插件包为dist/hook-order-probe/WowBuddyDev-addon.zip；04cd6be EXE也不含此诊断工具。插件包现已安装到本机_forever_测试客户端并验证备份/保存文件不变，未公开发布；见INSTALLED-HOOK-PROBE-VALIDATION.md。
 
 构建后新增差异：DirectCastProbe.lua恢复EnvCloakCast入口，最新随机插件包位于dist/directcast-probe；下述04cd6be EXE尚不含此文件，未再次重建。仅插件源码与包有此增量，未安装或公开发布。

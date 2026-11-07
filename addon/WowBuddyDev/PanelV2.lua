@@ -1104,7 +1104,7 @@ local function flipSealRow(pr, now2)
 end
 local sealEchoFrame = CreateFrame("Frame")
 sealEchoFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-sealEchoFrame:SetScript("OnEvent", function(_, unit, a, b, c, d)
+sealEchoFrame:SetScript("OnEvent", function(_, event, unit, a, b, c, d)
   if unit ~= "player" then
     return
   end
@@ -1410,6 +1410,8 @@ local function renderPresenceRows(contract, specID, originRow)
   groupCountRows = {}
   locRows = {}
   presenceRows = {}
+  -- 回显索引持有行对象；重建后下一次事件须索引新行。
+  sealCastIndex = nil
   local rowPlans = {}
   for index30, contractSlot in ipairs(contract or {}) do
     if contractSlot.kind == "presence" or contractSlot.kind == "presence_group_count" then

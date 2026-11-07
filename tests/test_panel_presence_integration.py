@@ -67,6 +67,56 @@ end
 
 
 class PanelPresenceIntegrationTests(unittest.TestCase):
+    def assert_seal_echo(self, source, repaired):
+        lua=self.fixture(source,'PALADIN',2,1486);g=lua.globals()
+        # GetSpellInfo仅为名称回显索引提供确定名称；事件仍走实际注册分发。
+        lua.execute("function GetSpellInfo(id) return 'fixture-spell-'..tostring(id) end")
+        g.combat=True
+        g.refreshPanelFixture(.25)
+        g.auraMode='unknown'
+        def seals():
+            return {row.key:row for row in g.fixturePresenceRows.values()
+                    if row.key.startswith('seal_')}
+        def green_keys():
+            return {key for key,row in seals().items() if row.row.dimTex.color[2]==1}
+        all_keys=set(seals())
+        self.assertGreater(len(all_keys),1)
+        g.EmitFixtureEvent('UNIT_SPELLCAST_SUCCEEDED','player','cast-guid',20271)
+        g.refreshPanelFixture(.25)
+        self.assertEqual(green_keys(),set() if repaired else all_keys)
+        if not repaired:return
+        selected=seals()['seal_righteousness']
+        # 新签名：unit,castGUID,spellID；任一已注册等级均可命中。
+        g.EmitFixtureEvent('UNIT_SPELLCAST_SUCCEEDED','player','cast-guid',selected.spellIDs[2])
+        g.refreshPanelFixture(.25)
+        self.assertEqual(green_keys(),{'seal_righteousness'})
+        g.EmitFixtureEvent('UNIT_SPELLCAST_SUCCEEDED','target','cast-guid',20271)
+        g.refreshPanelFixture(.25)
+        self.assertEqual(green_keys(),{'seal_righteousness'})
+        # 旧签名：unit,spellName,rank,lineID,spellID；名字通道及中文审判。
+        selected=seals()['seal_command']
+        g.EmitFixtureEvent('UNIT_SPELLCAST_SUCCEEDED','player',
+                          'fixture-spell-'+str(selected.spellIDs[1]),'rank',0,0)
+        g.refreshPanelFixture(.25)
+        self.assertEqual(green_keys(),{'seal_command'})
+        g.EmitFixtureEvent('UNIT_SPELLCAST_SUCCEEDED','player','审判','rank',0,0)
+        g.refreshPanelFixture(.25)
+        self.assertEqual(green_keys(),set())
+        # 面板重建后必须更新新行，不能写回已废弃的presenceRow对象。
+        g.EmitFixtureEvent('PLAYER_SPECIALIZATION_CHANGED','player')
+        lua.execute('''for _,frame in ipairs(frames) do
+          local cb=frame.scripts.OnUpdate
+          if cb and debug.getinfo(cb,'S').source=='@PanelV2.lua'
+             and not isPanelDriver(cb) then cb(frame,.05) end
+        end
+        fixturePresenceRows=findPanelUpvalue(fixturePanelDriver,'presenceRows')''')
+        g.EmitFixtureEvent('UNIT_SPELLCAST_SUCCEEDED','player','cast-guid',20154)
+        g.refreshPanelFixture(.25)
+        self.assertEqual(green_keys(),{'seal_righteousness'})
+
+    def test_seal_echo_receives_real_event_signature_and_survives_panel_rebuild(self):
+        self.assert_seal_echo(full_load.SOURCE,True)
+
     def fixture(self, source, token, cid, spec):
         prelude=f"fixtureClass='{token}';fixtureClassID={cid};fixtureSpecID={spec}\n"
         prelude+='\n'.join((ROOT/'tests'/name).read_text('utf8')
@@ -129,6 +179,7 @@ class PanelPresenceIntegrationTests(unittest.TestCase):
             shutil.copytree(full_load.SOURCE,source)
             # 仅增加旧全局名称别名，原PanelV2正文原样执行；其余依赖保持同一宿主。
             (source/'PanelV2.lua').write_text('P07483180=WowBuddyDev\n'+original.decode('utf-8-sig'),encoding='utf8')
+            self.assert_seal_echo(source,False)
             for token,cid,spec in (('DRUID',11,1484),('PALADIN',2,1486)):
                 with self.subTest(class_name=token):
                     self.assertEqual(self.exercise(source,token,cid,spec),
