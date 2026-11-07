@@ -58,6 +58,18 @@ class OriginalPixelBarFramesTests(unittest.TestCase):
             namespace='P07483180' if old else 'WowBuddyDev'
             core=source('Core.lua');start=core.index(namespace+'.COMMON_PIXEL_DATA = {')
             lua.execute(core[start:core.index('\n}',start)+2])
+            start=core.index('local castGenerationCounter = 1')
+            lua.execute(core[start:core.index('local empowerGenerationCounter = 0',start)])
+            lua.execute('''secret={}
+            function issecretvalue(v) return v==secret end
+            function UnitCastingInfo(unit)
+              if unit~='player' then return nil end
+              if castQueryError then error('fixture cast query') end
+              if casting then return unpack(casting,1,10) end
+            end
+            function UnitChannelInfo(unit)
+              if unit=='player' and channeling then return unpack(channeling,1,11) end
+            end''')
             for path in ('ForeverTalentData.lua','ForeverClassSupport.lua','classes/'+name+'/class_forever.lua'):
                 lua.execute(source(path))
             lua.execute('''WowBuddyDev.classData=registeredClass
@@ -75,7 +87,15 @@ class OriginalPixelBarFramesTests(unittest.TestCase):
                  'powerUnavailable=true; healthUnavailable=true; trinket=8.7', 'powerUnavailable=false; healthUnavailable=false; health=0',
                  'targetAlive=false', 'targetAlive=true; typing=true', 'typing=false; fixtureKnown=true',
                  'WowBuddyDev.DB.masterSwitch=false', 'WowBuddyDev.DB.masterSwitch=true; combat=false',
-                 'health=100; powerValue=100; speed=0; WowBuddyDev.isMoving=false; trinket=0', 'combat=true']
+                 'health=100; powerValue=100; speed=0; WowBuddyDev.isMoving=false; trinket=0', 'combat=true',
+                 "casting={'cast',nil,nil,now*1000,(now+5)*1000,false,7,false,116,42}",
+                 '', 'casting=nil',
+                 "channeling={'channel',nil,nil,now*1000,(now+3)*1000,false,false,5143,false,nil,43}",
+                 'channeling[8]=secret', 'channeling[5]=nil', 'castQueryError=true',
+                 'castQueryError=false;channeling=nil;WowBuddyDev.playerSucceededGeneration=99;WowBuddyDev.playerSucceededSpellID=116']
+        cast_expected={12:('40','116','1'),13:('30','116','1'),14:('0','0','0'),
+                       15:('20','5143','2'),16:('10','0','17'),17:('0','0','5'),
+                       18:('0','0','20'),19:('0','0','0')}
         frames=0
         for name,spec in [('Mage',1482),('Druid',1484),('Hunter',1485),('Paladin',1486),
                           ('Priest',1487),('Rogue',1488),('Shaman',1489),('Warlock',1490),('Warrior',1491)]:
@@ -127,9 +147,16 @@ class OriginalPixelBarFramesTests(unittest.TestCase):
                         self.assertEqual(decoded[1]['player_health_pct'],'255')
                     if index==8:
                         self.assertEqual(decoded[1]['master_switch'],'OFF')
+                    if index in cast_expected:
+                        self.assertEqual(tuple(decoded[1][key] for key in
+                            ('cast_remaining','player_cast_spell_id','player_cast_observation_code')),
+                            cast_expected[index])
+                    if index==19:
+                        self.assertEqual(decoded[1]['player_succeeded_generation'],'99')
+                        self.assertEqual(decoded[1]['player_succeeded_spell_id'],'116')
                     self.assertTrue(snapshots[0][1])
                     frames+=1
-        self.assertEqual(frames,108)
+        self.assertEqual(frames,180)
 
 
 if __name__=='__main__':unittest.main()
