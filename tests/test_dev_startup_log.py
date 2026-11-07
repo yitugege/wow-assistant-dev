@@ -7,6 +7,22 @@ from wowbuddy.dev_startup import run_logged,record
 from wowbuddy.startup_log import ROTATE_BYTES
 
 class StartupLogTests(unittest.TestCase):
+    def test_native_handlers_restore_python_hook(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original=sys.excepthook
+            def main():
+                self.assertIsNot(sys.excepthook,original)
+                return 0
+            self.assertEqual(run_logged(main,application=Path(tmp),arguments=['app','--data-dir',tmp]),0)
+            self.assertIs(sys.excepthook,original)
+
+    def test_crash_selection_precedes_other_commands_without_in_process_crash(self):
+        for argument,target in (('--crash-test','trigger_null_write'),('--crash-test=throw','trigger_cpp_runtime_error')):
+            with tempfile.TemporaryDirectory() as tmp,patch('wowbuddy.crash_diagnostics.'+target,side_effect=RuntimeError('test sentinel')) as trigger:
+                with patch('builtins.print') as main:
+                    code=run_logged(main,application=Path(tmp),arguments=['app','--selftest',argument,'--data-dir',tmp])
+                    self.assertEqual(code,1);trigger.assert_called_once();main.assert_not_called()
+
     def test_order_normal_exit_and_append(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);args=['app','--data-dir',tmp]

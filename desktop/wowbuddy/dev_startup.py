@@ -25,7 +25,7 @@ def qt_ready():
 
 def run_logged(main,*,application,arguments):
     global _active
-    previous=_active;log=None
+    previous=_active;log=None;diagnostics=None
     directory=Path(application)/'.local'
     try:
         try:
@@ -37,8 +37,22 @@ def run_logged(main,*,application,arguments):
                 environment_fields=(('进程ID',str(os.getpid())),('独立程序目录',str(application))))
         except (OSError,ValueError):pass
         _active=log
+        if log is not None and os.name=='nt':
+            try:
+                from .crash_diagnostics import CurrentProcessDiagnostics
+                diagnostics=CurrentProcessDiagnostics(log).install()
+                record('当前进程SEH/CRT异常处理器已注册')
+            except (OSError,AttributeError) as error:
+                record('原生异常处理器注册失败：'+str(error))
         record('main() 进入，准备分派独立入口')
         try:
+            from .native_cli import parse_native_cli
+            command=parse_native_cli(arguments).command
+            if command in ('crash_null','crash_throw'):
+                from .crash_diagnostics import trigger_null_write,trigger_cpp_runtime_error
+                record('执行显式崩溃诊断：'+command)
+                (trigger_null_write if command=='crash_null' else trigger_cpp_runtime_error)()
+                raise RuntimeError('崩溃诊断意外返回')
             code=main()
         except SystemExit as exit_status:
             code=exit_status.code if isinstance(exit_status.code,int) else (0 if exit_status.code is None else 1)
@@ -52,5 +66,6 @@ def run_logged(main,*,application,arguments):
         if log is not None:log.finish(code)
         return code
     finally:
+        if diagnostics is not None:diagnostics.close()
         _active=previous
         if log is not None:log.close()
