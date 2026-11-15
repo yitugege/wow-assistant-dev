@@ -160,6 +160,7 @@ def reset_for_start(state: SessionState, dispatcher: ActionDispatcher,
     dispatch.local_gcd_until_ms = 0
     dispatch.last_sent_ms = 0
     scheduler.target_valid = -1
+    scheduler.target_revision = None
     dispatch.focus.last_action = ''
     dispatch.focus.last_switch_ms = 0
     dispatch.focus.skipped_count = 0

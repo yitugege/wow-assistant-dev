@@ -8,6 +8,7 @@ from tests import test_original_direct_cast as original
 ROOT=Path(__file__).resolve().parents[1]
 HOST='''
 calls={}; slotsMode='existing'; pickupMode='ok'; placeMode='ok'; useMode='ok'; castMode='ok'
+actionSlots={};cursorKind=nil;cursorSpell=nil
 nameKnown=true; messages={}; SlashCmdList=SlashCmdList or {}
 function print(message) table.insert(messages,message) end
 function wipe(t) for k in pairs(t) do t[k]=nil end end
@@ -15,18 +16,24 @@ function GetSpellInfo(name)
   return 'Frostbolt',nil,nil,2000,nil,nil,nameKnown and 116 or nil
 end
 function GetActionInfo(slot)
+  if actionSlots[slot] then return 'spell',actionSlots[slot] end
   if slotsMode=='existing' and slot==1 then return 'spell',116 end
   if slotsMode=='full' then return 'macro',17 end
 end
+function GetCursorInfo() return cursorKind,nil,nil,cursorSpell end
+function ClearCursor() cursorKind,cursorSpell=nil,nil end
 function PickupSpell(id)
   table.insert(calls,'pickup:'..id)
   if pickupMode=='error' then error('fixture denied') end
   if pickupMode=='false' then return false end
+  cursorKind,cursorSpell='spell',id
 end
 function PlaceAction(slot)
   table.insert(calls,'place:'..slot)
   if placeMode=='error' then error('fixture denied') end
   if placeMode=='false' then return false end
+  if placeMode=='ignored' then return end
+  if cursorKind=='spell' then actionSlots[slot]=cursorSpell; ClearCursor() end
 end
 function UseAction(slot,unit)
   table.insert(calls,'use:'..slot..':'..unit)
@@ -73,14 +80,39 @@ class DirectCastActionsTests(unittest.TestCase):
                 self.assert_cast_trace(a,b,unit='player')
                 self.assert_cast_trace(a,b)  # 同一缓存下再次尝试。
 
-    def test_placement_failures_preserve_original_cache_semantics(self):
-        for pickup,place in itertools.product(('ok','error','false'),repeat=2):
-            with self.subTest(pickup=pickup,place=place):
-                a,b=self.hosts(slotsMode='empty',pickupMode=pickup,placeMode=place)
-                for _ in range(2):
-                    self.assertEqual(b.globals().WowBuddyDev.DirectCast.EnsureSlotForSpell(116),
-                                     a.globals().P07483180.DirectCast.EnsureSlotForSpell(116))
-                    self.assertEqual(list(b.globals().calls.values()),list(a.globals().calls.values()))
+    def test_failed_placement_never_uses_the_empty_slot_and_can_retry(self):
+        for mode in ('error', 'false', 'ignored'):
+            with self.subTest(mode=mode):
+                reference, product = self.hosts(slotsMode='empty', placeMode=mode)
+                original = reference.globals().P07483180.DirectCast
+                g = product.globals()
+                current = g.WowBuddyDev.DirectCast
+                self.assertEqual(original.Cast('spell_116'), (True, 'slot1'))
+                self.assertEqual(list(reference.globals().calls.values()), ['pickup:116', 'place:1', 'use:1:target'])
+                self.assertEqual(current.Cast('spell_116'), (True, 116))
+                self.assertEqual(list(g.calls.values()), ['pickup:116', 'place:1', 'cast:116:target'])
+                self.assertIsNone(g.cursorKind)
+                self.assertIsNone(g.actionSlots[1])
+
+                g.placeMode = 'ok'
+                self.assertEqual(current.Cast('spell_116'), (True, 'slot1'))
+                self.assertEqual(g.actionSlots[1], 116)
+                self.assertEqual(list(g.calls.values())[3:], ['pickup:116', 'place:1', 'use:1:target'])
+
+    def test_auto_placement_skips_an_occupied_cursor_and_failed_pickup(self):
+        _, product = self.hosts(slotsMode='empty')
+        g = product.globals()
+        current = g.WowBuddyDev.DirectCast
+        g.cursorKind = 'item'
+        self.assertFalse(current.EnsureSlotForSpell(116))
+        self.assertEqual(g.cursorKind, 'item')
+        self.assertEqual(list(g.calls.values()), [])
+        for mode in ('error', 'false'):
+            with self.subTest(mode=mode):
+                product.execute('calls={}; ClearCursor()')
+                g.pickupMode = mode
+                self.assertFalse(current.EnsureSlotForSpell(116))
+                self.assertEqual(list(g.calls.values()), ['pickup:116'])
 
     def test_missing_macro_spell_name_and_registry_fallback(self):
         a,b=self.hosts()

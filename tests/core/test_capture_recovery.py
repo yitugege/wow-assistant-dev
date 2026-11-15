@@ -1,7 +1,10 @@
 """抓屏访问丢失及缓存坐标变化；显式替身不接触桌面。"""
+import ctypes
+import struct
 import unittest
 from types import SimpleNamespace
-from wowbuddy.capture import DxgiCapture,DxgiInitialization,Rect,DXGI_ERROR_WAIT_TIMEOUT,WindowCapture
+from unittest.mock import Mock
+from wowbuddy.capture import DxgiCapture,DxgiInitialization,Rect,DXGI_ERROR_WAIT_TIMEOUT,WindowCapture,Win32WindowAPI
 from wowbuddy.pixel_geometry import RGBImage
 
 
@@ -25,6 +28,49 @@ class Backend:
 
 
 class CaptureRecoveryTests(unittest.TestCase):
+    def test_windows_session_state_uses_only_the_valid_status_header(self):
+        windows = Win32WindowAPI.__new__(Win32WindowAPI)
+        windows.wtsapi32 = api = Mock()
+        cases = ((1, 0, 0, 20, 'desktop_locked'), (1, 0, 1, 20, None),
+                 (1, 4, 1, 20, 'desktop_disconnected'), (1, 0, -1, 20, 'desktop_unverified'),
+                 (2, 0, 1, 20, 'desktop_unverified'), (1, 0, 1, 8, 'desktop_unverified'))
+        for level, connection, lock, size, expected in cases:
+            with self.subTest(level=level, connection=connection, lock=lock, size=size):
+                api.reset_mock()
+                header = ctypes.create_string_buffer(struct.pack('<I4xIIi', level, 1, connection, lock))
+                def query(server, session, category, buffer, count):
+                    self.assertEqual((server, session, category), (None, 0xffffffff, 25))
+                    ctypes.cast(buffer, ctypes.POINTER(ctypes.c_void_p))[0] = ctypes.addressof(header)
+                    ctypes.cast(count, ctypes.POINTER(ctypes.c_uint32))[0] = size
+                    return 1
+                api.WTSQuerySessionInformationW.side_effect = query
+                self.assertEqual(windows.desktop_status(), expected)
+                api.WTSFreeMemory.assert_called_once()
+        api.reset_mock()
+        api.WTSQuerySessionInformationW.side_effect = None
+        api.WTSQuerySessionInformationW.return_value = 0
+        self.assertEqual(windows.desktop_status(), 'desktop_unverified')
+        api.WTSFreeMemory.assert_not_called()
+
+    def test_lock_suspends_both_capture_backends_and_drops_cached_frames(self):
+        backend = Backend()
+        dxgi = DxgiCapture(backend, lambda: 1000)
+        dxgi.cached_image = RGBImage([[0xff00ff] * 48])
+        windows, printed = Mock(), Mock()
+        status = Mock(return_value='desktop_locked')
+        capture = WindowCapture(windows, dxgi, printed, desktop_status=status)
+        for _ in range(2):
+            result = capture.capture(10)
+            self.assertEqual(result.status, 'desktop_locked')
+            self.assertIsNone(result.image)
+        self.assertIsNone(dxgi.cached_image)
+        self.assertEqual(backend.calls, [('reset',)])
+        windows.is_iconic.assert_not_called()
+        printed.capture.assert_not_called()
+        status.return_value = None
+        windows.is_iconic.return_value = True
+        self.assertEqual(capture.capture(10).status, 'minimized')
+
     def test_two_backend_selection_matrix_and_origin_marker(self):
         def image(kind):
             if kind=='none':return None
@@ -86,6 +132,53 @@ class CaptureRecoveryTests(unittest.TestCase):
         self.assertEqual(capture.frame_count,2)
         self.assertEqual([c for c in backend.calls if c[0]=='acquire'],
                          [('acquire',50),('acquire',0),('acquire',50)])
+
+    def test_incompatible_output_does_not_disable_capture_after_display_change(self):
+        for reason in ('rotated', 'unsupported_format'):
+            with self.subTest(reason=reason):
+                backend = Backend()
+                now = [1000]
+                landscape = Rect(0, 0, 1920, 1080)
+                portrait = Rect(1920, 0, 3000, 1920)
+                display_mode = {1: 'ok', 2: reason}
+                backend.monitor_from_rect = lambda rect: 1 if rect.left < 1920 else 2
+
+                def initialize(monitor):
+                    backend.calls.append(('initialize', monitor))
+                    return DxgiInitialization(display_mode[monitor], (landscape, portrait)[monitor - 1])
+
+                backend.initialize = initialize
+                left = Rect(10, 10, 110, 20)
+                right = Rect(1940, 20, 2040, 30)
+                original = DxgiCapture(backend, lambda: now[0])
+                self.assertIsNone(original.capture(right))
+                self.assertTrue(original.permanent_format_failure)
+                self.assertIsNone(original.capture(left))
+                self.assertEqual(backend.calls, [('reset',), ('initialize', 2)])
+
+                backend.calls.clear()
+                backend.results = [(0, 1), (DXGI_ERROR_WAIT_TIMEOUT, None), (0, 2), (0, 3)]
+                capture = DxgiCapture(backend, lambda: now[0], recover_output_changes=True)
+                self.assertIsNotNone(capture.capture(left))
+                self.assertIsNone(capture.capture(right))
+                self.assertIsNone(capture.cached_image)
+                self.assertEqual(capture.last_error, reason)
+                self.assertEqual(capture.retry_after_ms, 2500)
+                self.assertIsNone(capture.capture(right))
+                self.assertEqual(backend.calls.count(('initialize', 2)), 1)
+
+                # 移回横屏后先丢弃超时帧，再取得新图像。
+                self.assertIsNone(capture.capture(left))
+                self.assertIsNotNone(capture.capture(left))
+                self.assertEqual(backend.calls.count(('initialize', 1)), 2)
+                self.assertIsNone(capture.capture(right))
+                display_mode[2] = 'ok'
+                now[0] = 2499
+                self.assertIsNone(capture.capture(right))
+                now[0] = 2500
+                self.assertIsNotNone(capture.capture(right))
+                self.assertEqual(capture.monitor, 2)
+                self.assertEqual(backend.calls.count(('initialize', 2)), 3)
 
     def test_read_failure_releases_acquired_frame_and_resource(self):
         backend=Backend();capture=DxgiCapture(backend,lambda:1000)

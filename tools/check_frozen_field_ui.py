@@ -1,6 +1,7 @@
 """九职业冻结字段页诊断与显示全部切换；仅NoSystemBackend离屏窗口。"""
 from pathlib import Path
 import json,os,tempfile,shutil
+from PySide6.QtCore import QSettings
 from check_frozen_outer import ROOT,run,file_sha256
 
 def check():
@@ -34,6 +35,32 @@ def check():
             showall=(data/'_showall.txt').read_text('utf8')
             assert '--toggle-showall on' in showall and '--toggle-showall off' in showall
             cases.append({'mode':mode,'spec':spec,'passed':True,'report':str(data/'dump-ui.json'),**outcome})
+        # 原04a530的数字arg会再次解释动作名中的占位符；冻结程序也必须保留此语义。
+        data=home/'threshold-placeholder';data.mkdir()
+        fixture=data/'rotations.json'
+        fixture.write_text(json.dumps({'rotations':[{'specId':1482,'specName':'诊断',
+            'subKey':'test','profileName':'占位符阈值','rules':[
+                {'action':'cast%1','when':['num_below','player_health_pct',30]}]}]},
+            ensure_ascii=False),'utf8')
+        settings=QSettings(str(data/'settings.ini'),QSettings.IniFormat)
+        settings.setValue('switch/sw_player_health_pct_b30',19)
+        settings.sync()
+        expected='sw_cast30~player_health_pct_b%4'
+        for phase in ('migrate','reopen'):
+            outcome=run(target,home,env,arguments=['--desktop-dump-ui',
+                f'--rotations={fixture}','--rotation=1482|test|占位符阈值',
+                '--spec=1482','--data-dir',str(data)])
+            report=json.loads((data/'dump-ui.json').read_text('utf8'))
+            assert report['passed'] and report['backend']=='NoSystemBackend',report
+            assert not report['monitor_active'] and not report['watch_active']
+            settings.sync()
+            assert int(settings.value('switch/'+expected,-1))==19
+            assert not settings.contains('switch/sw_player_health_pct_b30')
+            assert not settings.contains('switch/sw_cast%1~player_health_pct_b30')
+            ui=(data/'_ui.txt').read_text('utf8')
+            assert '19%' in ui,ui
+            cases.append({'mode':mode,'scenario':'threshold-'+phase,'passed':True,
+                'key':expected,'value':19,'report':str(data/'dump-ui.json'),**outcome})
     return {'passed':True,'cases':cases,'outer_sha256':outer_manifest['sha256'],
             'business_sha256':business_manifest['executable_sha256'],'test_root':str(root),
             'game_verified':False,'scope':'冻结字段页加载及显示全部切换，不是像素布局或实机施法验收'}

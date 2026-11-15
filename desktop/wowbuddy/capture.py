@@ -8,6 +8,7 @@ from __future__ import annotations
 import ctypes as C
 from dataclasses import dataclass
 import os
+from struct import Struct
 import time
 from typing import Callable, Protocol
 import uuid
@@ -19,6 +20,11 @@ from .capture_backend_text import capture_backend_text
 DXGI_ERROR_NOT_FOUND = 0x887A0002
 DXGI_ERROR_WAIT_TIMEOUT = 0x887A0027
 DXGI_RESET_ERRORS = frozenset((0x887A0026, 0x887A0005, 0x887A0006, 0x887A0007))
+DESKTOP_HOLD_TEXT = {
+    "desktop_locked": "Windows 已锁屏，等待解锁后恢复监控。",
+    "desktop_disconnected": "Windows 会话已断开，等待重新连接。",
+    "desktop_unverified": "暂未确认 Windows 会话状态，已暂停游戏输入。",
+}
 
 
 def failed(hr: int) -> bool:
@@ -115,9 +121,12 @@ class DxgiBackend(Protocol):
 
 class DxgiCapture:
     """02f4e0缓存/退避状态机；backend负责显式底层COM操作。"""
-    def __init__(self, backend: DxgiBackend, clock_ms: Callable[[], int] | None = None):
+    def __init__(self, backend: DxgiBackend, clock_ms: Callable[[], int] | None = None, *,
+                 recover_output_changes: bool = False):
         self.backend = backend
         self.clock_ms = clock_ms or (lambda: time.time_ns() // 1_000_000)
+        self.recover_output_changes = recover_output_changes
+        self._incompatible_monitor: int | None = None
         self.permanent_factory_failure = False
         self.permanent_format_failure = False
         self.retry_after_ms = 0
@@ -146,11 +155,19 @@ class DxgiCapture:
 
     def capture(self, client: Rect, strip_width: int = 48) -> RGBImage | None:
         if (self.permanent_factory_failure or self.permanent_format_failure
-                or self.clock_ms() < self.retry_after_ms or client.empty or strip_width <= 0):
+                or client.empty or strip_width <= 0):
+            return None
+        waiting = self.clock_ms() < self.retry_after_ms
+        if waiting and self._incompatible_monitor is None:
             return None
         monitor = self.backend.monitor_from_rect(client)
         if not monitor:
             return None
+        if self._incompatible_monitor is not None:
+            if waiting and monitor == self._incompatible_monitor:
+                return None
+            self._incompatible_monitor = None
+            self.retry_after_ms = 0
         if self.monitor != monitor:
             self.reset()
             init = self.backend.initialize(monitor)
@@ -159,8 +176,13 @@ class DxgiCapture:
                 self.last_error = init.status
                 return None
             if init.status in {"rotated", "unsupported_format"}:
-                self.permanent_format_failure = True
-                self.last_error = init.status
+                if self.recover_output_changes:
+                    # 退避仅作用于当前输出，移到可用的屏幕时立即尝试。
+                    self._incompatible_monitor = monitor
+                    self._backoff(init.status)
+                else:
+                    self.permanent_format_failure = True
+                    self.last_error = init.status
                 return None
             if init.status in {"duplicate_failed", "no_output"}:
                 if init.retry_after_ms is None:
@@ -228,8 +250,12 @@ class CaptureResult:
 
 
 class WindowCapture:
-    def __init__(self, windows: WindowAPI, dxgi: DxgiCapture, printwindow: PrintBackend):
+    def __init__(self, windows: WindowAPI, dxgi: DxgiCapture, printwindow: PrintBackend, *,
+                 desktop_status: Callable[[], str | None] | None = None):
         self.windows, self.dxgi, self.printwindow = windows, dxgi, printwindow
+        self.desktop_status = desktop_status
+        self._desktop_blocked = False
+        self.prefer_printwindow = False
 
     def _backend_status(self) -> str | None:
         # 兼容既有只提供capture()的fake；不读取Mock自动生成的动态属性。
@@ -238,6 +264,13 @@ class WindowCapture:
     def capture(self, hwnd: int) -> CaptureResult:
         if not hwnd:
             return CaptureResult("invalid_window")
+        status = self.desktop_status() if self.desktop_status is not None else None
+        if status is not None:
+            if not self._desktop_blocked and isinstance(self.dxgi, DxgiCapture):
+                self.dxgi.reset("等待 Windows 桌面恢复")
+            self._desktop_blocked = True
+            return CaptureResult(status)
+        self._desktop_blocked = False
         if self.windows.is_iconic(hwnd):
             return CaptureResult("minimized")
         window = self.windows.window_rect(hwnd)
@@ -252,11 +285,17 @@ class WindowCapture:
         if client.empty:
             return CaptureResult("invalid_client_rect")
         rect = Rect(origin[0], origin[1], origin[0] + client.width, origin[1] + client.height)
+        printed = None
+        if self.prefer_printwindow:
+            printed = self.printwindow.capture(hwnd, window, origin, client.width, client.height)
+            if _has_capture_marker(printed):
+                return CaptureResult("ok", printed, "printwindow", rect, True)
         dxgi = self.dxgi.capture(rect, 48)
         if _has_capture_marker(dxgi):
             return CaptureResult("ok", dxgi, "dxgi", rect, True,
                                  self._backend_status())
-        printed = self.printwindow.capture(hwnd, window, origin, client.width, client.height)
+        if not self.prefer_printwindow:
+            printed = self.printwindow.capture(hwnd, window, origin, client.width, client.height)
         if _nonempty(printed) and (not _nonempty(dxgi) or _has_capture_marker(printed)):
             selected, name = printed, "printwindow"
         elif _nonempty(dxgi):
@@ -272,6 +311,10 @@ class WindowCapture:
 U32 = C.c_uint32
 I32 = C.c_int32
 PTR = C.c_void_p
+# WTSINFOEXW 的级别和 8 字节对齐的 Data 头，只读取会话状态字段。
+_WTS_INFO_HEADER = Struct("<I4xIIi")
+_WTS_CURRENT_SESSION = 0xFFFFFFFF
+_WTS_SESSION_INFO_EX = 25
 
 
 class _RECT(C.Structure):
@@ -301,6 +344,10 @@ class Win32WindowAPI:
         if os.name != "nt":
             raise OSError("真实抓屏后端只支持Windows")
         self.user32 = C.WinDLL("user32", use_last_error=True)
+        self.wtsapi32 = C.WinDLL("wtsapi32", use_last_error=True)
+        _signature(self.wtsapi32, "WTSQuerySessionInformationW", I32,
+                   [PTR, U32, I32, C.POINTER(PTR), C.POINTER(U32)])
+        _signature(self.wtsapi32, "WTSFreeMemory", None, [PTR])
         _signature(self.user32, "IsIconic", I32, [PTR])
         _signature(self.user32, "GetWindowRect", I32, [PTR, C.POINTER(_RECT)])
         _signature(self.user32, "GetClientRect", I32, [PTR, C.POINTER(_RECT)])
@@ -308,6 +355,27 @@ class Win32WindowAPI:
 
     def is_iconic(self, hwnd):
         return bool(self.user32.IsIconic(hwnd))
+
+    def desktop_status(self):
+        buffer, size = PTR(), U32()
+        api = self.wtsapi32
+        if not api.WTSQuerySessionInformationW(None, _WTS_CURRENT_SESSION, _WTS_SESSION_INFO_EX,
+                                               C.byref(buffer), C.byref(size)):
+            return "desktop_unverified"
+        try:
+            if not buffer or size.value < _WTS_INFO_HEADER.size:
+                return "desktop_unverified"
+            level, _, connection, lock = _WTS_INFO_HEADER.unpack(C.string_at(buffer, _WTS_INFO_HEADER.size))
+            if level != 1:
+                return "desktop_unverified"
+            if connection != 0:  # WTSActive
+                return "desktop_disconnected"
+            if lock not in (0, 1):
+                return "desktop_unverified"
+            return "desktop_locked" if lock == 0 else None
+        finally:
+            if buffer:
+                api.WTSFreeMemory(buffer)
 
     def _rect(self, function, hwnd):
         rect = _RECT()
@@ -594,4 +662,6 @@ class Win32DxgiBackend:
 
 def make_win32_capture() -> WindowCapture:
     """显式创建真实后端；调用返回对象.capture(hwnd)才开始抓屏。"""
-    return WindowCapture(Win32WindowAPI(), DxgiCapture(Win32DxgiBackend()), Win32PrintWindow())
+    windows = Win32WindowAPI()
+    return WindowCapture(windows, DxgiCapture(Win32DxgiBackend(), recover_output_changes=True), Win32PrintWindow(),
+                         desktop_status=windows.desktop_status)

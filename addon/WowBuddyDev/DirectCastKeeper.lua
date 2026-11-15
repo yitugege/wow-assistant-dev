@@ -1,4 +1,8 @@
 -- 原自Buff续挂调度；调用成功与否仍由游戏权限/状态决定。
+-- 无限客户端拦截定时器直接施法，反复弹出 ADDON_ACTION_FORBIDDEN。
+-- 该客户端使用职业宏和循环里的补 Buff 规则。
+if GetBuildInfo and select(4, GetBuildInfo()) == 16001 then return end
+
 local DC = WowBuddyDev.DirectCast
 local nextTry = {}
 
@@ -21,7 +25,7 @@ local function keeperTick()
           local start,duration = GetSpellCooldown(spellID)
           if not (start and start>0 and duration and duration>0 and start+duration-now>0.1) then
             local ok = false
-            local slot = DC.FindSlotForSpell(spellID) or DC.EnsureSlotForSpell(spellID)
+            local slot = DC.EnsureSlotForSpell(spellID)
             if slot then ok = pcall(UseAction,slot,"player") end
             if not ok then ok = pcall(CastSpellByID,spellID,"player") end
             nextTry[key] = now+5

@@ -18,7 +18,8 @@ class AutoTargetPixelTests(unittest.TestCase):
             offset=source.index(start)
             return source[offset:source.index(end,offset)]
         functions=section('local function setTextureColor(', '\nlocal maxRgbValue')
-        packet=section('  local ttdValue = 0','\n  valuesById.ttf = 0')
+        packet_end='  valuesById.ttd = ttdValue'
+        packet=section('  local ttdValue = 0',packet_end)+packet_end
         number=section('          local numberValue = value or 0','\n        end\n      elseif field.type == "spell"')
         self.lua.execute('WowBuddyDev={}; texture={SetColorTexture=function(self,r,g,b,a) self.r=r;self.g=g;self.b=b;self.a=a end}')
         self.render=self.lua.execute(functions+'\nreturn function()\nlocal valuesById={}\n'+packet+

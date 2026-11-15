@@ -10,6 +10,32 @@ local function observe(fn, ...)
   if ok then return value end
 end
 
+local confirmedMoving
+local movementEvents = CreateFrame("Frame")
+for _, event in ipairs({"PLAYER_STARTED_MOVING", "PLAYER_STOPPED_MOVING", "PLAYER_ENTERING_WORLD",
+                        "PLAYER_DEAD", "PLAYER_ALIVE", "PLAYER_UNGHOST",
+                        "PLAYER_CONTROL_LOST", "PLAYER_CONTROL_GAINED"}) do
+  movementEvents:RegisterEvent(event)
+end
+movementEvents:SetScript("OnEvent", function(_, event)
+  if event == "PLAYER_STARTED_MOVING" then
+    confirmedMoving = true
+  elseif event == "PLAYER_STOPPED_MOVING" then
+    confirmedMoving = false
+  else
+    confirmedMoving = nil
+  end
+end)
+
+function ADDON.ObservePlayerMoving()
+  local speed = observe(GetUnitSpeed, "player")
+  if (not issecretvalue or not issecretvalue(speed)) and type(speed) == "number" and speed >= 0 then
+    confirmedMoving = speed > 0
+  end
+  -- 站着进入战斗不会触发停止移动事件，沿用最后一次可读的速度或移动事件。
+  return confirmedMoving
+end
+
 local function colorPercent(unit, powerType, health)
   local ok, value = pcall(function()
     if C_CurveUtil and C_CurveUtil.CreateColorCurve and Enum and Enum.LuaCurveType then
@@ -67,7 +93,7 @@ function ADDON.FillForeverExtraValues(values, specID)
     values.target_valid = observe(function() return alive("target") == true and UnitCanAttack("player", "target") == true end)
   end
   if values.player_in_combat == nil then values.player_in_combat = observe(UnitAffectingCombat, "player") end
-  if values.player_moving == nil then values.player_moving = observe(function() return GetUnitSpeed("player") > 0 end) end
+  if values.player_moving == nil then values.player_moving = ADDON.ObservePlayerMoving() end
   -- ★ 2026-10-03：明确 boolean（== true），不再让 observe 的 nil 漏出去。
   --   auto_attack_active 被 start_attack 规则用 FLAG(x,False) 消费（「没在自动攻击才发」），
   --   而 C_Spell.IsCurrentSpell 在无限客户端可能读不到（与战士 strike_queued 同源缺陷）：

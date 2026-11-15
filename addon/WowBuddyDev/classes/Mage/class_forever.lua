@@ -31,9 +31,47 @@ WowBuddyDev.RegisterPixelStripV2(1482, {
   { key = "missile_barrage", name = "飞弹连射", kind = "presence", unit = "player", filter = "HELPFUL", spellIDs = { 400589 } },
   { key = "presence_of_mind", name = "气定神闲", kind = "presence", unit = "player", filter = "HELPFUL", spellIDs = { 12043 } },
   { key = "arcane_power", name = "奥术强化", kind = "presence", unit = "player", filter = "HELPFUL", spellIDs = { 12042 } },
+  { key = "arcane_blast_debuff", name = "奥术冲击减益", kind = "presence", unit = "player", filter = "HARMFUL", spellIDs = { 400573, 400574, 1239696, 1239697, 1239699, 1239700 } },
 })
 
+local frostNovaRanks = { 122, 865, 6131, 10230 }
+
+local function frostNovaReady(spellID)
+  if spellID ~= 122 or WowBuddyDev.forceAvailableState[122] then return nil end
+  local rank
+  for index = #frostNovaRanks, 1, -1 do
+    if WowBuddyDev.IsSpellKnown(frostNovaRanks[index]) == true then
+      rank = frostNovaRanks[index]
+      break
+    end
+  end
+  if not rank then return false end
+
+  if C_Spell and C_Spell.GetSpellCooldownDuration then
+    local ok, remaining = pcall(function()
+      local duration = C_Spell.GetSpellCooldownDuration(rank, true)
+      if duration and not (issecretvalue and issecretvalue(duration)) then
+        return duration:GetRemainingDuration()
+      end
+    end)
+    if ok and not (issecretvalue and issecretvalue(remaining)) and type(remaining) == "number" then
+      return remaining <= 0 and WowBuddyDev.IsSpellReadyRaw(rank)
+    end
+  end
+
+  -- 数值受限时，用已确认施放的时间和实测基础冷却保守兜底。
+  local lastCast = WowBuddyDev.lastCastTime
+  local nova = lastCast and lastCast[122]
+  local coldSnap = lastCast and lastCast[11958]
+  if nova and (not coldSnap or nova >= coldSnap) and GetTime() - nova < 25 then
+    return false
+  end
+  return WowBuddyDev.IsSpellReadyRaw(rank)
+end
+
 WowBuddyDev.RegisterClass(1482, {
+  OverrideIsSpellReady = frostNovaReady,
+  cooldownEventAliases = { [865] = 122, [6131] = 122, [10230] = 122 },
   DEFAULT_MACROS = {
     spell_1459 = "/cast [@player,nochanneling] 奥术智慧",
     spell_168 = "/cast [@player,nochanneling] 霜甲术",
@@ -235,7 +273,7 @@ WowBuddyDev.RegisterClass(1482, {
     [400574] = { 400574, 1239696, 1239697, 1239699, 1239700 },
     [1312002] = { 400640, 1240044, 1240045, 1240046, 1240047, 1312002 },
     [2139] = { 2139 },
-    [122] = { 122, 865, 6131, 10230 },
+    [122] = frostNovaRanks,
     [12051] = { 12051 },
     [12042] = { 12042 },
     [11129] = { 11129 },

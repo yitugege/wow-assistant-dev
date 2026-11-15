@@ -37,6 +37,7 @@ def _int64(value, default=0):
 
 
 def _fields(value, forced_type=""):
+    # 0x14002c9e0：每个数组项均占位；空标签回填id，presence调用强制类型。
     result = []
     for entry in _array(value):
         entry = _object(entry)

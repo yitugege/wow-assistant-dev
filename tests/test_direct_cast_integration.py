@@ -70,6 +70,33 @@ class DirectCastIntegrationTests(unittest.TestCase):
         self.assertEqual(g.directCalls[2].slot,7)
         self.assertEqual(g.directCalls[2].unit,expected_unit)
 
+    def test_manual_class_slot_is_shared_by_registered_key_spellings(self):
+        lua = self.fixture()
+        g = lua.globals()
+        addon = g.WowBuddyDev
+        lua.execute('''
+            nameKnown=false
+            function GetSpellInfo(name)
+                return name,nil,nil,2000,nil,nil,nameKnown and 116 or nil
+            end
+            function GetActionInfo() return 'macro', 17 end
+            function CastSpellByID() error('manual slot should take precedence') end
+        ''')
+        self.assertTrue(addon.CreateSecureButton('class_NUMPADPLUS', 'NUMPADPLUS', '/cast [@player] Frostbolt'))
+        g.SlashCmdList.DCBIND('class_NUMPADADD 61')
+        g.SlashCmdList.DIRECTCAST('test class_NUMPADPLUS')
+        self.assertEqual((g.directCalls[1].slot, g.directCalls[1].unit), (61, 'player'))
+        self.assertEqual(addon.DirectCast.slots['class_NUMPADADD'], 61)
+
+        g.nameKnown = True
+        g.SlashCmdList.DCBIND('class_numpadplus 62')
+        self.assertEqual(addon.DirectCast.Cast('class_NUMPADADD'), (True, 'slot62'))
+        self.assertEqual((g.directCalls[2].slot, g.directCalls[2].unit), (62, 'player'))
+        g.SlashCmdList.DCBIND('class_NUMPAD5 63')
+        g.nameKnown = False
+        g.SlashCmdList.DIRECTCAST('test class_NUMPAD5')
+        self.assertEqual(g.directCalls[3].slot, 63)
+
     def test_successfully_rebound_macro_is_used_and_failed_rebind_is_not_cached(self):
         lua=self.fixture();g=lua.globals();a=g.WowBuddyDev
         self.assertTrue(a.CreateSecureButton('class_NUMPAD5','NUMPAD5','/cast [@player] Changed'))
@@ -85,6 +112,29 @@ class DirectCastIntegrationTests(unittest.TestCase):
         self.assertIsNone(a.GetBoundMacro('class_NUMPAD5'))
         self.assertEqual(a.DirectCast.Cast('class_NUMPAD5'),(None,'no-macro'))
         self.assertEqual(len(g.directCalls),1)
+
+    def test_logical_action_uses_the_registered_user_macro_and_rejects_failed_binding(self):
+        lua = self.fixture()
+        g = lua.globals()
+        addon = g.WowBuddyDev
+        self.assertEqual(addon.GetBoundMacro('spell_116'), addon.GetBoundMacro('class_numpad5'))
+
+        custom = '/cast [@player] Changed'
+        self.assertTrue(addon.SaveUserMacro('spell_116', custom))
+        addon.RefreshMacroBindings()
+        self.assertEqual(addon.GetBoundMacro('class_numpad5'), custom)
+        self.assertEqual(addon.DirectCast.Cast('spell_116'), (True, 'slot7'))
+        self.assertEqual(g.spellQueries[1], 'Changed')
+        self.assertEqual(g.directCalls[1].unit, 'player')
+
+        lua.execute('''
+            function SetOverrideBindingClick() return false end
+            rebindOK=pcall(WowBuddyDev.CreateSecureButton,'spell_116','NUMPAD5','/cast Rejected')
+        ''')
+        self.assertFalse(g.rebindOK)
+        self.assertIsNone(addon.GetBoundMacro('spell_116'))
+        self.assertEqual(addon.DirectCast.Cast('spell_116'), (None, 'no-macro'))
+        self.assertEqual(len(g.directCalls), 1)
 
     def test_combat_deferred_rebind_keeps_current_registered_macro(self):
         lua=self.fixture();g=lua.globals();a=g.WowBuddyDev

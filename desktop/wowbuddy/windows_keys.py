@@ -85,6 +85,7 @@ class CtypesWin32Backend:
         signatures = {
             'MapVirtualKeyW': (uint, [uint, uint]),
             'PostMessageW': (boolean, [hwnd, uint, C.c_size_t, C.c_ssize_t]),
+            'GetAsyncKeyState': (C.c_int16, [C.c_int]),
             'IsWindow': (boolean, [hwnd]), 'GetForegroundWindow': (hwnd, []),
             'GetAncestor': (hwnd, [hwnd, uint]),
             'AttachThreadInput': (boolean, [uint, uint, boolean]),

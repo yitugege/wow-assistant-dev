@@ -2368,6 +2368,10 @@ function WowBuddyDev.CreateSecureButton(actionKey, bindingKey, macroBody)
     key = normalizedKey, buttonName = buttonName, macroText = macroBody or "",
   }
   macroBindingErrors[actionKey] = nil
+  -- 可选观察者（DirectCast 点击挂钩）；它出错不能影响已经完成的绑定。
+  if type(WowBuddyDev.OnSecureButtonBound) == "function" then
+    pcall(WowBuddyDev.OnSecureButtonBound, secureButton, actionKey)
+  end
   return true
 end
 -- 功能：按动作键取回它的安全按钮对象。
@@ -2385,14 +2389,26 @@ function WowBuddyDev.GetSecureButton(actionKey)
   end
   return _G["WBD_BTN_" .. actionKey]
 end
+function WowBuddyDev.NormalizeClassActionKey(actionKey)
+  local key = type(actionKey) == "string" and actionKey:match("^class_(.+)$")
+  return key and "class_" .. normalizeBindingKey(key) or nil
+end
 -- 只读返回成功登记的宏文本，不暴露可变登记表或读取受保护按钮属性。
--- /dc 命令会转为小写；class_* 的按键后缀用同一绑定规范化规则查询。
+-- /dc 命令会转为小写；逻辑动作和 class_* 按键使用同一套绑定映射。
 function WowBuddyDev.GetBoundMacro(actionKey)
   if type(actionKey) ~= "string" or actionKey == "" then return nil end
   local entry = macroBindingRegistry[actionKey]
   if not entry then
-    local key = actionKey:match("^class_(.+)$")
-    if key then entry = macroBindingRegistry["class_" .. normalizeBindingKey(key)] end
+    local classAction = WowBuddyDev.NormalizeClassActionKey(actionKey)
+    if classAction then
+      entry = macroBindingRegistry[classAction]
+    elseif WowBuddyDev.GetClassBindingAction then
+      local bindingKey = (WowBuddyDev.ACTION_TO_KEY or {})[actionKey]
+      if bindingKey then
+        local registered = WowBuddyDev.GetClassBindingAction(actionKey, normalizeBindingKey(bindingKey))
+        entry = macroBindingRegistry[registered]
+      end
+    end
   end
   return entry and entry.macroText or nil
 end
@@ -2459,6 +2475,18 @@ ApplyMacros_Internal = function()
   if WowBuddyDev.ApplyAutoTargetBinding then
     local ok, err = pcall(WowBuddyDev.ApplyAutoTargetBinding)
     if not ok then reportMacroBindingError("auto_target", err) end
+  end
+  if WowBuddyDev.ApplyRecoveryBindings then
+    local ok, err = pcall(WowBuddyDev.ApplyRecoveryBindings)
+    if not ok then reportMacroBindingError("recovery", err) end
+  end
+  if WowBuddyDev.ApplyWandBinding then
+    local ok, err = pcall(WowBuddyDev.ApplyWandBinding)
+    if not ok then reportMacroBindingError("shoot_wand", err) end
+  end
+  if WowBuddyDev.ApplyDiscardTargetBinding then
+    local ok, err = pcall(WowBuddyDev.ApplyDiscardTargetBinding)
+    if not ok then reportMacroBindingError("discard_unreachable_target", err) end
   end
   if WowBuddyDev.InvalidateControlBindingConflicts then
     WowBuddyDev.InvalidateControlBindingConflicts()
@@ -2975,6 +3003,9 @@ function WowBuddyDev.IsAutoTargetGateOpen(enemyCount)
   if WowBuddyDev.IsHealingSpec() and (type(WowBuddyDev.HasHealingNpcMouseover) == "function" and WowBuddyDev.HasHealingNpcMouseover()) then
     return true
   end
+  if WowBuddyDev.IsPostKillAutoTargetReady and WowBuddyDev.IsPostKillAutoTargetReady() then
+    return true
+  end
   local autoTargetEnabled = WowBuddyDev.GetAutoTargetEnabled()
   if autoTargetEnabled then
     local specIndex = GetSpecialization and GetSpecialization() or 0
@@ -3234,6 +3265,9 @@ local function onCoreEvent(eventFrame, eventName, ...)
           uiErrorAt = now6
           uiErrorKind = failureKind
           tryPairFocusHealFailure(now6)
+          if failureKind == "los" and WowBuddyDev.RecordTargetSightError then
+            WowBuddyDev.RecordTargetSightError()
+          end
         end
       end)
     end

@@ -11,6 +11,9 @@ from tests import test_addon_full_load as full_load
 ROOT = full_load.ROOT
 sys.path.insert(0, str(ROOT/'desktop'))
 from wowbuddy.packages import read_addon
+from wowbuddy.pixel_fields import decode_field
+
+MAGE_MAINTENANCE = {'intellect', 'frost_armor', 'ice_armor', 'mage_armor'}
 
 PROBE = '''
 function findPanelUpvalue(fn,wanted,seen)
@@ -117,6 +120,48 @@ class PanelPresenceIntegrationTests(unittest.TestCase):
     def test_seal_echo_receives_real_event_signature_and_survives_panel_rebuild(self):
         self.assert_seal_echo(full_load.SOURCE,True)
 
+    def test_mage_maintenance_does_not_report_absent_on_empty_combat_queries(self):
+        lua = self.fixture(full_load.SOURCE, 'MAGE', 8, 1482)
+        g = lua.globals()
+        rows = {row.key: row for row in g.fixturePresenceRows.values() if row.key in MAGE_MAINTENANCE}
+        self.assertEqual(set(rows), MAGE_MAINTENANCE)
+
+        def states():
+            g.refreshPanelFixture(.25)
+            return {key: decode_field('presence', [round(row.row.dimTex.color[i] * 255)
+                                                   for i in range(1, 4)], key).value_text
+                    for key, row in rows.items()}
+
+        self.assertEqual(set(states().values()), {'ON'})
+        g.combat = True
+        g.auraMode = 'absent'
+        self.assertEqual(set(states().values()), {'UNKNOWN'})
+        g.auraMode = 'unknown'
+        self.assertEqual(set(states().values()), {'UNKNOWN'})
+        g.auraMode = 'present'
+        self.assertEqual(set(states().values()), {'ON'})
+        g.combat = False
+        g.auraMode = 'absent'
+        self.assertEqual(set(states().values()), {'OFF'})
+
+    def test_arcane_blast_debuff_uses_player_harmful_aura(self):
+        lua = self.fixture(full_load.SOURCE, 'MAGE', 8, 1482)
+        g = lua.globals()
+        lua.execute('''
+            function C_UnitAuras.GetPlayerAuraBySpellID() return nil end
+            function C_UnitAuras.GetAuraDataByIndex(unit,index,filter)
+                if auraMode=='present' and unit=='player' and index==1 and filter=='HARMFUL' then
+                    return {spellId=400573,name='奥术冲击'}
+                end
+            end
+        ''')
+        row = next(row for row in g.fixturePresenceRows.values() if row.key == 'arcane_blast_debuff')
+        for mode, expected in [('present', 'ON'), ('absent', 'OFF')]:
+            g.auraMode = mode
+            g.refreshPanelFixture(.25)
+            self.assertEqual(decode_field('presence', [round(row.row.dimTex.color[i] * 255)
+                                                       for i in range(1, 4)], row.key).value_text, expected)
+
     def fixture(self, source, token, cid, spec):
         prelude=f"fixtureClass='{token}';fixtureClassID={cid};fixtureSpecID={spec}\n"
         prelude+='\n'.join((ROOT/'tests'/name).read_text('utf8')
@@ -152,9 +197,10 @@ class PanelPresenceIntegrationTests(unittest.TestCase):
         g.auraMode='present'
         refresh(.25,lambda row:True)
         g.combat=True;g.auraMode='unknown'
-        refresh(.25,lambda row:True)
-        refresh(20,lambda row:True)
-        refresh(.25,lambda row:not row.key.startswith('seal_'))
+        in_combat = lambda row: not (token == 'MAGE' and row.key in MAGE_MAINTENANCE)
+        refresh(.25,in_combat)
+        refresh(20,in_combat)
+        refresh(.25,lambda row:in_combat(row) and not row.key.startswith('seal_'))
         g.auraMode='absent'
         refresh(.25,lambda row:False)
         g.auraMode='present';g.combat=False

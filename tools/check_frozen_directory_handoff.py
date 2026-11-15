@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.build_client_release import build_client
 from tools.check_frozen_outer import run
-from tools.check_outer_gui import close_owned_main
+from tools.check_outer_gui import close_owned_main,is_dev_window_title
 from wowbuddy.github_outer import read_payload
 from wowbuddy.packages import read_bundle
 from wowbuddy.launcher import BUSINESS_EXE
@@ -64,7 +64,7 @@ def check(scenario='success',current_build=False):
         if handoff is None:
             candidates=[]
             def visit(hwnd):
-                if backend.window_title(hwnd).text!='WowBuddyDev — 独立开发版':return
+                if not is_dev_window_title(backend.window_title(hwnd).text):return
                 pid=backend.window_pid(hwnd)
                 if Path(backend.process_path(pid))==current/EXE:candidates.append(pid)
             backend.enum_windows(visit)

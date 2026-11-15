@@ -1,7 +1,7 @@
 """与原包内闭包比较宏解析及光环判断；全部游戏 API 为离线替身。"""
 from pathlib import Path
 import unittest
-from lupa.lua51 import LuaRuntime
+from lupa.lua51 import LuaError, LuaRuntime
 from tests import test_original_direct_cast as original
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -96,6 +96,28 @@ class DirectCastGuardsTests(unittest.TestCase):
             self.assertEqual(product('Frostbolt'), reference('Frostbolt'))
             self.assertEqual(self.product.globals().lookupCount, self.reference.globals().lookupCount)
         self.assertEqual(self.product.globals().lookupCount, 3)
+
+    def test_guard_reads_modern_metadata_if_legacy_spell_info_throws(self):
+        for lua in (self.reference, self.product):
+            lua.execute('''
+                auraMode='id'
+                function GetSpellInfo() error('fixture legacy lookup denied') end
+                function C_Spell.GetSpellInfo()
+                    return {spellID=116,castTime=2000}
+                end
+            ''')
+        original = self.reference.globals().P07483180.DirectCast
+        current = self.product.globals().WowBuddyDev.DirectCast
+        with self.assertRaisesRegex(LuaError, 'fixture legacy lookup denied'):
+            original.GuardBlocked('Frostbolt')
+        self.assertTrue(current.GuardBlocked('Frostbolt'))
+        self.assertEqual(current.SpellIDForName('Frostbolt'), 116)
+        self.product.execute('function issecretvalue(value) return value == 116 end')
+        self.assertFalse(current.GuardBlocked('Unknown'))
+        self.assertIsNone(current.SpellIDForName('Unknown'))
+        self.product.execute("function C_Spell.GetSpellInfo() error('fixture modern lookup denied') end")
+        self.assertFalse(current.GuardBlocked('Unavailable'))
+        self.assertIsNone(current.SpellIDForName('Unavailable'))
 
     def test_empty_guard_snapshot_retains_original_late_registration_behavior(self):
         for lua in (self.reference, self.product):

@@ -2373,6 +2373,11 @@
      "id": "arcane_power",
      "label": "奥术强化",
      "type": "presence"
+    },
+    {
+     "id": "arcane_blast_debuff",
+     "label": "奥术冲击减益",
+     "type": "presence"
     }
    ]
   },

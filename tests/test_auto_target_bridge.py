@@ -17,9 +17,13 @@ class AutoTargetBridgeTests(unittest.TestCase):
         self.lua.execute('''
         WowBuddyDev={DB={masterSwitch=true},classData={}}
         combat=false; exists=true; dead=false; focus=false; enabled=true
+        now=10; targetGUID='Creature-1'; registered={}
         button={HookScript=function(self,event,callback) self.callback=callback end}
-        function CreateFrame() return {RegisterEvent=function() end,
+        function CreateFrame() return {RegisterEvent=function(_,event) registered[event]=true end,
           SetScript=function(self,event,fn) resetSession=fn end} end
+        function GetTime() return now end
+        function UnitGUID() if exists then return targetGUID end end
+        function CombatLogGetCurrentEventInfo() return nil,'UNIT_DIED',nil,nil,nil,nil,nil,loggedGUID end
         function UnitAffectingCombat() return combat end
         function InCombatLockdown() return combat end
         function UnitExists() return exists end
@@ -36,12 +40,81 @@ class AutoTargetBridgeTests(unittest.TestCase):
           boundKey=key; macro=text; return true
         end
         function WowBuddyDev.GetSecureButton() return button end
+        function WowBuddyDev.RefreshMacroBindings() WowBuddyDev.ApplyAutoTargetBinding() end
         ''')
         self.lua.execute('P07483180=WowBuddyDev')
         source_dir=source_dir or ROOT/'addon/WowBuddyDev'
         for name in ('ActionKeyCheck.lua', 'AutoTarget.lua'):
             self.lua.execute((source_dir/name).read_text('utf8'))
         self.assertTrue(self.lua.eval('WowBuddyDev.ApplyAutoTargetBinding()'))
+
+    def test_post_kill_request_requires_matching_death_and_expires(self):
+        g=self.lua.globals()
+        a=g.WowBuddyDev
+        self.assertFalse(a.GetPostKillAutoTargetEnabled())
+        self.assertTrue(a.SetPostKillAutoTargetEnabled(True))
+        self.assertTrue(g.registered['COMBAT_LOG_EVENT_UNFILTERED'])
+        self.assertEqual(self.packet().state,0)
+        g.combat=True
+        self.assertEqual(self.packet().state,2)
+        self.assertFalse(a.SetPostKillAutoTargetEnabled(False))
+        g.combat=False
+        g.exists=False
+        g.resetSession(None,'PLAYER_TARGET_CHANGED')
+        g.resetSession(None,'PLAYER_REGEN_ENABLED')
+        self.assertEqual(self.packet().state,0)
+        g.loggedGUID='Creature-other'
+        g.resetSession(None,'COMBAT_LOG_EVENT_UNFILTERED')
+        self.assertEqual(self.packet().state,0)
+        g.loggedGUID='Creature-1'
+        g.resetSession(None,'COMBAT_LOG_EVENT_UNFILTERED')
+        self.assertEqual(self.packet().state,1)
+        self.assertTrue(a.IsPostKillAutoTargetReady())
+        g.now=14
+        self.assertEqual(self.packet().state,0)
+        self.assertTrue(a.SetPostKillAutoTargetEnabled(False))
+        self.assertIn('[combat,',g.macro)
+
+    def test_post_kill_with_unreadable_guid_requires_same_selection(self):
+        g=self.lua.globals()
+        g.targetGUID=None
+        self.assertTrue(g.WowBuddyDev.SetPostKillAutoTargetEnabled(True))
+        g.combat=True
+        self.assertEqual(self.packet().state,2)
+        g.dead=True
+        g.combat=False
+        g.resetSession(None,'UNIT_HEALTH','target')
+        pending=self.packet()
+        self.assertEqual(pending.state,1)
+        g.button.callback()
+        acknowledged=self.packet()
+        self.assertEqual(acknowledged.ack,(pending.ack+1)%32)
+        self.assertEqual(acknowledged.state,1)
+        g.dead=False
+        self.assertEqual(self.packet().state,0)
+        g.combat=True
+        self.assertEqual(self.packet().state,2)
+        g.resetSession(None,'PLAYER_TARGET_CHANGED')
+        g.dead=True
+        g.combat=False
+        self.assertEqual(self.packet().state,0)
+
+    def test_interrupted_loot_reopens_ranged_targeting_for_the_corpse_in_combat(self):
+        self.lua.execute('''function WowBuddyDev.HasInterruptedLootTarget() return lootInterruption end''')
+        g = self.lua.globals()
+        a = g.WowBuddyDev
+        g.combat, g.dead, g.lootInterruption = True, True, False
+        self.assertFalse(a.IsRemoteAutoTargetGateOpen())
+        self.assertEqual(self.packet().state, 0)
+        g.lootInterruption = True
+        self.assertTrue(a.IsRemoteAutoTargetGateOpen())
+        self.assertEqual(self.packet().state, 1)
+        g.focus = True
+        self.assertEqual(self.packet().state, 0)
+        g.focus, g.lootInterruption = False, False
+        self.assertEqual(self.packet().state, 0)
+        g.lootInterruption, g.combat = True, False
+        self.assertEqual(self.packet().state, 0)
 
     def test_original_lua_gate_failures_and_recovery(self):
         reference=Path('D:/reverse-analysis/wow-assistant/addon-source')

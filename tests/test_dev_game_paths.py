@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import tempfile
 import sys
 import json
@@ -37,7 +38,11 @@ class GamePathsTests(unittest.TestCase):
         def exercise(window):
             with tempfile.TemporaryDirectory() as tmp:
                 client=Path(tmp)/'_forever_';client.mkdir();(client/'Wow.exe').touch()
-                with patch('wowbuddy.addon_games.selected_executable',return_value=str(client/'Wow.exe')),patch('wowbuddy.dev_game_paths.common_roots',return_value=()):
+                with (patch.dict(os.environ),
+                      patch('wowbuddy.addon_games.selected_executable', return_value=str(client/'Wow.exe')),
+                      patch('wowbuddy.dev_game_paths.common_roots', return_value=())):
+                    # 仅启用这次按钮测试，所有客户端候选都来自临时目录。
+                    os.environ.pop('WOWBUDDY_NO_GAME_SCAN', None)
                     window.ui.addon_clean_button.click()
                 self.assertEqual(Path(window.ui.addon_path.text()),client)
                 self.assertEqual(window.settings.snapshot().addon_history,(str(client).replace('\\','/'),))

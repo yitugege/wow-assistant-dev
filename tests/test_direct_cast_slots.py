@@ -34,7 +34,7 @@ class DirectCastSlotsTests(unittest.TestCase):
                 self.assertEqual(list(self.product.globals().messages.values()),
                                  list(self.reference.globals().messages.values()))
 
-    def test_existing_slot_selection_and_nonempty_cache_match_original(self):
+    def test_existing_slot_matches_original_and_is_revalidated_after_a_move(self):
         script = '''
             queried={}
             function GetActionInfo(slot)
@@ -53,10 +53,18 @@ class DirectCastSlotsTests(unittest.TestCase):
         self.assertEqual(list(self.product.globals().queried.values()),
                          list(self.reference.globals().queried.values()))
         for lua in (self.reference, self.product):
-            lua.execute("function GetActionInfo() error('must retain original cached index') end")
+            lua.execute("""
+                function GetActionInfo(slot)
+                    if slot==144 then return 'spell',133 end
+                    if slot==33 then return 'spell',116 end
+                end
+            """)
         self.assertEqual(self.reference.globals().P07483180.DirectCast.Cast('spell_116'),
                          (True, 'slot144'))
-        self.assertEqual(self.product.globals().WowBuddyDev.DirectCast.FindSlotForSpell(116), 144)
+        query = self.product.globals().WowBuddyDev.DirectCast.FindSlotForSpell
+        self.assertEqual(query(116), 33)
+        self.product.execute("function GetActionInfo() error('fixture unavailable') end")
+        self.assertIsNone(query(116))
 
     def test_empty_index_can_discover_later_action_bar_contents(self):
         self.product.execute('function GetActionInfo() return nil end')

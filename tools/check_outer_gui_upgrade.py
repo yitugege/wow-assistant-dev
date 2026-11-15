@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.check_frozen_outer import run
-from tools.check_outer_gui import close_owned_main
+from tools.check_outer_gui import close_owned_main,is_dev_window_title
 from wowbuddy.launcher import release_directory,BUSINESS_EXE
 from wowbuddy.release_identity import read_release_identity,CACHE_NAMESPACE,file_sha256
 from wowbuddy.github_outer import verify_outer
@@ -31,7 +31,7 @@ def check(previous,manifest):
         current_old=[];current_new=[]
         def visit(hwnd):
             if not backend.is_visible(hwnd):return
-            if backend.window_title(hwnd).text!='WowBuddyDev — 独立开发版':return
+            if not is_dev_window_title(backend.window_title(hwnd).text):return
             pid=backend.window_pid(hwnd);path=Path(backend.process_path(pid))
             if path==old_cache/BUSINESS_EXE:current_old.append(pid)
             elif path==new_cache/BUSINESS_EXE:current_new.append(pid)

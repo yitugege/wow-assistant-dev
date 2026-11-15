@@ -43,6 +43,24 @@ class PipelineTests(unittest.TestCase):
         self.assertIsNone(result.old_attempt)
         self.assertEqual(result.candidates[0].key, "NUMPAD5")
 
+    def test_independent_pause_hint_distinguishes_no_target_from_saved_switch(self):
+        from wowbuddy.dev_protocol import DEV_VERSION
+        fields = {"master_switch": 0xff0000, "player_in_combat": 0xff0000, "target_valid": 0xff0000}
+        original, _ = render_old(1482, fields)
+        original_stop = self.pipeline.evaluate(original).candidates[0]
+        self.assertTrue(original_stop.stop)
+        self.assertEqual(original_stop.reason, RULES['sentinel']['stopReason'])
+        independent, _ = render_old(1482, fields | {"addon_version_code": DEV_VERSION})
+        independent_stop = self.pipeline.evaluate(independent).candidates[0]
+        self.assertTrue(independent_stop.stop)
+        self.assertIn('已脱战且没有可攻击目标', independent_stop.reason)
+
+        self.pipeline.unattended_travel = True
+        traveling_stop = self.pipeline.evaluate(independent).candidates[0]
+        self.assertTrue(traveling_stop.stop)
+        self.assertEqual(traveling_stop.reason, '无人托管正在执行陆路计划，脱战时暂停技能循环。')
+        self.assertEqual(self.pipeline.evaluate(original).candidates[0].reason, original_stop.reason)
+
     def test_readable_fixture_preserves_all_fields_at_supported_pitches(self):
         for spec in READABLE['specs']:
             baseline=self.pipeline.evaluate(render_readable(int(spec))).frame
@@ -63,6 +81,43 @@ class PipelineTests(unittest.TestCase):
         expected_key = next(a["key"] for a in READABLE_RULES["specs"]["1482"]["actions"] if a["name"] == "spell_116")
         self.assertEqual(result.candidates[0].key, expected_key)
         self.assertTrue(result.frame.allow_unknown_availability)
+
+    def test_protocol_fallback_keeps_the_verified_target_policy(self):
+        from wowbuddy.dev_protocol import DEV_VERSION
+
+        readable = render_readable()
+        profile = self.profile
+        before = self.pipeline.evaluate(readable, selected_profile=profile)
+        self.assertEqual(before.candidates[0].action, 'spell_116')
+        independent, _ = render_old(1482, {'addon_version_code': DEV_VERSION,
+            'master_switch': 0x00ff00, 'player_valid': 0x00ff00, 'target_valid': 0x00ff00,
+            'player_casting': 0xff0000, 'action_avail': 0xffffff})
+        rows = [list(row) for row in combined(independent, readable).rows]
+        for start, packet in (
+            (34, (0x574244, 7 * 256, 0xffffff, 0xffffff, 0, 0xffffff, 0xffffff)),
+            (132, (0x574251, 7, 1, 1, 0, 0, 0)),
+        ):
+            checksum = 0
+            for word in packet:
+                checksum = (checksum * 31 + word) % 0xfefffd
+            for index, word in enumerate((*packet, checksum), start):
+                for y in range(index * 4, (index + 1) * 4):
+                    rows[y][6] = word
+        confirmed = self.pipeline.evaluate(RGBImage(rows), selected_profile=profile)
+        self.assertEqual(confirmed.fields['mob_policy'], 'ON')
+        self.assertEqual(confirmed.candidates[0].action, 'spell_116')
+
+        untrusted_old, _ = render_old(1482, {'addon_version_code': 12345})
+        for image in (readable, combined(untrusted_old, readable), render_readable(overrides={'target_health_pct': 0})):
+            result = self.pipeline.evaluate(image, selected_profile=profile)
+            self.assertEqual(result.frame.protocol, 'readable')
+            self.assertTrue(result.frame.ok)
+            self.assertEqual(result.fields['mob_policy'], 'ON')
+            self.assertIn('当前协议无法确认怪物归属', result.target_rejection)
+            self.assertFalse(any(candidate.key for candidate in result.candidates))
+
+        restored = self.pipeline.evaluate(RGBImage(rows), selected_profile=profile)
+        self.assertEqual(restored.candidates[0].action, 'spell_116')
 
     def test_valid_old_header_unknown_spec_does_not_fall_back(self):
         old, _ = render_old(1482, {"spec_id": 123})

@@ -1,6 +1,7 @@
 """分阶段启动适配：真实资源、Qt窗口及取消后的生命周期。"""
 import os
 os.environ['QT_QPA_PLATFORM']='offscreen'
+import json
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -58,7 +59,12 @@ class StagedStartupTests(unittest.TestCase):
             startup.start();startup.timer.stop()
             for _ in range(8):startup.stages.tick()
             self.assertEqual(startup.stages.phase,'shown')
-            self.assertEqual(received,[Assets.load(ROOT/'assets')])
+            self.assertEqual(len(received),1)
+            self.assertEqual(received[0].directory,ROOT/'assets')
+            loaded=received[0].pipeline()
+            bundled=Assets.load(ROOT/'assets').pipeline()
+            self.assertEqual(loaded.builtin_thresholds,bundled.builtin_thresholds)
+            self.assertEqual(loaded.readable_keys,bundled.readable_keys)
             self.assertTrue(startup.stages.main_window.isVisible())
             self.assertEqual([timer.interval() for timer in startup.delays],[600])
         finally:
@@ -91,14 +97,20 @@ class StagedStartupTests(unittest.TestCase):
         import itertools
         sys.path.insert(0,str(ROOT/'tests/core'))
         from test_old_protocol import render_old
+        from test_pipeline import render_readable
         # 原05e240丢弃两个可选加载器结果；真实资源解析后仍应使用旧协议。
-        for contract_state,rules_state in itertools.product(('missing','invalid','valid'),repeat=2):
+        for contract_state,rules_state in itertools.product(
+                ('missing','invalid','valid','mismatched'), ('missing','invalid','valid')):
             with self.subTest(contract=contract_state,rules=rules_state), TemporaryDirectory() as directory:
                 root=Path(directory)
                 for name in ('contract.json','rules.json'):
                     (root/name).write_bytes((ROOT/'assets'/name).read_bytes())
                 for name,state in (('contract_readable.json',contract_state),('rules_readable.json',rules_state)):
-                    if state!='missing':
+                    if state=='mismatched':
+                        raw=json.loads((ROOT/'assets'/name).read_bytes())
+                        raw['specs']['9999']={'classicKeys':['orphan'],'classicRows':[]}
+                        (root/name).write_text(json.dumps(raw), 'utf8')
+                    elif state!='missing':
                         (root/name).write_bytes((ROOT/'assets'/name).read_bytes() if state=='valid' else b'{broken')
                 backend=Windows();backend.handle=123
                 received=[]
@@ -112,12 +124,57 @@ class StagedStartupTests(unittest.TestCase):
                     self.assertEqual(startup.stages.phase,'shown')
                     self.assertEqual(len(received),1)
                     self.assertEqual([timer.interval() for timer in startup.delays],[600])
-                    frame=received[0].pipeline().prepare(render_old(1482,{})[0]).frame
+                    pipeline=received[0].pipeline()
+                    if contract_state=='mismatched':
+                        self.assertIn('1482',pipeline.readable.specs)
+                        self.assertNotIn('9999',pipeline.readable.specs)
+                        readable=pipeline.prepare(render_readable(1482)).frame
+                        self.assertTrue(readable.ok,readable.status)
+                        self.assertEqual((readable.protocol,readable.spec_id),('readable','1482'))
+                    frame=pipeline.prepare(render_old(1482,{})[0]).frame
                     self.assertTrue(frame.ok,frame.status)
                     self.assertEqual((frame.protocol,frame.spec_id),('old','1482'))
                 finally:
                     startup.close()
                     if startup.stages.main_window:startup.stages.main_window.close()
+
+    def test_normal_startup_decodes_normalized_field_descriptors(self):
+        sys.path.insert(0,str(ROOT/'tests/core'))
+        from test_old_protocol import render_old
+        with TemporaryDirectory() as directory:
+            root=Path(directory)
+            raw=json.loads((ROOT/'assets/contract.json').read_bytes())
+            mage=raw['specs']['1482']
+            mage['fields'][0]=None
+            mage['fields'][1]['label']=''
+            presence=mage['presenceFields'][0]
+            presence['type']='number'
+            (root/'contract.json').write_text(json.dumps(raw),'utf8')
+            (root/'rules.json').write_bytes((ROOT/'assets/rules.json').read_bytes())
+            received=[]
+
+            def construct(assets):
+                received.append(assets.pipeline())
+                return QWidget()
+
+            backend=Windows();backend.handle=123
+            startup=create_staged_startup(self.app,root,backend,construct,lambda _:None)
+            try:
+                startup.start();startup.timer.stop()
+                for _ in range(8):startup.stages.tick()
+                self.assertEqual(startup.stages.phase,'shown')
+                image,colors=render_old(1482,{presence['id']:0x00ff00})
+                frame=received[0].prepare(image).frame
+                self.assertTrue(frame.ok,frame.status)
+                self.assertEqual(frame.raw_colors,tuple(colors))
+                start=len(raw['commonFields'])
+                self.assertEqual((frame.rows[start].key,frame.rows[start].type),('','number'))
+                self.assertEqual(frame.rows[start+1].label,mage['fields'][1]['id'])
+                self.assertEqual(frame.rows[start+len(mage['fields'])].type,'presence')
+                self.assertEqual(frame.values[presence['id']],'ON')
+            finally:
+                startup.close()
+                if startup.stages.main_window:startup.stages.main_window.close()
 
     def test_cancel_stops_pending_warning_without_main(self):
         startup=create_staged_startup(self.app,ROOT/'assets',Windows(),lambda _:self.fail('取消后创建主窗口'),lambda _:None)

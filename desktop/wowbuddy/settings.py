@@ -156,6 +156,69 @@ class SettingsStore:
     def clear_addon_history(self) -> None:
         self.qsettings.remove("addon/history")
 
+    def automatic_addon_update_enabled(self) -> bool:
+        return self._read("addon/autoUpdate", True, "boolean")
+
+    def unattended_enabled(self) -> bool:
+        return self._read("automation/unattended", False, "boolean")
+
+    def save_unattended(self, enabled: bool) -> None:
+        self.qsettings.setValue("automation/unattended", enabled)
+
+    def manual_routes(self, *, access: bool = False) -> list[str]:
+        key = "automation/manualAccessRoutes" if access else "automation/manualRoutes"
+        return self._read(key, [], "strings")
+
+    def fixed_camp(self) -> str:
+        return self._read("automation/fixedCamp", "", "string")
+
+    def save_fixed_camp(self, route: str) -> None:
+        self.qsettings.setValue("automation/fixedCamp", route)
+        self.sync()
+
+    def patrol_route(self) -> str:
+        return self._read("automation/patrolRoute", "", "string")
+
+    def corpse_trails(self) -> list[str]:
+        return self._read("automation/corpseTrails", [], "strings")
+
+    def corpse_recording_enabled(self) -> bool:
+        return self._read("automation/recordCorpseTrail", False, "boolean")
+
+    def save_corpse_recording(self, enabled: bool) -> None:
+        self.qsettings.setValue("automation/recordCorpseTrail", enabled)
+        self.sync()
+
+    def save_corpse_trail(self, trail: str) -> None:
+        previous = [item for item in self.corpse_trails() if item != trail]
+        self.qsettings.setValue("automation/corpseTrails", [trail, *previous[:23]])
+        self.sync()
+
+    def save_patrol_route(self, route: str) -> None:
+        self.qsettings.setValue("automation/patrolRoute", route)
+        self.sync()
+
+    def vendor_route(self) -> str:
+        return self._read("automation/vendorRoute", "", "string")
+
+    def save_vendor_route(self, route: str) -> None:
+        self.qsettings.setValue("automation/vendorRoute", route)
+        self.sync()
+
+    def save_manual_routes(self, routes: list[str], *, access: bool = False, clear_patrol: bool = False) -> None:
+        key = "automation/manualAccessRoutes" if access else "automation/manualRoutes"
+        self.qsettings.setValue(key, routes)
+        if clear_patrol:
+            self.qsettings.remove("automation/patrolRoute")
+        self.sync()
+
+    def manual_connections(self) -> list[str]:
+        return self._read("automation/manualConnections", [], "strings")
+
+    def save_manual_connections(self, connections: list[str]) -> None:
+        self.qsettings.setValue("automation/manualConnections", connections)
+        self.sync()
+
     def save_last_check_ms(self, timestamp_ms: int) -> None:
         if type(timestamp_ms) is not int or not -(2**63) <= timestamp_ms < 2**63:
             raise ValueError("时间戳必须是 int64")

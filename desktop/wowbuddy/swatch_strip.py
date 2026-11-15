@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QBrush, QFont, Q
 from PySide6.QtWidgets import QWidget, QSizePolicy, QToolTip
 from .window_shell import round_global_coordinate
 from .expressions import _trim
+from .qt_arg import qt_arg
 
 
 @dataclass(frozen=True)
@@ -76,6 +77,12 @@ class SwatchStrip(QWidget):
         item = self.items[index]
         return f"#{item.number if item.number > 0 else index + 1}  {item.label or '(通用)'} = {item.value or '—'}"
 
+    def hover_text(self, index):
+        # 0x1400b1390逐次arg，最后一次会重新扫描标签中的占位符；0b0dc0提示框同时替换。
+        item = self.items[index]
+        text = f"#{item.number if item.number > 0 else index + 1} {item.label} = %3"
+        return qt_arg(text, item.value or '—')
+
     def event(self, event):
         kind = event.type()
         if kind == QEvent.Type.ToolTip:
@@ -136,8 +143,7 @@ class SwatchStrip(QWidget):
                 painter.drawPath(path)
             if 0 <= self.hovered < len(self.items):
                 item = self.items[self.hovered]
-                number = item.number if item.number > 0 else self.hovered + 1
-                text = f"#{number} {item.label} = {item.value or '—'}"
+                text = self.hover_text(self.hovered)
                 width = QFontMetrics(self.font()).horizontalAdvance(text) + 10
                 rect = QRectF(self.rect().right() - width, self.rect().bottom() - 14, width, 13)
                 painter.setPen(Qt.PenStyle.NoPen)

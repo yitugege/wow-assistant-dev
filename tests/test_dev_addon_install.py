@@ -20,18 +20,18 @@ class InstallTests(unittest.TestCase):
         for name in SIGNATURE_FILES:(directory/name).write_text('-- legacy','utf8')
         return directory
 
-    def test_success_cleans_legacy_only_after_record_is_committed(self):
+    def test_install_preserves_legacy_until_explicit_cleanup(self):
         legacy=self.legacy()
-        from wowbuddy.dev_addon_cleanup import cleanup_addons_directory
-        def check(addons,keep):
-            record=json.loads((self.client/'.wowbuddy-install.json').read_text('utf8'))
-            self.assertEqual(record['addon_directory'],keep)
-            self.assertTrue((self.target/'Core.lua').is_file())
-            return cleanup_addons_directory(addons,keep)
-        with patch('wowbuddy.dev_addon_cleanup.cleanup_addons_directory',side_effect=check):
-            result=install_package(self.package,self.client)
-        self.assertEqual(result['cleanup_deleted'],1)
-        self.assertFalse(legacy.exists());self.assertTrue(self.target.is_dir())
+        before={path.name:path.read_bytes() for path in legacy.iterdir()}
+        result=install_package(self.package,self.client)
+        record=json.loads((self.client/'.wowbuddy-install.json').read_text('utf8'))
+        self.assertEqual(record['addon_directory'],result['addon_directory'])
+        self.assertEqual(result['cleanup_deleted'],0)
+        self.assertEqual(before,{path.name:path.read_bytes() for path in legacy.iterdir()})
+        from wowbuddy.dev_addon_cleanup import cleanup_old_addons
+        self.assertEqual(cleanup_old_addons(self.client).deleted,1)
+        self.assertFalse(legacy.exists())
+        self.assertTrue((self.target/'Core.lua').is_file())
 
     def test_install_failure_never_runs_cleanup(self):
         legacy=self.legacy()
@@ -41,12 +41,14 @@ class InstallTests(unittest.TestCase):
             cleanup.assert_not_called()
         self.assertTrue(legacy.exists())
 
-    def test_cleanup_failure_does_not_reclassify_successful_install(self):
+    def test_explicit_cleanup_failure_preserves_both_installs(self):
         legacy=self.legacy()
+        install_package(self.package,self.client)
+        from wowbuddy.dev_addon_cleanup import cleanup_old_addons
         with patch('wowbuddy.addon_actions._remove_plugin_directory',side_effect=OSError('locked')):
-            result=install_package(self.package,self.client)
-        self.assertEqual(result['cleanup_deleted'],0)
-        self.assertIn('删除失败',result['cleanup_notes'])
+            result=cleanup_old_addons(self.client)
+        self.assertEqual(result.deleted,0)
+        self.assertIn('删除失败',result.notes)
         self.assertTrue(legacy.exists());self.assertTrue((self.target/'Core.lua').exists())
 
     def setUp(self):

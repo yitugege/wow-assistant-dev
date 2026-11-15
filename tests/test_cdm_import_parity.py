@@ -26,13 +26,16 @@ function time() return 123456 end
 function InCombatLockdown() return combat end
 function UnitClass() return 'Mage','MAGE',8 end
 function GetSpecialization() return 1 end
-UIParent={CreateFontString=function() return {SetFont=function() end,Hide=function() end} end}
+UIParent={CreateFontString=function() return {SetFont=function() end,Hide=function() end} end,
+  GetWidth=function() return 1000 end,GetHeight=function() return 500 end}
+function string.trim(value) return value:match('^%s*(.-)%s*$') end
 C_Timer={NewTimer=function(delay,callback)
   local t={delay=delay,callback=callback,Cancel=function(self) self.cancelled=true end}
   timers[#timers+1]=t;return t end}
-C_CooldownViewer={GetLayoutData=function() return 'existing' end,
+layout='existing'
+C_CooldownViewer={GetLayoutData=function() return layout end,
   SetLayoutData=function(data) writes[#writes+1]=data
-    if writeFails then error('fixture write failure',0) end end}
+    if writeFails then error('fixture write failure',0) end;layout=data end}
 C_EncodingUtil={}
 for _,name in ipairs({'DecodeBase64','DecompressString','DeserializeCBOR'}) do
   C_EncodingUtil[name]=function(value,method)
@@ -54,15 +57,17 @@ class CDMImportParityTests(unittest.TestCase):
         assert hashlib.sha256(data).hexdigest()=='361134bc9f2dd0b2c8cd8849b3741bd88d09c55ec371de9abc7b6f79502ebbed'
         cls.original={m.name:m.data for m in read_addon(data)}['CDMImport.lua'].decode('utf-8-sig')
 
+    def run_module(self, command, seed='', *, original=False):
+        source = self.original if original else (ROOT/'addon/WowBuddyDev/CDMImport.lua').read_text('utf-8-sig')
+        lua = LuaRuntime(unpack_returned_tuples=True, register_eval=False, register_builtins=False)
+        lua.execute(HOST+seed)
+        lua.execute(source)
+        return plain(lua.execute(command))
+
     def run_pair(self, command, seed=''):
-        rows=[]
-        for source in (self.original,(ROOT/'addon/WowBuddyDev/CDMImport.lua').read_text('utf-8-sig')):
-            lua=LuaRuntime(unpack_returned_tuples=True,register_eval=False,register_builtins=False)
-            lua.execute(HOST+seed)
-            lua.execute(source)
-            rows.append(plain(lua.execute(command)))
-        self.assertEqual(rows[0],rows[1])
-        return rows[1]
+        current = self.run_module(command, seed)
+        self.assertEqual(self.run_module(command, seed, original=True), current)
+        return current
 
     def test_flat_saved_variables_migration_and_cached_identity(self):
         row=self.run_pair('''local db=fixtureAddon.CDMManager.GetDB()
@@ -89,26 +94,43 @@ class CDMImportParityTests(unittest.TestCase):
                 self.assertEqual(row['db'],{})
                 self.assertEqual(len(row['stages']),('DecodeBase64','DecompressString','DeserializeCBOR').index(stage)+1)
 
-    def test_data_import_preserves_original_false_success_and_cache(self):
+    def test_data_import_commits_cache_only_after_successful_write(self):
         for setup,expected_writes in (('',{1:'new'}),('combat=true',{}),
                                       ('C_CooldownViewer=nil',{}),('writeFails=true',{1:'new'})):
             with self.subTest(setup=setup):
-                row=self.run_pair('''local ok=fixtureAddon.CDMImportDataConfig('CDMSSdata|abc')
-                  return {ok=ok,db=fixtureAddon.CDMManager.GetDB(),writes=writes}''',
-                  "payload={d='new',c='MAGE',s=1};"+setup)
-                self.assertTrue(row['ok'])
-                self.assertEqual(row['writes'],expected_writes)
-                self.assertEqual(row['db']['specDataConfigs']['MAGE-1'],
-                                 {'dataConfig':'new','importedAt':123456})
+                command = '''local ok=fixtureAddon.CDMImportDataConfig('CDMSSdata|abc')
+                  return {ok=ok,db=fixtureAddon.CDMManager.GetDB(),writes=writes}'''
+                seed = "payload={d='new',c='MAGE',s=1};"+setup
+                old = self.run_module(command, seed, original=True)
+                current = self.run_module(command, seed)
+                self.assertTrue(old['ok'])
+                self.assertEqual(old['writes'], expected_writes)
+                self.assertEqual(current['writes'], expected_writes)
+                self.assertEqual(old['db']['specDataConfigs']['MAGE-1'], {'dataConfig':'new','importedAt':123456})
+                if setup:
+                    self.assertFalse(current['ok'])
+                    self.assertNotIn('specDataConfigs', current['db'])
+                else:
+                    self.assertEqual(old, current)
 
-    def test_profile_import_in_combat_saves_without_applying(self):
-        row=self.run_pair('''local ok=fixtureAddon.CDMImportProfile('trial','CDMSSv2|abc')
-          return {ok=ok,db=fixtureAddon.CDMManager.GetDB(),writes=writes}''',
-          "combat=true;payload={v=2,d='new',cds={EssentialCooldownViewer=19}}")
-        self.assertTrue(row['ok']);self.assertEqual(row['writes'],{})
-        self.assertEqual(row['db']['activeProfile'],'trial')
-        self.assertEqual(row['db']['profiles']['trial']['dataConfig'],'new')
-        self.assertEqual(row['db']['cooldownFontSize'],{})
+    def test_failed_profile_import_preserves_active_and_existing_profiles(self):
+        command = '''local ok=fixtureAddon.CDMImportProfile('trial','CDMSSv2|abc')
+          return {ok=ok,db=fixtureAddon.CDMManager.GetDB(),writes=writes}'''
+        for setup, writes in (('combat=true', {}), ('writeFails=true', {1:'new'})):
+            with self.subTest(setup=setup):
+                seed = '''fixtureAddon.DB.cdmStateSaverDB={activeProfile='keep',fontVersion=3,
+                  profiles={keep={dataConfig='keep'},trial={dataConfig='old'}}};
+                  payload={v=2,d='new',cds={EssentialCooldownViewer=19}};'''+setup
+                old = self.run_module(command, seed, original=True)
+                current = self.run_module(command, seed)
+                self.assertTrue(old['ok'])
+                self.assertEqual(old['db']['activeProfile'], 'trial')
+                self.assertEqual(old['db']['profiles']['trial']['dataConfig'], 'new')
+                self.assertFalse(current['ok'])
+                self.assertEqual(current['writes'], writes)
+                self.assertEqual(current['db']['activeProfile'], 'keep')
+                self.assertEqual(current['db']['profiles']['trial']['dataConfig'], 'old')
+                self.assertEqual(current['db']['cooldownFontSize'], {})
 
     def test_valid_profile_applies_fonts_and_preserves_other_profiles(self):
         row=self.run_pair('''local ok=fixtureAddon.CDMImportProfile('trial','CDMSSv2|abc')
@@ -133,14 +155,71 @@ class CDMImportParityTests(unittest.TestCase):
           "combat=true;reloads=0;function ReloadUI() reloads=reloads+1 end;payload={v=2,d='new'}")
         self.assertEqual(row,{'db':{},'writes':{},'stages':{},'reloads':0})
 
-    def test_missing_edit_mode_global_fails_after_storing_and_layout_write(self):
-        row=self.run_pair('''local ok,err=pcall(fixtureAddon.CDMImportProfile,'trial','CDMSSv2|abc')
-          return {ok=ok,missing=type(err)=='string' and not not err:find('ApplyEditModeSettings',1,true),
-            db=fixtureAddon.CDMManager.GetDB(),writes=writes}''',
-          "payload={v=2,d='new',e={fixture=true}}")
-        self.assertFalse(row['ok']);self.assertTrue(row['missing'])
-        self.assertEqual(row['writes'],{1:'new'})
-        self.assertEqual(row['db']['profiles']['trial']['editModeSettings'],{'fixture':True})
+    def test_missing_edit_mode_global_does_not_abort_loading_or_saving(self):
+        command = '''local ok,result=pcall(fixtureAddon.CDMImportProfile,'trial','CDMSSv2|abc')
+          local saved,saveError=pcall(SlashCmdList.CDMSS,'save trial')
+          return {ok=ok,result=result,saved=saved,saveError=saveError,db=fixtureAddon.CDMManager.GetDB(),
+            writes=writes,activeLayout=activeLayout,refreshes=refreshes}'''
+        seed = '''payload={v=2,d='new',e={fixture=true}}; refreshes=0
+          CooldownViewerSettings={RefreshLayout=function() refreshes=refreshes+1 end}
+          C_EditMode={GetLayouts=function() return {activeLayout=7} end,
+            SetActiveLayout=function(id) activeLayout=id end}'''
+        old = self.run_module(command, seed, original=True)
+        self.assertFalse(old['ok'])
+        self.assertIn('ApplyEditModeSettings', old['result'])
+        self.assertFalse(old['saved'])
+        self.assertIn('ExtractEditModeSettings', old['saveError'])
+        current = self.run_module(command, seed)
+        self.assertTrue(current['ok'])
+        self.assertTrue(current['result'])
+        self.assertTrue(current['saved'])
+        self.assertEqual(current['writes'], {1:'new'})
+        self.assertEqual(current['activeLayout'], 7)
+        self.assertEqual(current['refreshes'], 2)
+        profile = current['db']['profiles']['trial']
+        self.assertEqual(profile['editModeSettings'], {'fixture':True})
+        self.assertEqual(profile['dataConfig'], 'new')
+
+    def test_export_then_import_preserves_layout_fonts_and_saved_edit_fields(self):
+        command = '''fixtureAddon.CDMManager.ExportProfile('snapshot')
+          layout='another layout'
+          local ok=fixtureAddon.CDMImportProfile('copy',exported)
+          return {ok=ok,exported=exported,serialized=serialized,layout=layout,
+            db=fixtureAddon.CDMManager.GetDB()}'''
+        seed = '''fixtureAddon.DB.cdmStateSaverDB={activeProfile='snapshot',fontVersion=3,fontSize=20,
+            profiles={snapshot={dataConfig='old',editModeSettings={fixture=true}}}}
+          function StaticPopup_Show(which, first, second, text)
+            assert(which=='CDMSS_COPY'); exported=text
+          end
+          function C_EncodingUtil.SerializeCBOR(data) serialized=data;return 'cbor' end
+          function C_EncodingUtil.CompressString(data,method)
+            assert(data=='cbor' and method==7);return 'compressed'
+          end
+          function C_EncodingUtil.EncodeBase64(data) assert(data=='compressed');return 'encoded' end
+          function C_EncodingUtil.DeserializeCBOR(data)
+            assert(data=='DecompressString:DecodeBase64:encoded');return serialized
+          end'''
+        row = self.run_module(command, seed)
+        self.assertTrue(row['ok'])
+        self.assertEqual(row['exported'], 'CDMSSv2|encoded')
+        self.assertEqual(row['layout'], 'existing')
+        self.assertEqual(row['db']['activeProfile'], 'copy')
+        self.assertEqual(row['db']['profiles']['copy']['editModeSettings'], {'fixture':True})
+        self.assertEqual(row['serialized']['fz'], 20)
+
+    def test_failed_popup_write_does_not_reload_and_refresh_can_retry(self):
+        command = '''local popup={EditBox={GetText=function() return 'CDMSSv2|abc' end}}
+          StaticPopupDialogs.CDMSS_IMPORT.OnAccept(popup)
+          local delay=timers[1] and timers[1].delay
+          if delay then timers[1].callback() end
+          return {reloads=reloads,delay=delay,refreshes=refreshes}'''
+        seed = '''payload={v=2,d='new'}; reloads=0; refreshes=0
+          function ReloadUI() reloads=reloads+1 end
+          CooldownViewerSettings={RefreshLayout=function()
+            refreshes=refreshes+1; if refreshes==1 then error('not ready') end
+          end}'''
+        self.assertEqual(self.run_module(command, seed+';writeFails=true'), {'reloads':0,'refreshes':0})
+        self.assertEqual(self.run_module(command, seed), {'reloads':1,'delay':1.5,'refreshes':2})
 
 
 if __name__=='__main__': unittest.main()

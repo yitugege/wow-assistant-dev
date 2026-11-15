@@ -9,11 +9,13 @@ from typing import Callable, Mapping, Sequence
 
 from .aura_probe import ProbeEvent, _integer, field_integer
 from .candidates import Candidate, Rule, collect_expect_off, parse_rules
+from .dev_protocol import DEV_VERSION
 from .dispatch import ActionDispatcher, DispatchResult, DispatchState
 from .expressions import EvaluationContext, _trim
+from .old_protocol import OldFrame
 from .pipeline import Decision, DecisionPipeline, PreparedFrame
 from .pixel_geometry import RGBImage
-from .send_gates import invalidate_local_gcd, local_gcd_allows
+from .send_gates import FocusMemory, invalidate_local_gcd, local_gcd_allows
 
 
 SEAL_FIELDS = ("seal_fury", "seal_righteousness", "seal_command")
@@ -83,6 +85,7 @@ class SchedulerState:
     focus_known: bool = False
     observed_focus: int = -1
     seals: SealMemory = field(default_factory=SealMemory)
+    target_revision: int | None = None
 
 
 @dataclass(frozen=True)
@@ -104,6 +107,20 @@ class Scheduler:
                  clock_ms: Callable[[], int], state: SchedulerState | None = None):
         self.pipeline, self.dispatcher, self.clock_ms = pipeline, dispatcher, clock_ms
         self.state = state if state is not None else SchedulerState()
+        self.before_dispatch = None
+
+    def reset_character(self):
+        """独立插件重载后清理角色相关记忆，保留监控累计计数。"""
+        state, dispatch = self.state, self.dispatcher.state
+        retain_self_buffs(dispatch, frozenset())
+        dispatch.local_gcd_until_ms = 0
+        dispatch.focus = FocusMemory()
+        state.target_valid = state.observed_focus = -1
+        state.target_revision = None
+        state.auto_waiting = state.auto_protocol_active = state.focus_known = False
+        state.seals = SealMemory()
+        self.pipeline.engine.last_auto_packet = None
+        self.pipeline.recovery.reset()
 
     def preserved_actions(self, prepared: PreparedFrame) -> frozenset[str]:
         rules = parse_rules(prepared.selected_rules)
@@ -132,8 +149,16 @@ class Scheduler:
                 on_event(name, value, gate=gate)
         keep = self.preserved_actions(prepared)
         target = fields.get("target_valid", "").upper()
+        frame = prepared.frame
+        revision = None
+        if isinstance(frame, OldFrame) and frame.version_code == DEV_VERSION:
+            revision = frame.target_revision
+        else:
+            state.target_revision = None
         if target == "ON":
-            if state.target_valid != 1:
+            # 独立插件可确认两个连续有效目标之间的切换。缺包不视为换目标。
+            switched = revision is not None and state.target_revision is not None and revision != state.target_revision
+            if state.target_valid != 1 or switched:
                 cleared = retain_self_buffs(dispatch_state, keep)
                 now = self.clock_ms()
                 if invalidate_local_gcd(active=now < dispatch_state.local_gcd_until_ms,
@@ -143,8 +168,11 @@ class Scheduler:
                     event("new_target_gcd_clear", remaining_ms)
                 event("new_target_clear", cleared)
             state.target_valid = 1
+            if revision is not None:
+                state.target_revision = revision
         elif target == "OFF":
             state.target_valid = 0
+            state.target_revision = None
         # 未知值既不当作OFF，也不改前次有效目标状态。
         if fields.get("player_valid", "").upper() == "OFF":
             dispatch_state.focus.last_action = ""
@@ -199,8 +227,12 @@ class Scheduler:
                 continue
             if dispatch_state.auras.suppression_until.get(candidate.action, 0) > now:
                 continue
+            if self.before_dispatch is not None and not self.before_dispatch(fields):
+                return result('movement_stopping')
             sent = self.dispatcher.dispatch(candidate, hwnd=hwnd, fields=fields,
                                             focus_known=state.focus_known, observed_focus=state.observed_focus)
+            if sent.success:
+                self.pipeline.recovery.note_dispatch(candidate.action)
             # 每帧只尝试第一个可发项；失败也不会继续尝试较低优先项。
             return result("sent" if sent.success else "send_failed", candidate, sent)
         return result("gcd_blocked" if gcd else "suppressed")

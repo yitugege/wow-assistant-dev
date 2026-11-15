@@ -145,13 +145,15 @@ class ThresholdPanel:
             for index, (group, value, description) in enumerate(zip(groups, values, descriptions)):
                 threshold = group.representative
                 label = QLabel(description.label)
+                label.setWordWrap(True)
                 label.setToolTip(description.tooltip)
                 slider = QSlider(Qt.Orientation.Horizontal)
                 slider.setRange(0, threshold.maximum)
                 slider.setSingleStep(max(1, threshold.step))
                 slider.setPageStep(max(1, threshold.maximum // 10))
                 slider.setValue(value)
-                slider.setFixedWidth(180)
+                slider.setMinimumWidth(80)
+                slider.setMaximumWidth(180)
                 slider.setToolTip(description.tooltip)
                 slider.setTickPosition(QSlider.TickPosition.NoTicks)
                 output = QLabel()

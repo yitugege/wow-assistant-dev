@@ -949,7 +949,7 @@ local function queryAuraPresence(unit, filter, spellIDs)
       else
         callOK, auraData = pcall(queryByAnyID, spellID, filter, unit)
       end
-      if not callOK then
+      if not callOK or (issecretvalue and issecretvalue(auraData)) then
         determined = false
       elseif auraData ~= nil then
         return true
@@ -969,7 +969,8 @@ local function queryAuraPresence(unit, filter, spellIDs)
       end
       if getSpellName then
         local nameOK, wantedName = pcall(getSpellName, spellID)
-        if nameOK and type(wantedName) == "string" and scan.names[wantedName] then
+        if nameOK and type(wantedName) == "string"
+            and not (issecretvalue and issecretvalue(wantedName)) and scan.names[wantedName] then
           return true
         end
       end
@@ -987,7 +988,8 @@ local function queryAuraPresence(unit, filter, spellIDs)
     end
     if getSpellName then
       local nameOK, wantedName = pcall(getSpellName, spellID)
-      if nameOK and type(wantedName) == "string" and scan.names[wantedName] then
+      if nameOK and type(wantedName) == "string"
+          and not (issecretvalue and issecretvalue(wantedName)) and scan.names[wantedName] then
         return true
       end
     end
@@ -998,6 +1000,7 @@ local function queryAuraPresence(unit, filter, spellIDs)
   return nil
 end
 local presenceUnknownHoldSec = 3
+local mageMaintenance = { intellect = true, frost_armor = true, ice_armor = true, mage_armor = true }
 -- 功能：玩家增益行（luaDriven）的绿/灰只由 Lua 直读光环决定。
 -- 入参：无（遍历文件级 presenceRows）。
 -- 出参：无。
@@ -1017,7 +1020,9 @@ local function refreshPresenceRows()
     local dimTexture = presenceRow.luaDriven and presenceRow.row and presenceRow.row.dimTex
     if dimTexture then
       local verdict = queryAuraPresence(presenceRow.unit, presenceRow.filter, presenceRow.spellIDs)
-      if verdict == nil then
+      local unconfirmedMaintenance = verdict ~= true and presenceRow.unit == "player"
+        and mageMaintenance[presenceRow.key] and UnitAffectingCombat and UnitAffectingCombat("player")
+      if verdict == nil and not unconfirmedMaintenance then
         if UnitAffectingCombat and UnitAffectingCombat("player") then
           if presenceRow.key and presenceRow.key:find("^seal_") then
             -- ★ 圣印行例外（2026-10-15 二修）：审判会机制性吃掉圣印，战斗中光环
@@ -1040,13 +1045,16 @@ local function refreshPresenceRows()
           presenceRow.sealAnchor = nil
           presenceRow.staleOut = now - presenceRow.knownAt > presenceUnknownHoldSec
         end
-      else
+      elseif not unconfirmedMaintenance then
         presenceRow.sealAnchor = nil
         presenceRow.knownAt = now
         presenceRow.staleOut = false
         presenceRow.green = verdict
       end
-      if not presenceRow.staleOut and presenceRow.green then
+      if unconfirmedMaintenance then
+        -- 实机战斗中按 ID 和索引都可能查空，脱战却读到长效增益仍在生效。
+        dimTexture:SetColorTexture(1, 1, 0, 1)
+      elseif not presenceRow.staleOut and presenceRow.green then
         dimTexture:SetColorTexture(0, 1, 0, 1)
       else
         dimTexture:SetColorTexture(dimLevel, dimLevel, dimLevel, 1)

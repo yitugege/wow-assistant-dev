@@ -91,8 +91,8 @@ class QtLocalUpdateFS:
         try:
             while True:
                 chunk = bytes(file.read(chunk_size))
-                if file.error() != QFileDevice.FileError.NoError:
-                    raise OSError(file.errorString())
+                # 0x1400b33a0仅循环read>0；打开后的读取错误也终止并返回前缀哈希。
+                # 不将这条原生兼容语义用于独立产品的GitHub下载器。
                 if not chunk:
                     return
                 yield chunk
@@ -293,8 +293,9 @@ class QtUpdaterClient(QObject):
             return
         reply = pending.reply
         code = _number(reply.error())
-        # Native checks download errors before reading final residual bytes.
-        body = bytes(reply.readAll()) if pending.request.kind == "check" or code == 0 else b""
+        # 0x1400b48d0：取消标志优先于网络错误，更早于readAll；取消后也可能收到成功完成。
+        read_body = pending.request.kind == "check" or (code == 0 and not self.updater._cancelled)
+        body = bytes(reply.readAll()) if read_body else b""
         response = UpdateResponse(body, code, reply.errorString())
         self._release(pending)
         self._finish_response(pending.request, response)

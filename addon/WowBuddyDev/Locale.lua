@@ -350,6 +350,7 @@ WowBuddyDev._localeEN = {
   ["|cff00ff00单|r/群"] = "|cff00ff00Single|r/AoE",
   ["单/|cff00ff00群|r"] = "Single/|cff00ff00AoE|r",
   ["自动寻怪"] = "Auto target",
+  ["击杀后继续选怪"] = "Target next enemy after a kill",
   ["虚空特效"] = "Void effect",
   ["设置为推荐值"] = "Apply Recommended Settings",
   ["请按下要绑定的按键（ESC取消）"] = "Press the key to bind (ESC to cancel)",

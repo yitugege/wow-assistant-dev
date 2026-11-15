@@ -196,6 +196,34 @@ class AddonFullLoadTests(unittest.TestCase):
                 assert(WowBuddyDevDiagnostics[50].operation=='Final')
             ''')
 
+    def test_randomized_package_restores_post_kill_setting_without_reusing_a_request(self):
+        from wowbuddy.auto_target import parse_auto_target
+
+        host = (ROOT/'tests/addon_login_host.lua').read_text('utf8')
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            name = build(SOURCE, root/'addon.zip', random_names=True)['addon_directory']
+            with zipfile.ZipFile(root/'addon.zip') as archive:
+                archive.extractall(root)
+            for saved in ('nil', 'false', 'true'):
+                with self.subTest(saved=saved):
+                    prelude = host + ('\nWowBuddyDevDB={masterSwitch=true,autoTarget=true,autoTargetVer=2,'
+                                      'autoTargetAfterKill=' + saved + '}')
+                    lua, _ = self.load(root/name, name, prelude)
+                    g = lua.globals()
+                    g.targetAlive = False
+                    g.EmitFixtureEvent('ADDON_LOADED', name)
+                    g.EmitFixtureEvent('PLAYER_LOGIN')
+                    addon = g.WowBuddyDev
+                    addon.RefreshAutoTargetSettingUI()
+                    enabled = saved == 'true'
+                    checkbox = g.WowBuddyDevPostKillAutoTargetCheck
+                    self.assertEqual(checkbox.GetChecked(checkbox), enabled)
+                    button = addon.GetSecureButton('auto_target')
+                    self.assertEqual('[combat,' in button.attributes.macrotext, not enabled)
+                    self.assertFalse(addon.IsPostKillAutoTargetReady())
+                    self.assertEqual(parse_auto_target(addon.GetAutoTargetPacket()).state, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

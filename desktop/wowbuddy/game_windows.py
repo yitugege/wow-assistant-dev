@@ -117,6 +117,10 @@ def executable_name(path: str) -> str:
     return path.rsplit('\\', 1)[-1].lower()
 
 
+# 新增的角色读取和鼠标操作只接受已知的游戏可执行文件。
+GAME_EXECUTABLES = frozenset(('wow.exe', 'wowb.exe', 'wowclassic.exe', 'wowclassicb.exe'))
+
+
 def _left_utf16(value: str, units: int) -> str:
     return value.encode('utf-16-le', 'surrogatepass')[:units * 2].decode('utf-16-le', 'surrogatepass')
 
@@ -201,8 +205,11 @@ def preferred_game(windows: tuple[WindowInfo, ...]) -> int:
 
 
 def find_game_window(backend: WindowBackend, *,
-                     on_diagnostic: Callable[[str], None] | None = None) -> int:
-    return preferred_game(enumerate_windows(backend, on_diagnostic=on_diagnostic).windows)
+                     on_diagnostic: Callable[[str], None] | None = None, game_only=False) -> int:
+    windows = enumerate_windows(backend, on_diagnostic=on_diagnostic).windows
+    if game_only:
+        windows = tuple(w for w in windows if w.executable in GAME_EXECUTABLES)
+    return preferred_game(windows)
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,10 +220,12 @@ class WindowChoices:
 
 
 def refresh_choices(backend: WindowBackend, *,
-                    on_diagnostic: Callable[[str], None] | None = None) -> WindowChoices:
+                    on_diagnostic: Callable[[str], None] | None = None, game_only=False) -> WindowChoices:
     """09ee50 的数据部分；再次检查 PID 排除本进程，不按 exe 过滤普通窗口。"""
     enumeration = enumerate_windows(backend, on_diagnostic=on_diagnostic)
     windows = tuple(w for w in enumeration.windows if not is_own_window(backend, w.hwnd))
+    if game_only:
+        windows = tuple(w for w in windows if w.executable in GAME_EXECUTABLES)
     preferred = preferred_game(windows)
     selected = next((i for i, w in enumerate(windows) if w.hwnd == preferred), -1)
     if selected == -1 and windows:
@@ -242,15 +251,17 @@ class WindowMonitor:
     def __init__(self, backend: WindowBackend, runtime: MonitorRuntime, *,
                  interval_ms: int | None = None,
                  on_selection: Callable[['WindowMonitor', int], None] | None = None,
-                 on_diagnostic: Callable[[str], None] | None = None):
+                 on_diagnostic: Callable[[str], None] | None = None, game_only=False):
         self.backend, self.runtime = backend, runtime
         self.interval_ms = 25 if interval_ms is None else interval_ms
         self.on_selection = on_selection
         self.on_diagnostic = on_diagnostic
+        self.game_only = game_only
         self.diagnostics: list[str] = []
         self.windows: tuple[WindowInfo, ...] = ()
         self.selected_index = -1
         self.target_hwnd = 0
+        self._target_pid = 0
         self.status = ''
         self.messages: list[str] = []
 
@@ -263,7 +274,7 @@ class WindowMonitor:
             self.on_selection(self, index)
 
     def refresh(self) -> None:
-        choices = refresh_choices(self.backend, on_diagnostic=self._diagnostic)
+        choices = refresh_choices(self.backend, on_diagnostic=self._diagnostic, game_only=self.game_only)
         self.windows, self.selected_index = choices.windows, choices.selected_index
 
     def _diagnostic(self, text: str) -> None:
@@ -279,21 +290,40 @@ class WindowMonitor:
         selected = (self.windows[self.selected_index]
                     if 0 <= self.selected_index < len(self.windows) else None)
         if selected is None or not selected.hwnd:
-            self.status = '请先选择一个目标窗口'
+            self.status = '未找到魔兽世界窗口，请启动游戏后刷新。' if self.game_only else '请先选择一个目标窗口'
             return
+        if self.game_only:
+            pid = self.backend.window_pid(selected.hwnd)
+            if (not pid or not is_valid_window(self.backend, selected.hwnd)
+                    or executable_name(self.backend.process_path(pid)) not in GAME_EXECUTABLES):
+                self.status = '游戏窗口已变化，请刷新后重新选择。'
+                return
+            self._target_pid = pid
         # 原手动启动仅拒绝零 HWND，不在此调用 IsWindow。
         self.target_hwnd = selected.hwnd
         self.runtime.start(selected.hwnd, self.interval_ms)
-        self.messages.append(f'已开始监控 · 目标窗口 {selected.label}（0x{selected.hwnd:x}）')
+
+    def stop_lost_target(self, *, watching=True):
+        hwnd = self.target_hwnd
+        if not self.runtime.is_active() or not hwnd:
+            return False
+        if (is_valid_window(self.backend, hwnd)
+                and (not self.game_only or self.backend.window_pid(hwnd) == self._target_pid)):
+            return False
+        self.toggle()
+        if self.game_only:
+            self.status = '魔兽世界窗口已关闭或进程已变化，监控已停止。'
+        if watching:
+            self.messages.append('自动监视：目标窗口已关闭，自动停止（游戏重启后会自动重连）')
+        else:
+            self.messages.append(self.status)
+        return True
 
     def tick(self) -> None:
         if self.runtime.is_active():
-            if not self.target_hwnd or is_valid_window(self.backend, self.target_hwnd):
-                return
-            self.toggle()
-            self.messages.append('自动监视：目标窗口已关闭，自动停止（游戏重启后会自动重连）')
+            self.stop_lost_target()
             return  # 同一轮不立即连接另一窗口。
-        hwnd = find_game_window(self.backend, on_diagnostic=self._diagnostic)
+        hwnd = find_game_window(self.backend, on_diagnostic=self._diagnostic, game_only=self.game_only)
         if not hwnd:
             return
         index = next((i for i, w in enumerate(self.windows) if w.hwnd == hwnd), -1)
@@ -305,4 +335,5 @@ class WindowMonitor:
         self.select(index)
         if not self.runtime.is_active():
             self.toggle()
-        self.messages.append(f'自动监视：找到游戏窗口（0x{hwnd:x}），已自动开始监控')
+        if not self.game_only or self.runtime.is_active():
+            self.messages.append(f'自动监视：找到游戏窗口（0x{hwnd:x}），已自动开始监控')
