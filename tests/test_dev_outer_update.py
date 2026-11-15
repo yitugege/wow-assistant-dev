@@ -8,13 +8,13 @@ from tempfile import TemporaryDirectory
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.dev_outer_update import install_outer
-from wowbuddy.github_outer import EXE_NAME,MANIFEST_NAME
-from wowbuddy.launcher import BUSINESS_EXE
-from wowbuddy.packages import Member,write_bundle
+from wowbuddy.update.dev_outer_update import install_outer
+from wowbuddy.update.github_outer import EXE_NAME,MANIFEST_NAME
+from wowbuddy.legacy.launcher import BUSINESS_EXE
+from wowbuddy.addons.packages import Member,write_bundle
 from wowbuddy.release_identity import ReleaseIdentity,file_sha256
-from wowbuddy.update_handoff import QtWin32HandoffBackend
-from wowbuddy.updater import part_file_path
+from wowbuddy.update.update_handoff import QtWin32HandoffBackend
+from wowbuddy.update.updater import part_file_path
 
 
 @unittest.skipUnless((ROOT/'dist/desktop/WowBuddyDev/WowBuddyDev.exe').is_file(),'需要自有PE资源载体')

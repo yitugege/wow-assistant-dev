@@ -10,12 +10,12 @@ sys.path.insert(0,str(ROOT/'desktop'));sys.path.insert(0,str(ROOT/'tests/core'))
 import test_dev_tray
 from test_old_protocol import render_old
 from test_pipeline import render_readable
-from wowbuddy.capture import CaptureResult, WindowCapture, Rect
-from wowbuddy.dev_protocol import DEV_VERSION, RECOVERY_CONFIG_BASE, RECOVERY_DISABLED_BASE
-from wowbuddy.old_protocol import OldFrame
-from wowbuddy.pixel_geometry import RGBImage
-from wowbuddy.rotation_selection import Profile
-from wowbuddy.candidates import parse_rules
+from wowbuddy.win32.capture import CaptureResult, WindowCapture, Rect
+from wowbuddy.core.dev_protocol import DEV_VERSION, RECOVERY_CONFIG_BASE, RECOVERY_DISABLED_BASE
+from wowbuddy.core.old_protocol import OldFrame
+from wowbuddy.core.pixel_geometry import RGBImage
+from wowbuddy.engine.rotation_selection import Profile
+from wowbuddy.core.candidates import parse_rules
 
 
 class MonitorProtocolTests(unittest.TestCase):
@@ -34,10 +34,10 @@ class MonitorProtocolTests(unittest.TestCase):
     def _exercise_unattended_camp_handoff(self, reason):
         from concurrent.futures import Future
         from tests.test_addon_recovery import RecoveryTests
-        from wowbuddy.auto_target import parse_auto_target
-        from wowbuddy.character_state import decode_mob_state, decode_navigation_state
-        from wowbuddy.death_recovery import AutomaticRevival
-        from wowbuddy.leveling_route import AutomaticLeveling
+        from wowbuddy.core.auto_target import parse_auto_target
+        from wowbuddy.engine.character_state import decode_mob_state, decode_navigation_state
+        from wowbuddy.automation.death_recovery import AutomaticRevival
+        from wowbuddy.automation.leveling_route import AutomaticLeveling
 
         game = RecoveryTests()
         game.setUp()
@@ -172,8 +172,8 @@ class MonitorProtocolTests(unittest.TestCase):
                 g.EmitFixtureEvent('PLAYER_TARGET_CHANGED')
 
             image = None
-            with (patch('wowbuddy.navigation.ForegroundMovement', return_value=movement),
-                  patch('wowbuddy.windows_keys.is_foreground', return_value=True)):
+            with (patch('wowbuddy.automation.navigation.ForegroundMovement', return_value=movement),
+                  patch('wowbuddy.win32.windows_keys.is_foreground', return_value=True)):
                 image = game.game_image()
                 self.assertEqual(window.poll_once().status, 'frame_held')
                 poll()
@@ -255,7 +255,16 @@ class MonitorProtocolTests(unittest.TestCase):
                 mouse.click.assert_called_once_with(123, (520, 530))
                 g.fixtureLife, g.popupType, g.fixtureHovered, g.fixtureY = 'ghost', None, False, 0.60
                 g.fixtureFacing = 0
+                # 释放灵魂后先等墓地坐标稳定（CorpseTrail 起点确认约 1.2 秒），期间只松键不前进。
+                movement.hold_forward.reset_mock()
                 poll()
+                self.assertEqual(window.ui.suggestions.toPlainText(), '等待释放灵魂后的墓地地图与坐标稳定。')
+                self.assertIsNone(window._corpse_trip)
+                movement.hold_forward.assert_not_called()
+                for _ in range(8):
+                    poll()
+                    if window._corpse_trip is not None:
+                        break
                 self.assertIsNotNone(window._corpse_trip)
                 movement.hold_forward.assert_called_with(123, (87, 65, 68))
                 g.fixtureY, g.popupType = 0.567, 'RECOVER_CORPSE'
@@ -315,7 +324,7 @@ class MonitorProtocolTests(unittest.TestCase):
                     self.assertEqual(window._leveling_destination, camp)
                     self.assertNotIn('当前刷怪区反复阵亡', window.ui.log_view.toPlainText())
                     if reason == 'approach_death':
-                        from wowbuddy.walking_route import WalkingTrip
+                        from wowbuddy.automation.walking_route import WalkingTrip
 
                         session, _, goal = camp
                         g.fixtureY = (goal.y + 5) / 100
@@ -484,13 +493,12 @@ class MonitorProtocolTests(unittest.TestCase):
                 poll()
                 g.fixtureTargetClassification = 'normal'
                 set_target(True, 'Creature-5')
-                for level in (g.fixtureLevel - 5, g.fixtureLevel - 3, -1):
+                # 不再限制“比角色低 4 级”：任意等级的普通怪（含 ?? 级）都会攻击。
+                for level in (g.fixtureLevel - 5, g.fixtureLevel - 3, -1, g.fixtureLevel - 4):
                     g.fixtureTargetLevel = level
-                    rejected = poll(2)
-                    self.assertIn('低 4 级', rejected.decision.target_rejection)
-                    self.assertIsNone(rejected.selected)
-                g.fixtureTargetLevel = g.fixtureLevel - 4
-                self.assertEqual(poll(2).selected.action, 'spell_116')
+                    accepted = poll(2)
+                    self.assertIsNone(accepted.decision.target_rejection)
+                    self.assertEqual(accepted.selected.action, 'spell_116')
 
                 game.lua.execute('function WowBuddyDev.UpdateRecovery() return 0,0 end')
                 unknown = poll(2)
@@ -681,10 +689,10 @@ class MonitorProtocolTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_capture_hold_restarts_exit_and_crossing_confirmation(self):
-        from wowbuddy.character_state import NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.runtime import PollResult
-        from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+        from wowbuddy.engine.character_state import NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.engine.runtime import PollResult
+        from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
         def exercise(window):
             window.session.start(123)
@@ -729,9 +737,9 @@ class MonitorProtocolTests(unittest.TestCase):
     def test_capture_hold_preserves_camp_receipts_and_restarts_waits(self):
         from math import pi
         from tests.test_leveling_route import ArrivalPullTests
-        from wowbuddy.character_state import TargetBearing
-        from wowbuddy.navigation import TargetApproach
-        from wowbuddy.runtime import PollResult
+        from wowbuddy.engine.character_state import TargetBearing
+        from wowbuddy.automation.navigation import TargetApproach
+        from wowbuddy.engine.runtime import PollResult
 
         def exercise(window):
             window.session.start(10)
@@ -787,10 +795,10 @@ class MonitorProtocolTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_capture_hold_requires_fresh_revival_hover_and_corpse_wait(self):
-        from wowbuddy.character_state import DeathState, NavigationState
-        from wowbuddy.death_recovery import AutomaticRevival, CorpseAccess
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.runtime import PollResult
+        from wowbuddy.engine.character_state import DeathState, NavigationState
+        from wowbuddy.automation.death_recovery import AutomaticRevival, CorpseAccess
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.engine.runtime import PollResult
 
         def exercise(window):
             window.session.start(123)

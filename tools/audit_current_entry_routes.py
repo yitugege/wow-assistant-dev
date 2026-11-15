@@ -15,7 +15,7 @@ from wowbuddy.native_cli import EARLY_COMMANDS,parse_native_cli
 def main():
     files=['run_dev.py','run_outer_dev.py',*[f'desktop/wowbuddy/{name}.py' for name in (
         'dev_startup','dev_native_commands','dev_staged_startup','dev_outer_entry',
-        'native_cli','qt_app','threshold_widgets','window_shell')]]
+        'native_cli','app/qt_app','app/dev_window','app/threshold_widgets','app/window_shell')]]
     sources={name:(ROOT/name).read_text('utf-8-sig') for name in files}
     connections=[]
     for name,source in sources.items():

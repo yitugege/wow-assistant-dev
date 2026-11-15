@@ -9,13 +9,13 @@ from PySide6.QtWidgets import QApplication, QWidget, QGridLayout, QLabel
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'desktop'))
-from wowbuddy.controller import FrameController, SettingsChange
-from wowbuddy.pipeline import DecisionPipeline
-from wowbuddy.rotation_selection import HubState
+from wowbuddy.engine.controller import FrameController, SettingsChange
+from wowbuddy.engine.pipeline import DecisionPipeline
+from wowbuddy.engine.rotation_selection import HubState
 from wowbuddy.settings import open_ini_settings
-from wowbuddy.thresholds import apply_thresholds
-from wowbuddy.expressions import EvaluationContext, evaluate
-from wowbuddy.threshold_widgets import ThresholdPanel
+from wowbuddy.engine.thresholds import apply_thresholds
+from wowbuddy.core.expressions import EvaluationContext, evaluate
+from wowbuddy.app.threshold_widgets import ThresholdPanel
 
 
 class ThresholdSettingsRoundtripTests(unittest.TestCase):

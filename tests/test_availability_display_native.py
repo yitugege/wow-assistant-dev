@@ -7,8 +7,8 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.presentation import availability
-from wowbuddy.expressions import EvaluationContext
+from wowbuddy.engine.presentation import availability
+from wowbuddy.core.expressions import EvaluationContext
 
 
 class QString(C.Structure):

@@ -6,12 +6,12 @@ from unittest.mock import Mock, call
 from lupa.lua51 import LuaRuntime
 from tests import test_addon_full_load as full_load
 from tests import test_original_direct_cast as original
-from wowbuddy.assets import Assets
-from wowbuddy.auto_target import PACKET_BASE, parse_auto_target
-from wowbuddy.dispatch import ActionDispatcher
-from wowbuddy.packages import read_addon
-from wowbuddy.pixel_geometry import RGBImage
-from wowbuddy.scheduler import Scheduler
+from wowbuddy.engine.assets import Assets
+from wowbuddy.core.auto_target import PACKET_BASE, parse_auto_target
+from wowbuddy.engine.dispatch import ActionDispatcher
+from wowbuddy.addons.packages import read_addon
+from wowbuddy.core.pixel_geometry import RGBImage
+from wowbuddy.engine.scheduler import Scheduler
 
 
 class OriginalDirectCastHookTests(unittest.TestCase):

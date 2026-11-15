@@ -6,6 +6,7 @@
 -- 重命名：3b0b39.lua → TimelineData_1.lua（按功能重命名）
 -- 作用：时间轴数据：首领机制计时
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("TimelineData_1", {  }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.TimelinePlannerEncounters = {}
 -- 功能：构建注册键 347015（首领 3470 × 难度 15）的机制解析器——按时间轴时长换算阿曼尼系机制，并用单位施法事件推进读条阶段。
 -- 入参：无（工厂函数，只建状态机）。

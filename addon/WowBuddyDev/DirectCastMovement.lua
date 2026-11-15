@@ -1,5 +1,6 @@
 -- 恢复原移动意图状态机。按钮挂钩只用 IsMovingCast 做只读判断，
 -- 不调用 MovementGate，因此不会登记停步后的补发意图。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DirectCastMovement", { "DirectCastSlots" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local DC = WowBuddyDev.DirectCast
 local pendingMove
 local moveStillTicks = 0

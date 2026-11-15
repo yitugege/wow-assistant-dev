@@ -6,6 +6,7 @@
 -- 重命名：001fcd.lua → TimelineData_2.lua（按功能重命名）
 -- 作用：时间轴数据：首领机制计时
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("TimelineData_2", { "TimelineData_1" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.TimelinePlannerEncounters = WowBuddyDev.TimelinePlannerEncounters or {}
 -- 功能：构建注册键 344515（首领 3445 × 难度 15）的机制解析器——按时间轴时长换算毒液系机制，并对会反复出现的时长做「本阶段只认第 3 次以后」的封顶。
 -- 入参：无（工厂函数，只建状态机）。

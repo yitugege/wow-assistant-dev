@@ -4,6 +4,7 @@
 -- 以及 ForeverTalents 算出的 mainIndex 一致。**只收录天赋树上的技能**；不在表里的
 -- （训练师通用技能、focus_* 这类非技能动作）一律视为通用，不参与过滤。
 -- 一个技能写多个下标 = 多系共享，任一命中即显示。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("ForeverSpecSpells", {  }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.ForeverSpecSpells = {
   -- 法师 1482 · 奥术 / 火焰 / 冰霜（54 个天赋节点 / 54 个技能）
   [1482] = {

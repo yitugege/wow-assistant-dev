@@ -7,7 +7,7 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from PySide6.QtCore import QFile,QIODevice
-from wowbuddy.session import FileLog
+from wowbuddy.engine.session import FileLog
 
 
 class SessionLogTests(unittest.TestCase):

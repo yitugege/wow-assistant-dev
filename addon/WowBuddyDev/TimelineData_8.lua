@@ -6,6 +6,7 @@
 -- 重命名：0350c5.lua → TimelineData_8.lua（按功能重命名）
 -- 作用：时间轴数据：首领机制计时
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("TimelineData_8", { "TimelineData_1" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.TimelinePlannerEncounters = WowBuddyDev.TimelinePlannerEncounters or {}
 -- 功能：把浮点秒数四舍五入成整数秒（本文件统一的取整口径）。
 -- 入参：value 待取整的秒数。

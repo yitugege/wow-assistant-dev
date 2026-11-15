@@ -5,19 +5,22 @@ import unittest
 from lupa.lua51 import LuaRuntime
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'));sys.path.insert(0,str(ROOT/'tests/core'))
-from wowbuddy.assets import Assets
-from wowbuddy.dev_protocol import DEV_VERSION, MAX_AVAILABILITY_SPELLS
-from wowbuddy.expressions import EvaluationContext
-from wowbuddy.old_protocol import OldDecoder
+from wowbuddy.engine.assets import Assets
+from wowbuddy.core.dev_protocol import DEV_VERSION, MAX_AVAILABILITY_SPELLS
+from wowbuddy.core.expressions import EvaluationContext
+from wowbuddy.core.old_protocol import OldDecoder
 from test_old_protocol import render_old
 from test_pipeline import render_readable
+
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
+
 
 class AvailabilityProtocolTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):cls.assets=Assets.load(ROOT/'assets')
 
     def test_lua_and_desktop_version_and_capacity_agree(self):
-        line=next(line for line in (ROOT/'addon/WowBuddyDev/Core.lua').read_text('utf8').splitlines()
+        line=next(line for line in rebuilt_core().splitlines()
                   if line.startswith('local addonVersionCode ='))
         self.assertEqual(LuaRuntime().execute(line+'\nreturn addonVersionCode'),DEV_VERSION)
         for spec in self.assets.rules['specs'].values():

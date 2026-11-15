@@ -6,6 +6,7 @@
 -- 重命名：d4c98a.lua → ChargeDisplay.lua（按功能重命名）
 -- 作用：充能/层数直读（GetSpellChargeCount 等）
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("ChargeDisplay", { "PanelV2" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local getSpellDisplayCount = C_Spell and C_Spell.GetSpellDisplayCount
 -- 功能：从候选法术 ID 里挑出客户端当前真正生效的那一个：优先取被替换后的法术，其次取已学会的。
 -- 入参：spellID 首选法术 ID，可为 nil；spellIDs 候选列表，可为 nil。

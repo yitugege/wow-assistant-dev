@@ -2,16 +2,16 @@
 import hashlib
 import json
 from pathlib import Path
-import posixpath
 import sys
-import xml.etree.ElementTree as ET
 import zipfile
 from lupa.lua51 import LuaRuntime
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'desktop'))
 from wowbuddy.dev_version import VERSION
-from wowbuddy.github_outer import verify_outer
+from wowbuddy.update.github_outer import verify_outer
+from tools.build_addon import check_archive, collect_files
 
 
 def digest(data):
@@ -20,7 +20,8 @@ def digest(data):
 
 def check():
     source = ROOT / 'addon/WowBuddyDev'
-    expected = sorted(p.read_bytes() for p in source.rglob('*.lua'))
+    # 打包以 TOC 为白名单，对照源取同一份清单。
+    expected = sorted(p.read_bytes() for p in collect_files(source) if p.suffix == '.lua')
     compile_lua = LuaRuntime(unpack_returned_tuples=True).eval(
         'function(s,n) local f,e=loadstring(s,n);return f~=nil,e end')
     packages = {}
@@ -36,23 +37,10 @@ def check():
     for path in (ROOT / 'dist/release/WowBuddyDev-addon.zip',
                  ROOT / 'dist/desktop/WowBuddyDev/packages/WowBuddyDev-dev.zip'):
         with zipfile.ZipFile(path) as archive:
-            names = set(archive.namelist())
-            lua = []
-            for name in names:
-                data = archive.read(name)
-                targets = []
-                if name.endswith('.lua'):
-                    ok, error = compile_lua(data.decode('utf-8-sig'), name)
-                    assert ok, (name, error)
-                    lua.append(data)
-                elif name.endswith('.toc'):
-                    lines = data.decode('utf-8-sig').splitlines()
-                    assert '## Version: ' + VERSION + '-dev' in lines
-                    targets = [s.strip() for s in lines if s.strip() and not s.lstrip().startswith('#')]
-                elif name.endswith('.xml'):
-                    targets = [node.attrib['file'] for node in ET.fromstring(data).iter() if 'file' in node.attrib]
-                for target in targets:
-                    assert posixpath.normpath(posixpath.join(posixpath.dirname(name), target.replace('\\', '/'))) in names
+            _, lua, _ = check_archive(archive, compile_lua, chunk_prefix='')
+            for name in archive.namelist():
+                if name.endswith('.toc'):
+                    assert '## Version: ' + VERSION + '-dev' in archive.read(name).decode('utf-8-sig').splitlines()
             assert sorted(lua) == expected
     for path in (ROOT / 'dist/desktop/WowBuddyDev/build-manifest.json', ROOT / 'dist/outer/build-manifest.json'):
         manifest = json.loads(path.read_text('utf8'))

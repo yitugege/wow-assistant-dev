@@ -1,4 +1,5 @@
 -- 在世界地图记录玩家点击的路线坐标。路线编辑只使用普通控件。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("ManualRoutes", {  }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local limit = 48
 local function readable(value)
   return not issecretvalue or not issecretvalue(value)

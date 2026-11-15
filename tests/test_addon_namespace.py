@@ -5,6 +5,9 @@ from lupa.lua51 import LuaRuntime
 ADDON=Path(__file__).resolve().parents[1]/'addon/WowBuddyDev'
 
 
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
+
+
 class NamespaceTests(unittest.TestCase):
     def test_all_lua_files_compile(self):
         lua=LuaRuntime(unpack_returned_tuples=True)
@@ -23,7 +26,7 @@ class NamespaceTests(unittest.TestCase):
         self.assertIn('## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics',toc)
 
     def test_secure_button_uses_own_name_and_defers_combat_mutation(self):
-        source=(ADDON/'Core.lua').read_text('utf8')
+        source=rebuilt_core()
         start=source.index('function WowBuddyDev.CreateSecureButton(')
         end=source.index('\nend\n',start)+5
         lua=LuaRuntime(unpack_returned_tuples=True)

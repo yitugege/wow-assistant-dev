@@ -3,8 +3,8 @@ from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.dev_addon_cleanup import cleanup_old_addons
-from wowbuddy.addon_install import SIGNATURE_FILES
+from wowbuddy.addons.dev_addon_cleanup import cleanup_old_addons
+from wowbuddy.addons.addon_install import SIGNATURE_FILES
 
 
 class CleanupTests(unittest.TestCase):
@@ -32,7 +32,7 @@ class CleanupTests(unittest.TestCase):
     def test_failed_delete_reports_failure_and_keeps_directory(self):
         with tempfile.TemporaryDirectory() as tmp:
             client,addons=self.fixture(Path(tmp))
-            with patch('wowbuddy.addon_actions._remove_plugin_directory',side_effect=OSError('locked')):
+            with patch('wowbuddy.addons.addon_actions._remove_plugin_directory',side_effect=OSError('locked')):
                 result=cleanup_old_addons(client)
             self.assertEqual(result.deleted,0);self.assertIn('删除失败',result.notes)
             self.assertTrue((addons/'legacy').exists())
@@ -43,11 +43,11 @@ class CleanupTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as tmp:
                 client,addons=self.fixture(Path(tmp))
                 window._select_development_client(str(client))
-                with patch('wowbuddy.addon_games.selected_executable',return_value=str(client/'Wow.exe')):
+                with patch('wowbuddy.addons.addon_games.selected_executable',return_value=str(client/'Wow.exe')):
                     window._addon_cleanup_button.click()
                     self.assertTrue((addons/'legacy').exists())
                     self.assertIn('正在运行',window.ui.addon_status.text())
-                with patch('wowbuddy.addon_games.selected_executable',return_value=''):
+                with patch('wowbuddy.addons.addon_games.selected_executable',return_value=''):
                     window.toggle_monitor()
                     window._addon_cleanup_button.click()
                     self.assertTrue((addons/'legacy').exists())

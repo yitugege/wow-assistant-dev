@@ -1,11 +1,12 @@
 """自有外层本地联测入口，复用原资源释放与启动宿主。"""
 import os
 import sys
-from .outer_entry import SourceReleaseAPI
-from .launcher import WindowsLauncherFiles,WindowsLauncherProcess
-from .launcher_host import launch_host,WindowsHostAPI
+from wowbuddy.legacy.outer_entry import SourceReleaseAPI
+from wowbuddy.legacy.launcher import WindowsLauncherFiles,WindowsLauncherProcess
+from wowbuddy.legacy.launcher_host import launch_host,WindowsHostAPI
+from wowbuddy.dev_version import REPOSITORY
 
-PROJECT_URL='https://github.com/yitugege/wow-assistant-dev'
+PROJECT_URL='https://github.com/'+REPOSITORY
 ERROR_TITLE='WowBuddyDev — 启动失败'
 
 

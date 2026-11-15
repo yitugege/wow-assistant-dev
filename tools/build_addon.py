@@ -6,14 +6,29 @@ import zipfile
 import secrets
 import re
 import posixpath
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 NAME = 'WowBuddyDev'
 
 
-def collect_files(directory: Path) -> list[Path]:
+# Lua 在运行时拼接路径加载的资源（见 PixelBar.lua 的 getLogoTexturePath、小地图图标与开关音效），
+# 无法从 TOC 推出，须在此显式登记。存在才收录；正式插件构建由 require_resources 要求全部存在。
+RESOURCE_FILES = (
+    'PermesIcon.tga',
+    'PermesLogoBlind.tga', 'PermesLogoBlindR.tga',
+    'PermesLogoNormal.tga', 'PermesLogoNormalR.tga',
+    'PermesLogoRed.tga', 'PermesLogoRedR.tga',
+    'toggle_on.ogg', 'toggle_off.ogg', 'toggle_baofa.ogg',
+    # 不在 TOC 中，但桌面端 wowbuddy.addons.addon_games.SIGNATURE_NAMES 依靠它识别已安装插件目录。
+    'forever_spell_ids.lua',
+)
+
+
+def toc_entries(directory: Path) -> list[Path]:
     directory = directory.resolve()
     toc = directory / f'{NAME}.toc'
+    entries = []
     for line in toc.read_text('utf-8-sig').splitlines():
         entry = line.strip()
         if not entry or entry.startswith('#'):
@@ -21,15 +36,66 @@ def collect_files(directory: Path) -> list[Path]:
         target = (directory / entry.replace('\\', '/')).resolve()
         if not target.is_relative_to(directory) or not target.is_file():
             raise ValueError(f'TOC引用不存在或越出插件目录：{entry}')
-    files = sorted(p for p in directory.rglob('*') if p.is_file())
-    for path in files:
+        entries.append(target)
+    return entries
+
+
+def check_archive(archive, compile_lua, *, chunk_prefix='@'):
+    """编译包内全部 Lua，并核对 TOC 与 XML 引用的文件都在包内。
+
+    compile_lua(source, chunk_name) -> (ok, error)。返回 (Lua 成员名列表, Lua 内容列表, 引用列表)；
+    编译失败或引用缺失时抛 ValueError。
+    """
+    names = set(archive.namelist())
+    compiled, contents, references = [], [], []
+    for name in sorted(names):
+        data = archive.read(name)
+        targets = []
+        if name.endswith('.lua'):
+            ok, error = compile_lua(data.decode('utf-8-sig'), chunk_prefix + name)
+            if not ok:
+                raise ValueError(error)
+            compiled.append(name)
+            contents.append(data)
+        elif name.endswith('.toc'):
+            targets = [line.strip() for line in data.decode('utf-8-sig').splitlines()
+                       if line.strip() and not line.lstrip().startswith('#')]
+        elif name.endswith('.xml'):
+            targets = [node.attrib['file'] for node in ET.fromstring(data).iter() if 'file' in node.attrib]
+        for target in targets:
+            resolved = posixpath.normpath(posixpath.join(posixpath.dirname(name), target.replace('\\', '/')))
+            if resolved not in names:
+                raise ValueError(f'包内引用缺失：{name} -> {target}')
+            references.append({'source': name, 'target': resolved})
+    return compiled, contents, references
+
+
+def collect_files(directory: Path) -> list[Path]:
+    """以 TOC 为白名单：TOC 本身、TOC 列出的文件和 RESOURCE_FILES 中存在的资源。"""
+    directory = directory.resolve()
+    for path in (p for p in directory.rglob('*') if p.is_file()):
         if path.is_symlink() or not path.resolve().is_relative_to(directory):
             raise ValueError(f'插件文件不能指向目录之外：{path}')
         if path.name == 'DirectCast.lua' or path.suffix.lower() in ('.exe', '.dll', '.pyc'):
             raise ValueError(f'开发插件包包含禁止的构建输入：{path.name}')
         if '__pycache__' in path.parts:
             raise ValueError(f'插件包中存在缓存目录：{path}')
-    return files
+    selected = {directory / f'{NAME}.toc', *toc_entries(directory)}
+    selected.update(directory / name for name in RESOURCE_FILES if (directory / name).is_file())
+    return sorted(selected)
+
+
+def excluded_files(directory: Path) -> list[str]:
+    directory = directory.resolve()
+    selected = set(collect_files(directory))
+    return sorted(p.relative_to(directory).as_posix() for p in directory.rglob('*')
+                  if p.is_file() and p.resolve() not in selected)
+
+
+def require_resources(directory: Path) -> None:
+    missing = [name for name in RESOURCE_FILES if not (directory / name).is_file()]
+    if missing:
+        raise ValueError('插件资源缺失：' + ', '.join(missing))
 
 
 def build(directory: Path, output: Path, *, random_names=False) -> dict:
@@ -86,9 +152,12 @@ def build(directory: Path, output: Path, *, random_names=False) -> dict:
 
 def main():
     output = ROOT / 'dist' / f'{NAME}-dev.zip'
-    manifest = build(ROOT / 'addon' / NAME, output)
+    source = ROOT / 'addon' / NAME
+    require_resources(source)
+    manifest = build(source, output)
     output.with_suffix('.manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2), 'utf8')
-    print(json.dumps({'artifact': str(output), 'sha256': manifest['sha256'], 'members': len(manifest['members'])}))
+    print(json.dumps({'artifact': str(output), 'sha256': manifest['sha256'], 'members': len(manifest['members']),
+                      'excluded': excluded_files(source)}, ensure_ascii=False))
 
 
 if __name__ == '__main__':

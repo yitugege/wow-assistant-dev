@@ -10,8 +10,8 @@ from pathlib import Path
 import tempfile
 from typing import Callable, Mapping, Protocol
 
-from .expressions import _trim
-from .rotation_selection import HubState, load_snapshot
+from wowbuddy.core.expressions import _trim
+from wowbuddy.engine.rotation_selection import HubState, load_snapshot
 
 DEFAULT_HUB_URL = "https://wowbuddy.cn/library/rotations.json"
 HUB_URL_ENV = "WOWBUDDY_HUB_URL"

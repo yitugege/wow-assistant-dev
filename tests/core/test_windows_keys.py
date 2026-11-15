@@ -2,8 +2,8 @@
 import ctypes
 import unittest
 
-from wowbuddy.keybindings import parse_keybinding
-from wowbuddy.windows_keys import (
+from wowbuddy.core.keybindings import parse_keybinding
+from wowbuddy.win32.windows_keys import (
     CtypesWin32Backend, INPUT, KEYBDINPUT, KeyboardInput, KeySender,
     activate_and_send, is_foreground, post_message, send_input,
 )

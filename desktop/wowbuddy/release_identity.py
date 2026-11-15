@@ -1,14 +1,14 @@
 """独立源码发布包标识；本地测试附加层，不冒充原版授权或数字签名。"""
+from contextlib import contextmanager
 from dataclasses import dataclass
 import ctypes as C
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
 
-from .launcher import BUSINESS_EXE
-from .launcher_host import WindowsHostAPI
+from wowbuddy.legacy.launcher import BUSINESS_EXE
+from wowbuddy.legacy.launcher_host import WindowsHostAPI
 
 SCHEMA = "wowbuddy-source-release-v1"
 MANIFEST_RESOURCE = 203
@@ -57,22 +57,32 @@ def read_identity_resource(api, module=None) -> ReleaseIdentity:
     return decode_identity(api.copy_resource(pointer, size))
 
 
-def read_release_identity(path: Path | None = None) -> ReleaseIdentity:
-    """只以资源方式映射PE；不执行其入口、TLS或DllMain。None为自身模块。"""
+@contextmanager
+def mapped_resources(path: Path):
+    """只以资源方式映射PE（AS_DATAFILE | AS_IMAGE_RESOURCE），不执行其入口、TLS或DllMain。
+
+    产出 (api, module)，退出时 FreeLibrary。
+    """
     api = WindowsHostAPI()
-    if path is None:
-        return read_identity_resource(api)
     load = api.k.LoadLibraryExW
     load.argtypes, load.restype = [C.c_wchar_p, C.c_void_p, C.c_uint32], C.c_void_p
     free = api.k.FreeLibrary
     free.argtypes, free.restype = [C.c_void_p], C.c_int32
-    module = load(str(Path(path).resolve()), None, 0x22)  # AS_DATAFILE | AS_IMAGE_RESOURCE
+    module = load(str(Path(path).resolve()), None, 0x22)
     if not module:
         raise C.WinError(C.get_last_error())
     try:
-        return read_identity_resource(api, module)
+        yield api, module
     finally:
         free(module)
+
+
+def read_release_identity(path: Path | None = None) -> ReleaseIdentity:
+    """读取发布标识资源；None为自身模块。"""
+    if path is None:
+        return read_identity_resource(WindowsHostAPI())
+    with mapped_resources(path) as (api, module):
+        return read_identity_resource(api, module)
 
 
 def file_sha256(path: Path) -> str:

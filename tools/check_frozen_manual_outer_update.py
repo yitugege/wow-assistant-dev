@@ -1,6 +1,7 @@
 """使用隔离构建驱动实际 Qt 按钮，从 GitHub 下载并重启官方单文件。"""
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -8,8 +9,8 @@ import sys
 import tempfile
 
 from check_frozen_outer import ROOT, run
-from wowbuddy.github_outer import check_latest, verify_outer
-from wowbuddy.launcher import BUSINESS_EXE, release_directory
+from wowbuddy.update.github_outer import check_latest, verify_outer
+from wowbuddy.legacy.launcher import BUSINESS_EXE, release_directory
 from wowbuddy.release_identity import CACHE_NAMESPACE, file_sha256, read_release_identity
 
 
@@ -102,7 +103,11 @@ def stage_fixture(root, version):
         shutil.copy2(ROOT / 'tools' / name, scripts / name)
 
     version_path = stage / 'desktop/wowbuddy/dev_version.py'
-    version_path.write_text(f'VERSION={version!r}\n', 'utf-8')
+    # 只替换版本行，保留同文件中的 REPOSITORY 等其他常量。
+    original = version_path.read_text('utf-8')
+    if len(re.findall(r'^VERSION=.*$', original, flags=re.M)) != 1:
+        raise ValueError('dev_version.py 版本行位置已变化')
+    version_path.write_text(re.sub(r'^VERSION=.*$', f'VERSION={version!r}', original, flags=re.M), 'utf-8')
     entry = stage / 'run_dev.py'
     content = entry.read_text('utf-8')
     marker = '    def after_main(window):\n'

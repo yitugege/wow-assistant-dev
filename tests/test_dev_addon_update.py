@@ -3,10 +3,10 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from tools.build_addon import build
-from wowbuddy.addon_update import AddonGame,ReinstallResult
-from wowbuddy.dev_addon_update import apply_release,refresh_package
-from wowbuddy.github_addon import download_latest,ZIP_NAME,MANIFEST_NAME,REPOSITORY
-from wowbuddy.dev_protocol import DEV_VERSION
+from wowbuddy.update.addon_update import AddonGame,ReinstallResult
+from wowbuddy.update.dev_addon_update import apply_release,refresh_package
+from wowbuddy.update.github_addon import download_latest,ZIP_NAME,MANIFEST_NAME,REPOSITORY
+from wowbuddy.core.dev_protocol import DEV_VERSION
 
 class Pending:
     def __init__(self):self.paths=()
@@ -18,14 +18,14 @@ class HotUpdateTests(unittest.TestCase):
         from test_dev_tray import TrayTests
         from unittest.mock import patch
         from concurrent.futures import Future
-        from wowbuddy.addon_update import AddonUpdateState
+        from wowbuddy.update.addon_update import AddonUpdateState
         def exercise(window):
             window._configure_addon_refresh(True)
             self.assertEqual(window.addon_startup_timer.interval(),5000)
             self.assertTrue(window.addon_startup_timer.isActive())
             self.assertEqual(window.hub_timer.interval(),1800000)
             done=Future();done.set_result({'changed':False})
-            with patch('wowbuddy.dev_addon_update.refresh_package',return_value={'changed':False}),patch('wowbuddy.dev_addon_update.apply_release',return_value=AddonUpdateState(pending=('test',))) as apply:
+            with patch('wowbuddy.update.dev_addon_update.refresh_package',return_value={'changed':False}),patch('wowbuddy.update.dev_addon_update.apply_release',return_value=AddonUpdateState(pending=('test',))) as apply:
                 window.addon_startup_timer.timeout.emit()
                 window._addon_refresh_future.result(timeout=5)
                 window._addon_refresh_future=done

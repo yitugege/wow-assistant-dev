@@ -38,7 +38,7 @@ def qt_ready():
 def prepare_qt_runtime(arguments):
     """原075960先构造Qt；使用Qt实际消费后的参数，不手写Qt选项表。"""
     from PySide6.QtWidgets import QApplication
-    from .ui_layout import NATIVE_STYLESHEET
+    from wowbuddy.app.ui_layout import NATIVE_STYLESHEET
     record('main() 进入，准备构造 QApplication')
     if {'--desktop-selftest','--selftest-backends','--desktop-dump-ui'}.intersection(arguments[1:]):
         os.environ['QT_QPA_PLATFORM']='offscreen'

@@ -16,7 +16,8 @@
 --   本文件就是把这些静默失效变成一条能读到的报告。
 -- ==========================================================================
 
-local ADDON = _G.WowBuddyDev
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("BuildCompat", { "ForeverCompat", "CoreSettings", "Core" }) or _G.WowBuddyDev -- @@注册表命名空间@@
+local ADDON = WowBuddyDev
 if not ADDON then
     return
 end

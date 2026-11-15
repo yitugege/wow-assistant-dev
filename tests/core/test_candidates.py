@@ -3,12 +3,12 @@
 import copy
 import unittest
 
-from wowbuddy.auto_target import PACKET_BASE
-from wowbuddy.candidates import (
+from wowbuddy.core.auto_target import PACKET_BASE
+from wowbuddy.core.candidates import (
     Action, CandidateEngine, OFF_GCD_SPELL_IDS, collect_expect_off, focus_unit,
     infer_role, parse_rules,
 )
-from wowbuddy.expressions import EvaluationContext, UnsupportedSemantics
+from wowbuddy.core.expressions import EvaluationContext, UnsupportedSemantics
 
 
 def document(actions=None, rotations=None, generic=None, role=None):

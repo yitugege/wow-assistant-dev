@@ -6,8 +6,8 @@ from lupa.lua51 import LuaRuntime
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.candidates import CandidateEngine
-from wowbuddy.keybindings import parse_keybinding
+from wowbuddy.core.candidates import CandidateEngine
+from wowbuddy.core.keybindings import parse_keybinding
 
 
 def main():

@@ -12,7 +12,8 @@
 --
 -- 桥格式：DB1|t=秒,combat=0/1,key=NUMPAD7,spell=2136,stage=attack|buff|idle
 -- ============================================================================
-local P = _G.WowBuddyDev
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DecisionBridge", { "CoreClassData", "PanelV2", "PixelBar" }) or _G.WowBuddyDev -- @@注册表命名空间@@
+local P = WowBuddyDev
 if not P then
     print("|cffff6666[DecisionBridge]|r Core.lua 未加载")
     return

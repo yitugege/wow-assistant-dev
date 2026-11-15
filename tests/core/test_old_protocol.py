@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 import unittest
 
-from wowbuddy.candidates import CandidateEngine
-from wowbuddy.old_protocol import OldDecoder, decode_identity
-from wowbuddy.pixel_geometry import RGBImage, nearbyint
+from wowbuddy.core.candidates import CandidateEngine
+from wowbuddy.core.old_protocol import OldDecoder, decode_identity
+from wowbuddy.core.pixel_geometry import RGBImage, nearbyint
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = json.loads((ROOT / "assets/contract.json").read_bytes())

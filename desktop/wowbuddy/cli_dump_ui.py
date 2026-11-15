@@ -9,10 +9,11 @@ from typing import Callable, Sequence
 from PySide6.QtCore import QCoreApplication, QTimer, Qt, qWarning, QJsonDocument
 from PySide6.QtWidgets import QWidget, QPushButton, QCheckBox, QLabel, QLineEdit
 
-from .candidates import Rule, parse_rules
-from .expressions import _int, _string
-from .field_cell import FieldCell
-from .rotation_selection import Profile
+from wowbuddy.core.candidates import Rule, parse_rules
+from wowbuddy.core.expressions import _int, _string
+from wowbuddy.app.field_cell import FieldCell
+from wowbuddy.engine.rotation_selection import Profile
+from wowbuddy.core.qt_text import utf16_left as _left_utf16
 
 
 @dataclass(frozen=True)
@@ -84,10 +85,6 @@ def load_diagnostic_rotation(options: DumpUiOptions, *, read_bytes=Path.read_byt
             return DiagnosticRotation(parts[0], _string(entry.get("specName")), parts[1],
                                       name, parse_rules(entry.get("rules")))
     return None
-
-
-def _left_utf16(text: str, units: int) -> str:
-    return text.encode("utf-16-le", "surrogatepass")[:units * 2].decode("utf-16-le", "surrogatepass")
 
 
 def widget_report(window: QWidget, spec_id: str) -> str:

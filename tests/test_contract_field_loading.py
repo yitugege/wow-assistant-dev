@@ -8,8 +8,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'desktop'))
 from wowbuddy.native_assets import NativeAssetStore
-from wowbuddy.old_protocol import OldDecoder
-from wowbuddy.pixel_geometry import RGBImage, BarGeometry
+from wowbuddy.core.old_protocol import OldDecoder
+from wowbuddy.core.pixel_geometry import RGBImage, BarGeometry
 
 
 class ContractFieldLoadingTests(unittest.TestCase):

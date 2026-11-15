@@ -6,6 +6,7 @@
 -- 重命名：cc3743.lua → TimelineTrash.lua（按功能重命名）
 -- 作用：小怪阶段采集（TrashCapture）
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("TimelineTrash", { "CoreSettings" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local CHALLENGE_DUNGEONS = {
   [1762] = true,
   [1877] = true,

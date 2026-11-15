@@ -1,6 +1,6 @@
 """独立版离线方案初始化；已有用户快照不覆盖。"""
 from pathlib import Path
-from .rotation_selection import load_snapshot
+from wowbuddy.engine.rotation_selection import load_snapshot
 
 
 def read_local_library(path, previous):

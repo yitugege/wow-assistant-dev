@@ -16,23 +16,23 @@ sys.path[:0] = [str(ROOT), str(ROOT/'desktop')]
 
 import run_dev
 from tests import test_addon_full_load as full_load
-from wowbuddy.arrival_pull import ArrivalPull
-from wowbuddy.assets import Assets
-from wowbuddy.auto_target import PACKET_BASE
-from wowbuddy.capture import Rect
-from wowbuddy.character_state import (CharacterState, DeathState, MobState, NavigationState, TargetBearing, decode_character_session,
+from wowbuddy.automation.arrival_pull import ArrivalPull
+from wowbuddy.engine.assets import Assets
+from wowbuddy.core.auto_target import PACKET_BASE
+from wowbuddy.win32.capture import Rect
+from wowbuddy.engine.character_state import (CharacterState, DeathState, MobState, NavigationState, TargetBearing, decode_character_session,
                                       decode_character_state,
                                       decode_death_state, decode_navigation_state, decode_target_rejection)
-from wowbuddy.corpse_loot import CorpseLoot
-from wowbuddy.death_recovery import AutomaticRevival, CorpseAccess
-from wowbuddy.leveling_route import AutomaticLeveling, LevelingGuideCache, find_grinding_point, find_leveling_point
-from wowbuddy.navigation import ForegroundMovement, MapDestination, MapNavigator, TargetApproach
-from wowbuddy.old_protocol import OldFrame
-from wowbuddy.pixel_geometry import RGBImage
-from wowbuddy.pipeline import Decision
-from wowbuddy.scheduler import TickResult
-from wowbuddy.walking_route import ZONE_MAP_IDS, WalkingTrip, camp_access_road, plan_walking_route
-from wowbuddy.windows_mouse import Win32Mouse
+from wowbuddy.automation.corpse_loot import CorpseLoot
+from wowbuddy.automation.death_recovery import AutomaticRevival, CorpseAccess
+from wowbuddy.automation.leveling_route import AutomaticLeveling, LevelingGuideCache, find_grinding_point, find_leveling_point
+from wowbuddy.automation.navigation import ForegroundMovement, MapDestination, MapNavigator, TargetApproach
+from wowbuddy.core.old_protocol import OldFrame
+from wowbuddy.core.pixel_geometry import RGBImage
+from wowbuddy.engine.pipeline import Decision
+from wowbuddy.engine.scheduler import TickResult
+from wowbuddy.automation.walking_route import ZONE_MAP_IDS, WalkingTrip, camp_access_road, plan_walking_route
+from wowbuddy.win32.windows_mouse import Win32Mouse
 
 
 def leg(zone, slug, points):
@@ -124,7 +124,7 @@ class LevelingLookupTests(unittest.TestCase):
         self.assertEqual((result['point']['x'], result['point']['y']), choices[0][3])
 
     def test_failed_ruttheran_flight_reselects_a_reachable_highland_camp(self):
-        from wowbuddy.walking_route import _RUTTHERAN_FLIGHT_ROAD, _RUTTHERAN_TAXI
+        from wowbuddy.automation.walking_route import _RUTTHERAN_FLIGHT_ROAD, _RUTTHERAN_TAXI
 
         starter = ('<article class="lvs-start"><h3><a href="/zh/zones/kalimdor/teldrassil/#route-alliance">'
                    '泰达希尔</a><small>1–11</small></h3></article>')
@@ -293,7 +293,7 @@ class LevelingLookupTests(unittest.TestCase):
                                                                       [('乱风岗', '45.7,50.7')])))
 
     def test_starter_guide_prioritizes_marked_camps_in_the_current_zone(self):
-        from wowbuddy.manual_routes import parse_manual_route
+        from wowbuddy.automation.manual_routes import parse_manual_route
 
         starter = ('<article class="lvs-start"><figure class="lvs-map"><span class="lvs-marker" '
                    'style="left:20%;top:30%" title="北郡修道院">1</span></figure><h3>'
@@ -509,7 +509,7 @@ class LevelingLookupTests(unittest.TestCase):
             find_grinding_point('horde', 33, zone, 50, 50, fetch=pages.__getitem__)
 
     def test_first_numbered_stage_uses_local_starter_camp_when_the_road_is_unavailable(self):
-        from wowbuddy.manual_routes import parse_manual_connection, parse_manual_route
+        from wowbuddy.automation.manual_routes import parse_manual_connection, parse_manual_route
 
         starter = ('<article class="lvs-start"><h3><a href="/zh/zones/kalimdor/durotar/#route-horde">杜隆塔尔</a>'
                    '<small>1–12</small></h3></article>')
@@ -669,7 +669,7 @@ class LevelingLookupTests(unittest.TestCase):
                 response.headers['Content-Type'] = 'text/html; charset=utf-8'
                 response.headers['Content-Length'] = str(len(full))
                 cache = LevelingGuideCache()
-                with patch('wowbuddy.leveling_route.urlopen', return_value=response):
+                with patch('wowbuddy.automation.leveling_route.urlopen', return_value=response):
                     response.read1.side_effect = [full, b'']
                     initial = find_leveling_point('alliance', 15, '西部荒野', cache=cache)
                     self.assertEqual(initial['point']['name'], '哨兵岭')
@@ -696,7 +696,7 @@ class LevelingLookupTests(unittest.TestCase):
         response = MagicMock()
         response.__enter__.return_value = response
         response.geturl.return_value = url
-        with TemporaryDirectory() as directory, patch('wowbuddy.leveling_route.urlopen', return_value=response):
+        with TemporaryDirectory() as directory, patch('wowbuddy.automation.leveling_route.urlopen', return_value=response):
             cache = LevelingGuideCache(directory=directory)
             response.status = 200
             response.headers = Message()
@@ -749,8 +749,8 @@ class LevelingLookupTests(unittest.TestCase):
             return b'partial'
 
         response.read1.side_effect = read_chunk
-        with (patch('wowbuddy.leveling_route.urlopen', return_value=response),
-              patch('wowbuddy.leveling_route.monotonic', side_effect=lambda: elapsed)):
+        with (patch('wowbuddy.automation.leveling_route.urlopen', return_value=response),
+              patch('wowbuddy.automation.leveling_route.monotonic', side_effect=lambda: elapsed)):
             cached = find_leveling_point('alliance', 17, '西部荒野', cache=cache)
             self.assertEqual(cached['point']['name'], '奥伯丁')
             self.assertEqual(cached['cached_sources'], [url])
@@ -789,9 +789,9 @@ class LevelingLookupTests(unittest.TestCase):
             response.read1.side_effect = read_chunk
             return response
 
-        with (patch('wowbuddy.leveling_route.urlopen', side_effect=open_page),
-              patch('wowbuddy.leveling_route.monotonic', side_effect=lambda: elapsed),
-              patch('wowbuddy.leveling_route._GUIDE_LOOKUP_SECONDS', 1)):
+        with (patch('wowbuddy.automation.leveling_route.urlopen', side_effect=open_page),
+              patch('wowbuddy.automation.leveling_route.monotonic', side_effect=lambda: elapsed),
+              patch('wowbuddy.automation.leveling_route._GUIDE_LOOKUP_SECONDS', 1)):
             result = find_grinding_point(*args, cache=cache)
         self.assertEqual(result['point']['name'], '摩尔森农场')
         self.assertEqual(result['cached_sources'], [zone_url])
@@ -961,7 +961,7 @@ class LevelingLookupTests(unittest.TestCase):
                     find_grinding_point(faction, 54, '菲拉斯', 44.461, 11.743, fetch=fetch)
 
     def test_marked_camps_fall_back_to_other_areas_in_eligible_guide_stages(self):
-        from wowbuddy.manual_routes import parse_manual_connection, parse_manual_route
+        from wowbuddy.automation.manual_routes import parse_manual_connection, parse_manual_route
 
         guide = (stage(1, '12–17', leg('贫瘠之地', 'the-barrens', [('十字路口', '52.3,31.9')]),
                        leg('石爪山脉', 'stonetalon-mountains', [('烈日石居', '47,61')]))
@@ -993,7 +993,7 @@ class LevelingLookupTests(unittest.TestCase):
                                blocked_legs=frozenset(connections[:3]), **options)
 
     def test_marked_and_catalog_coordinates_share_the_failed_camp_cooldown(self):
-        from wowbuddy.manual_routes import parse_manual_route
+        from wowbuddy.automation.manual_routes import parse_manual_route
 
         path = '/zh/zones/eastern-kingdoms/redridge-mountains/'
         guide = stage(1, '15–17', leg('赤脊山', 'redridge-mountains', [('湖畔镇', '25.5,59.4')]))
@@ -1009,7 +1009,7 @@ class LevelingLookupTests(unittest.TestCase):
                 self.assertEqual((result['point']['x'], result['point']['y']), (15, 64))
 
     def test_marked_camp_requires_matching_stage_map_and_reachable_land_connection(self):
-        from wowbuddy.manual_routes import parse_manual_connection, parse_manual_route
+        from wowbuddy.automation.manual_routes import parse_manual_connection, parse_manual_route
 
         guide = (stage(1, '12–17', leg('贫瘠之地', 'the-barrens', [('十字路口', '52.3,31.9')]))
                  + stage(2, '18–22', leg('石爪山脉', 'stonetalon-mountains', [('烈日石居', '47,61')])))
@@ -1060,7 +1060,7 @@ class LevelingLookupTests(unittest.TestCase):
         self.assertEqual(later['point']['name'], '绿带草地沼泽爬行者区')
 
     def test_dig_camp_upgrade_keeps_online_marker_checks_and_uses_the_north_road(self):
-        from wowbuddy.manual_routes import parse_manual_route
+        from wowbuddy.automation.manual_routes import parse_manual_route
 
         loch = '/zh/zones/eastern-kingdoms/loch-modan/'
         wetlands = '/zh/zones/eastern-kingdoms/wetlands/'
@@ -1347,7 +1347,7 @@ class LevelingLookupTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             args = ['app', '--leveling-next', '--faction', 'horde', '--level', '15', '--zone', '贫瘠之地',
                     '--data-dir', directory]
-            with patch('wowbuddy.leveling_route.find_leveling_point', side_effect=OSError('offline')), \
+            with patch('wowbuddy.automation.leveling_route.find_leveling_point', side_effect=OSError('offline')), \
                     patch.object(run_dev, 'launch') as launch:
                 self.assertEqual(run_dev.main(args), 1)
                 launch.assert_not_called()
@@ -1411,7 +1411,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         return RGBImage(pixels)
 
     def test_quest_pin_reads_the_completed_local_quest_from_world_map_data(self):
-        from wowbuddy.character_state import QuestTurnInPin, decode_quest_turn_in_pin
+        from wowbuddy.engine.character_state import QuestTurnInPin, decode_quest_turn_in_pin
 
         self.lua.execute('''
             fixtureQuestReady=true
@@ -1444,7 +1444,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertIsNone(sample())
 
     def test_quest_pin_uses_the_remote_zone_pin_instead_of_its_waypoint(self):
-        from wowbuddy.character_state import QuestTurnInPin, decode_quest_turn_in_pin
+        from wowbuddy.engine.character_state import QuestTurnInPin, decode_quest_turn_in_pin
 
         self.lua.execute('''
             local getMapInfo=C_Map.GetMapInfo
@@ -1467,8 +1467,8 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertEqual(decode_quest_turn_in_pin(image, frame), QuestTurnInPin(87, 1433, 31, 62))
 
     def test_native_quest_dialog_turn_in_uses_task_id_hover_and_game_receipt(self):
-        from wowbuddy.character_state import decode_quest_dialog, decode_quest_turn_in_pin
-        from wowbuddy.quest_turn_in import QuestTurnIn
+        from wowbuddy.engine.character_state import decode_quest_dialog, decode_quest_turn_in_pin
+        from wowbuddy.automation.quest_turn_in import QuestTurnIn
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.lua.execute('''
@@ -1626,7 +1626,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertEqual([call.args for call in send.call_args_list], [('interact', 0x76)] * 2)
 
     def test_taxi_pixels_report_only_the_verified_native_route_and_flight_state(self):
-        from wowbuddy.character_state import decode_taxi_state
+        from wowbuddy.engine.character_state import decode_taxi_state
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.lua.execute('''
@@ -1726,7 +1726,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertFalse(sample().riding)
 
     def test_vendor_pixels_require_a_matching_open_shop_and_report_general_slots(self):
-        from wowbuddy.character_state import decode_vendor_state
+        from wowbuddy.engine.character_state import decode_vendor_state
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.lua.execute('''
@@ -1825,7 +1825,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertIs(repair.repair_needed, False)
 
     def test_darkshore_vendor_reports_catalog_identity_without_overwriting_manual_name(self):
-        from wowbuddy.character_state import decode_vendor_state
+        from wowbuddy.engine.character_state import decode_vendor_state
 
         self.lua.execute('''
             WowBuddyDevDB.supplyVendor='其他地图的商人'
@@ -1895,7 +1895,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertEqual(len(set(tokens)), 1)
 
     def test_travel_identity_matches_the_character_across_game_sessions(self):
-        from wowbuddy.character_state import decode_travel_identity
+        from wowbuddy.engine.character_state import decode_travel_identity
 
         def sample(scale=1):
             image = self.game_image(scale)
@@ -1933,7 +1933,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
 
     def test_game_experience_updates_and_combat_notices_are_logged_independently(self):
         import test_dev_tray
-        from wowbuddy.character_state import LevelProgress, decode_level_progress
+        from wowbuddy.engine.character_state import LevelProgress, decode_level_progress
 
         self.lua.execute('''
             fixtureXP=100
@@ -1998,7 +1998,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_confirmed_line_of_sight_failures_stop_only_unattended_attack_candidates(self):
-        from wowbuddy.candidates import Candidate
+        from wowbuddy.core.candidates import Candidate
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.g.WowBuddyDev.DB.autoTarget = True
@@ -2102,7 +2102,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertTrue(ready())
 
     def test_cast_feedback_distinguishes_game_acceptance_start_and_interruption(self):
-        from wowbuddy.character_state import CastFeedback, decode_cast_feedback
+        from wowbuddy.engine.character_state import CastFeedback, decode_cast_feedback
 
         self.lua.execute((ROOT/'tests/addon_world_host.lua').read_text('utf8'))
         emit = self.g.EmitFixtureEvent
@@ -2135,7 +2135,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertIsNone(read()[2])
 
     def test_cast_feedback_pairs_readable_errors_with_the_current_failed_attempt(self):
-        from wowbuddy.character_state import CastFeedback, decode_cast_feedback
+        from wowbuddy.engine.character_state import CastFeedback, decode_cast_feedback
 
         self.lua.execute((ROOT/'tests/addon_world_host.lua').read_text('utf8'))
         self.lua.execute('''
@@ -2202,7 +2202,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertEqual(read()[2], CastFeedback(5, 837, ('提交', '成功')))
 
     def test_combat_facing_packet_requires_a_recent_failure_against_the_same_target(self):
-        from wowbuddy.character_state import CombatFacingSample, decode_cast_feedback, decode_combat_facing
+        from wowbuddy.engine.character_state import CombatFacingSample, decode_cast_feedback, decode_combat_facing
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.g.combat = True
@@ -2280,8 +2280,8 @@ class CharacterStateIntegrationTests(unittest.TestCase):
 
     def test_nova_spacing_requires_a_matching_cast_root_and_increasing_distance(self):
         import test_dev_tray
-        from wowbuddy.character_state import decode_cast_feedback, decode_nova_spacing
-        from wowbuddy.navigation import NovaSpacing
+        from wowbuddy.engine.character_state import decode_cast_feedback, decode_nova_spacing
+        from wowbuddy.automation.navigation import NovaSpacing
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.g.combat = True
@@ -2357,7 +2357,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.g.rootSource = 'party1'
         image, frame, sample, blockers = read()
         self.assertEqual((sample, blockers), (None, ('定身未确认来自当前角色',)))
-        from wowbuddy.character_state import _sample_column
+        from wowbuddy.engine.character_state import _sample_column
         word = _sample_column(image, frame, calibration=((112, (0x57424F,)),))
         self.assertEqual(word(116), 5)
         pixels = [list(row) for row in image.rows]
@@ -2452,8 +2452,8 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertEqual(read()[2:], (None, ('未找到冰霜新星光环',)))
 
     def test_combat_facing_turns_once_per_receipt_with_bounded_probes(self):
-        from wowbuddy.character_state import CombatFacingSample
-        from wowbuddy.navigation import CombatFacing
+        from wowbuddy.engine.character_state import CombatFacingSample
+        from wowbuddy.automation.navigation import CombatFacing
 
         movement = Mock()
         controller = CombatFacing(movement)
@@ -2503,9 +2503,9 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertIsNone(decode_target_rejection(image, replace(frame, values=dict(frame.values, target_valid='ON'))))
 
     def test_mob_policy_rejects_foreign_taps_and_aoe_then_loots_only_the_same_corpse(self):
-        from wowbuddy.candidates import Candidate
-        from wowbuddy.character_state import decode_mob_state
-        from wowbuddy.corpse_loot import CorpseLoot
+        from wowbuddy.core.candidates import Candidate
+        from wowbuddy.engine.character_state import decode_mob_state
+        from wowbuddy.automation.corpse_loot import CorpseLoot
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.lua.execute('''
@@ -2626,8 +2626,8 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         send.assert_called_once_with('F11')
 
     def test_recent_kill_reselects_only_the_same_corpse_after_the_game_clears_target(self):
-        from wowbuddy.character_state import decode_mob_state
-        from wowbuddy.corpse_loot import CorpseLoot
+        from wowbuddy.engine.character_state import decode_mob_state
+        from wowbuddy.automation.corpse_loot import CorpseLoot
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.lua.execute('''
@@ -2993,10 +2993,10 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         window = SimpleNamespace(executable='Wow.exe', hwnd=123)
         assistant = SimpleNamespace(executable='wow战斗助手.exe', hwnd=125)
         with TemporaryDirectory() as directory, \
-                patch('wowbuddy.capture.make_win32_capture', return_value=capture), \
-                patch('wowbuddy.game_windows.CtypesWindowBackend'), \
-                patch('wowbuddy.game_windows.enumerate_windows', return_value=SimpleNamespace(windows=[assistant, window])), \
-                patch('wowbuddy.leveling_route.find_leveling_point', side_effect=lookup) as find, \
+                patch('wowbuddy.win32.capture.make_win32_capture', return_value=capture), \
+                patch('wowbuddy.win32.game_windows.CtypesWindowBackend'), \
+                patch('wowbuddy.win32.game_windows.enumerate_windows', return_value=SimpleNamespace(windows=[assistant, window])), \
+                patch('wowbuddy.automation.leveling_route.find_leveling_point', side_effect=lookup) as find, \
                 patch.object(run_dev, 'launch') as launch:
             args = ['app', '--leveling-next', '--data-dir', directory]
             self.assertEqual(run_dev.main(args), 0)
@@ -3011,9 +3011,9 @@ class CharacterStateIntegrationTests(unittest.TestCase):
     def test_cli_writes_error_without_network_when_windows_are_ambiguous(self):
         window = SimpleNamespace(executable='Wow.exe', hwnd=123)
         with TemporaryDirectory() as directory, \
-                patch('wowbuddy.game_windows.CtypesWindowBackend'), \
-                patch('wowbuddy.game_windows.enumerate_windows', return_value=SimpleNamespace(windows=[window, window])), \
-                patch('wowbuddy.leveling_route.find_leveling_point') as find:
+                patch('wowbuddy.win32.game_windows.CtypesWindowBackend'), \
+                patch('wowbuddy.win32.game_windows.enumerate_windows', return_value=SimpleNamespace(windows=[window, window])), \
+                patch('wowbuddy.automation.leveling_route.find_leveling_point') as find:
             self.assertEqual(run_dev.main(['app', '--leveling-next', '--data-dir', directory]), 1)
             report = json.loads((Path(directory)/'leveling-next.json').read_text('utf8'))
             self.assertFalse(report['ok'])
@@ -3378,7 +3378,7 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         self.assertIsNone(decode_navigation_state(flying, frame))
 
     def test_discard_target_macro_uses_free_key_and_publishes_verified_stationary_binding(self):
-        from wowbuddy.keybindings import parse_keybinding
+        from wowbuddy.core.keybindings import parse_keybinding
 
         self.g.WowBuddyDev.DB.masterSwitch = True
         self.g.WowBuddyDev.DB.autoTarget = True
@@ -4524,8 +4524,8 @@ class NavigationTests(unittest.TestCase):
         keyboard.GetAsyncKeyState.side_effect = lambda key: 0x8000 if key in down else 0
         movement = ForegroundMovement(keyboard, processes)
         keys = self.position.keys
-        with (patch('wowbuddy.navigation.Timer') as timer,
-              patch('wowbuddy.navigation.monotonic', return_value=0.0) as clock):
+        with (patch('wowbuddy.automation.navigation.Timer') as timer,
+              patch('wowbuddy.automation.navigation.monotonic', return_value=0.0) as clock):
             self.assertTrue(movement.hold_forward(100, keys))
             clock.return_value = 0.2
             self.assertTrue(movement.keep_forward(100, keys))
@@ -4571,8 +4571,8 @@ class NavigationTests(unittest.TestCase):
 
                 keyboard.SendInput.side_effect = inject
                 keyboard.GetAsyncKeyState.side_effect = lambda key: 0x8000 if key in down else 0
-                with (patch('wowbuddy.navigation.Timer') as timer,
-                      patch('wowbuddy.navigation.monotonic', return_value=0.0) as clock):
+                with (patch('wowbuddy.automation.navigation.Timer') as timer,
+                      patch('wowbuddy.automation.navigation.monotonic', return_value=0.0) as clock):
                     if steering:
                         self.assertTrue(movement.hold_forward(100, keys))
                     self.assertFalse(movement.pulse(100, left, 35, keys, steering=steering))
@@ -4671,7 +4671,7 @@ class NavigationTests(unittest.TestCase):
         path = object()
         start = replace(self.position, continuous=True, heading=3 * math.pi / 2)
         next_point = replace(self.destination, x=37, y=35, label='下一路点')
-        with patch('wowbuddy.navigation.Timer'):
+        with patch('wowbuddy.automation.navigation.Timer'):
             navigator.observe('session', 123, start, self.destination, path=path)
             moving = replace(start, moving=True, sequence=1, x=34)
             navigator.observe('session', 123, moving, next_point, path=path)
@@ -5242,9 +5242,9 @@ class ArrivalPullTests(unittest.TestCase):
 
 class WalkingRouteTests(unittest.TestCase):
     def test_quest_cross_map_requires_a_connected_exit_and_a_confirmed_crossing(self):
-        from wowbuddy.character_state import QuestTurnInPin
-        from wowbuddy.manual_routes import ManualRoute, parse_manual_connection
-        from wowbuddy.walking_route import plan_quest_approach
+        from wowbuddy.engine.character_state import QuestTurnInPin
+        from wowbuddy.automation.manual_routes import ManualRoute, parse_manual_connection
+        from wowbuddy.automation.walking_route import plan_quest_approach
 
         character = CharacterState('alive', True, True, 'horde', 16, 1411, '杜隆塔尔', 40, 50)
         position = NavigationState('alive', 1, 1411, 40, 50, 0, 3499, 2333, (87, 65, 68))
@@ -5265,9 +5265,9 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertFalse(trip.complete)
 
     def test_quest_trip_joins_a_marked_road_and_requires_the_correct_map_and_endpoint(self):
-        from wowbuddy.character_state import QuestTurnInPin
-        from wowbuddy.manual_routes import ManualRoute
-        from wowbuddy.walking_route import plan_quest_approach
+        from wowbuddy.engine.character_state import QuestTurnInPin
+        from wowbuddy.automation.manual_routes import ManualRoute
+        from wowbuddy.automation.walking_route import plan_quest_approach
 
         character = CharacterState('alive', True, True, 'alliance', 16, 52, '西部荒野', 32, 36)
         position = NavigationState('alive', 1, 52, 32, 36, 0, 3499, 2333, (87, 65, 68))
@@ -5383,7 +5383,7 @@ class WalkingRouteTests(unittest.TestCase):
                     sample = replace(sample, sequence=sample.sequence + 1, x=point.x, y=point.y)
 
     def test_redridge_graveyard_ghost_uses_observed_turn_to_poacher_corpse(self):
-        from wowbuddy.walking_route import camp_access_road
+        from wowbuddy.automation.walking_route import camp_access_road
 
         origin = NavigationState('ghost', 1, 1433, 18.45, 58.12, 0, 2171, 1448, (87, 65, 68))
         corpse = MapDestination(1433, 23.17, 79.31, 'ghost', '尸体')
@@ -5753,7 +5753,7 @@ class WalkingRouteTests(unittest.TestCase):
                 self.assertTrue(trip.complete)
 
     def test_teldrassil_camp_routes_use_the_bridge_and_both_graveyards(self):
-        from wowbuddy.walking_route import _TELDRASSIL_BRIDGE
+        from wowbuddy.automation.walking_route import _TELDRASSIL_BRIDGE
 
         island = 1438
         west = MapDestination(island, 40.504, 55.571, 'alive', '西部营地')
@@ -5785,7 +5785,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertIn((58.508, 45.665), road)
 
     def test_darnassus_east_gate_requires_fresh_gate_samples_and_rejoins_the_camp_road(self):
-        from wowbuddy.walking_route import _DARNASSUS_EAST_GATE, source_road_blocks
+        from wowbuddy.automation.walking_route import _DARNASSUS_EAST_GATE, source_road_blocks
 
         forest, city = 1438, 1457
         forest_gate = _DARNASSUS_EAST_GATE[forest]
@@ -5856,7 +5856,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertEqual(waypoint, camp_goal)
 
     def test_darnassus_city_road_crosses_both_bridges_and_stops_short_of_the_portal(self):
-        from wowbuddy.walking_route import _DARNASSUS_CITY_ROAD, _DARNASSUS_EAST_GATE, _DARNASSUS_TREE_WAIT
+        from wowbuddy.automation.walking_route import _DARNASSUS_CITY_ROAD, _DARNASSUS_EAST_GATE, _DARNASSUS_TREE_WAIT
 
         city, forest = 1457, 1438
         origin = NavigationState('alive', 1, city, *_DARNASSUS_EAST_GATE[city][-1], 0, 1058, 706, (87, 65, 68))
@@ -5894,7 +5894,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertEqual(trip._camp_road, east)
 
     def test_ruttheran_portal_does_not_confuse_teldrassil_highland_with_the_harbor(self):
-        from wowbuddy.walking_route import (_DARNASSUS_EAST_GATE, _DARNASSUS_TREE_ENTRY, _DARNASSUS_TREE_WAIT,
+        from wowbuddy.automation.walking_route import (_DARNASSUS_EAST_GATE, _DARNASSUS_TREE_ENTRY, _DARNASSUS_TREE_WAIT,
                                            _RUTTHERAN_FLIGHT_ROAD)
 
         forest, city = 1438, 1457
@@ -5970,7 +5970,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertTrue(trip.travel_exhausted)
 
     def test_ruttheran_return_to_highland_walks_via_the_city_and_checks_the_landing(self):
-        from wowbuddy.walking_route import (_DARNASSUS_RETURN_LANDING, _RUTTHERAN_FLIGHT_ROAD,
+        from wowbuddy.automation.walking_route import (_DARNASSUS_RETURN_LANDING, _RUTTHERAN_FLIGHT_ROAD,
                                            _RUTTHERAN_RETURN_ENTRY, source_road_blocks)
 
         forest, city = 1438, 1457
@@ -6014,8 +6014,8 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertEqual(trip.approach_road[-1], highland)
 
     def test_ruttheran_taxi_requires_fresh_hover_flight_and_ramp_receipts(self):
-        from wowbuddy.character_state import TaxiState
-        from wowbuddy.walking_route import _AUBERDINE_DESCENT_PROFILE, _RUTTHERAN_FLIGHT_ROAD
+        from wowbuddy.engine.character_state import TaxiState
+        from wowbuddy.automation.walking_route import _AUBERDINE_DESCENT_PROFILE, _RUTTHERAN_FLIGHT_ROAD
 
         harbor = _RUTTHERAN_FLIGHT_ROAD[-1]
         goal = MapDestination(1439, 38.953, 48.684, 'alive', '黑海岸练级营地')
@@ -6075,8 +6075,8 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertIsNotNone(first.elevation_range)
 
     def test_ruttheran_flight_failure_waits_for_panel_closure_then_chooses_a_land_route(self):
-        from wowbuddy.character_state import TaxiState
-        from wowbuddy.walking_route import WalkingLeg, _RUTTHERAN_FLIGHT_ROAD, _RUTTHERAN_TAXI
+        from wowbuddy.engine.character_state import TaxiState
+        from wowbuddy.automation.walking_route import WalkingLeg, _RUTTHERAN_FLIGHT_ROAD, _RUTTHERAN_TAXI
 
         harbor = _RUTTHERAN_FLIGHT_ROAD[-1]
         goal = MapDestination(1439, 38.953, 48.684, 'alive', '黑海岸练级营地')
@@ -6117,7 +6117,7 @@ class WalkingRouteTests(unittest.TestCase):
                 send.assert_called_once_with('close', None)
 
     def test_auberdine_reacquires_the_deck_at_the_last_flight_waypoint(self):
-        from wowbuddy.character_state import TaxiState
+        from wowbuddy.engine.character_state import TaxiState
 
         goal = MapDestination(1439, 38.953, 48.684, 'alive', '黑海岸练级营地')
         trip = WalkingTrip.resume_auberdine(1, goal, level=12, faction='alliance')
@@ -6147,7 +6147,7 @@ class WalkingRouteTests(unittest.TestCase):
         send.assert_not_called()
 
     def test_auberdine_lower_ramp_requires_elevation_and_keeps_small_steps(self):
-        from wowbuddy.walking_route import _AUBERDINE_DESCENT_PROFILE
+        from wowbuddy.automation.walking_route import _AUBERDINE_DESCENT_PROFILE
 
         darkshore = 1439
         x, y, height = _AUBERDINE_DESCENT_PROFILE[-1]
@@ -6221,7 +6221,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertFalse(camp_access_road(replace(corpse, y=71.2), origin=position))
 
     def test_darkshore_camp_rotation_and_graveyard_use_the_south_road(self):
-        from wowbuddy.walking_route import (_DARKSHORE_BRIDGE_ROAD, _DARKSHORE_SOUTH_TIGER_ROAD,
+        from wowbuddy.automation.walking_route import (_DARKSHORE_BRIDGE_ROAD, _DARKSHORE_SOUTH_TIGER_ROAD,
                                              _DARKSHORE_SOUTH_TIGER_REJOIN, source_road_blocks)
 
         darkshore = 1439
@@ -6269,7 +6269,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertEqual(road[-1], (camp.x, camp.y))
 
     def test_auberdine_harbor_ground_joins_town_without_admitting_the_flight_deck(self):
-        from wowbuddy.walking_route import _AUBERDINE_HARBOR_ROAD, darkshore_camp_origin
+        from wowbuddy.automation.walking_route import _AUBERDINE_HARBOR_ROAD, darkshore_camp_origin
 
         darkshore = 1439
         ground = _AUBERDINE_HARBOR_ROAD[-1]
@@ -6331,7 +6331,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertEqual(len(plan_walking_route(ash, darkshore, 0, 'ghost')), 1)
 
     def test_darkshore_crossing_rejoins_from_the_south_tiger_recovery_spur(self):
-        from wowbuddy.walking_route import (_DARKSHORE_SOUTH_TIGER_REJOIN, _DARKSHORE_SOUTH_TIGER_ROAD,
+        from wowbuddy.automation.walking_route import (_DARKSHORE_SOUTH_TIGER_REJOIN, _DARKSHORE_SOUTH_TIGER_ROAD,
                                              _DARKSHORE_SOUTH_ROAD)
 
         darkshore, ash = 1439, 1440
@@ -6514,7 +6514,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertEqual((target.x, target.y), bridge)
 
     def test_alliance_talondeep_resumes_inside_the_cave_and_returns_to_ashenvale(self):
-        from wowbuddy.walking_route import _TALONDEEP_CAVES
+        from wowbuddy.automation.walking_route import _TALONDEEP_CAVES
 
         ash, stone, desolace = 1440, 1442, 1443
         sizes = {ash: (5767, 3844), stone: (4883, 3256), desolace: (4496, 2998)}
@@ -6749,7 +6749,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertNotIn((59.928, 13.372), visited)
 
     def test_alliance_felwood_corridor_joins_talondeep_in_both_directions(self):
-        from wowbuddy.walking_route import _TALONDEEP_CAVES, source_road_blocks
+        from wowbuddy.automation.walking_route import _TALONDEEP_CAVES, source_road_blocks
 
         feralas, desolace, stone, ash, felwood = 1444, 1443, 1442, 1440, 1448
         outgoing = plan_walking_route(feralas, felwood, 54, 'alive', faction='alliance')
@@ -6845,7 +6845,7 @@ class WalkingRouteTests(unittest.TestCase):
             self.assertIn(junction, follow(WalkingTrip(3, (), corpse, camp_road=road), position))
 
     def test_joining_built_in_road_mid_segment_continues_instead_of_backtracking(self):
-        from wowbuddy.walking_route import WalkingLeg
+        from wowbuddy.automation.walking_route import WalkingLeg
 
         leg = WalkingLeg(1435, 1419, 44, ((42, 20), (42, 22), (41, 24)))
         goal = MapDestination(1419, 55, 30, 'alive', '刷怪点')
@@ -7097,7 +7097,7 @@ class WalkingRouteTests(unittest.TestCase):
         self.assertEqual(waypoint, goal)
 
     def test_displaced_loch_route_replans_after_two_matching_origin_samples(self):
-        from wowbuddy.walking_route import WalkingLeg
+        from wowbuddy.automation.walking_route import WalkingLeg
 
         origin = NavigationState('alive', 1, 1432, 65.4, 39.6, 0, 2758, 1840, (87, 65, 68))
         route = plan_walking_route(1432, 1437, 20, 'alive')
@@ -7553,13 +7553,13 @@ from unittest.mock import Mock, patch
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 from run_dev import launch
-from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-from wowbuddy.death_recovery import AutomaticRevival
-from wowbuddy.navigation import MapDestination
-from wowbuddy.old_protocol import OldFrame
-from wowbuddy.pipeline import Decision
-from wowbuddy.scheduler import TickResult
-from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+from wowbuddy.automation.death_recovery import AutomaticRevival
+from wowbuddy.automation.navigation import MapDestination
+from wowbuddy.core.old_protocol import OldFrame
+from wowbuddy.engine.pipeline import Decision
+from wowbuddy.engine.scheduler import TickResult
+from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
 app = QApplication(['WowBuddyDev'])
 def verify():
@@ -7592,7 +7592,7 @@ def verify():
         def poll(recovered, death, *, disabled=False):
             result = SimpleNamespace(tick=TickResult('stopped', Decision(frame, frame.values, (),
                 recovery_ready=recovered, recovery_disabled=disabled)))
-            with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+            with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                 window._poll_navigation(result, session, object(), frame, character, death, navigate=True)
         poll(False, death)
         assert navigator.observe.call_args.args[2:4] == (None, None)
@@ -7636,9 +7636,9 @@ from unittest.mock import Mock, patch
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 from run_dev import launch
-from wowbuddy.character_state import DeathState, NavigationState
-from wowbuddy.navigation import MapNavigator
-from wowbuddy.old_protocol import OldFrame
+from wowbuddy.engine.character_state import DeathState, NavigationState
+from wowbuddy.automation.navigation import MapNavigator
+from wowbuddy.core.old_protocol import OldFrame
 
 app = QApplication(['WowBuddyDev'])
 def verify():
@@ -7654,7 +7654,7 @@ def verify():
                                 (87, 65, 68), position_steps=1_000_000)
         heading = math.atan2((point.x - 39.02) * point.width, (point.y - 77.15) * point.height)
         def poll(position):
-            with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+            with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                 window._poll_navigation(result, session, object(), frame, None, death, navigate=True)
 
         for sequence in range(6):
@@ -7699,8 +7699,8 @@ from unittest.mock import Mock, patch
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 from run_dev import launch
-from wowbuddy.character_state import CastFeedback, CombatFacingSample
-from wowbuddy.old_protocol import OldFrame
+from wowbuddy.engine.character_state import CastFeedback, CombatFacingSample
+from wowbuddy.core.old_protocol import OldFrame
 
 app = QApplication(['WowBuddyDev'])
 def verify():
@@ -7716,8 +7716,8 @@ def verify():
         movement.movement.holding_forward = False
         feedback = CastFeedback(17, 837, ('提交', '失败'), 57, '朝向')
         sample = CombatFacingSample(5, (87, 65, 68), action_spell=116)
-        with patch('wowbuddy.character_state.decode_cast_feedback', return_value=feedback), patch(
-                'wowbuddy.character_state.decode_combat_facing', return_value=sample), patch.object(
+        with patch('wowbuddy.engine.character_state.decode_cast_feedback', return_value=feedback), patch(
+                'wowbuddy.engine.character_state.decode_combat_facing', return_value=sample), patch.object(
                 window.loop.capture, 'desktop_status', return_value=None):
             for sent in (None, (session, 133, 16, 500), (session, 116, 17, 500),
                          (session, 116, 16, 0)):

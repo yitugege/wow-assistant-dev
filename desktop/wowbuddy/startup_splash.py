@@ -133,7 +133,7 @@ class NeonSplash(QWidget):
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.MouseButton.LeftButton:
-            from .window_shell import round_global_coordinate
+            from wowbuddy.app.window_shell import round_global_coordinate
             position = event.globalPosition() - self._drag_offset
             self.move(round_global_coordinate(position.x()), round_global_coordinate(position.y()))
         super().mouseMoveEvent(event)

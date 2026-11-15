@@ -10,6 +10,7 @@
 -- 入参：value 待取整的秒数。
 -- 出参：整数秒。
 -- 说明：时间轴时长是浮点，机制表按整数秒写死，所有判定都先过这里，免得各函数各写一套取整规则。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("TimelineData_3", { "TimelineData_1" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local function roundToInt(value)
   return math.floor(value + .5)
 end

@@ -1,6 +1,7 @@
 -- 原自Buff续挂调度；调用成功与否仍由游戏权限/状态决定。
 -- 无限客户端拦截定时器直接施法，反复弹出 ADDON_ACTION_FORBIDDEN。
 -- 该客户端使用职业宏和循环里的补 Buff 规则。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DirectCastKeeper", { "DirectCastSlots" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 if GetBuildInfo and select(4, GetBuildInfo()) == 16001 then return end
 
 local DC = WowBuddyDev.DirectCast

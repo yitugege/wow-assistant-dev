@@ -6,6 +6,7 @@
 -- 重命名：4047d4.lua → HealingNpcFocus.lua（按功能重命名）
 -- 作用：治疗 NPC 鼠标指向判定（竖排字段）
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("HealingNpcFocus", { "CoreState" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local packetBase = 10485760
 local eligibleBit = 524288
 local sequenceMask = 1023

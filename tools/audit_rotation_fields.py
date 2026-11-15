@@ -5,7 +5,7 @@ import sys
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.assets import Assets
+from wowbuddy.engine.assets import Assets
 
 
 def references(expr):

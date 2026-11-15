@@ -1,5 +1,6 @@
 -- Native class identity and committed talent allocation are separate values.
-local ADDON = _G.WowBuddyDev
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("ForeverTalents", { "ForeverTalentData", "CoreSettings" }) or _G.WowBuddyDev -- @@注册表命名空间@@
+local ADDON = WowBuddyDev
 local definitions = ADDON.ForeverTalentData
 local cached, cachedAt, cachedSpec
 local nodeGroups = {}

@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 import run_dev
-from wowbuddy.qt_app import AssistantWindow
+from wowbuddy.app.qt_app import AssistantWindow
 
 
 class AutoStartTests(unittest.TestCase):
@@ -18,7 +18,7 @@ class AutoStartTests(unittest.TestCase):
         window.monitor.game_only=False
         window.session.is_active.return_value=active
         window.ui.window_combo.findData.return_value=index
-        with patch('wowbuddy.qt_app.find_game_window',return_value=handle):
+        with patch('wowbuddy.app.qt_app.find_game_window',return_value=handle):
             AssistantWindow.auto_start_once(window)
         return window
 

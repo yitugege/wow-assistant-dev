@@ -6,6 +6,7 @@
 -- 重命名：c2f0bc.lua → SettingsReset.lua（按功能重命名）
 -- 作用：设置界面的恢复默认部分
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("SettingsReset", { "ForeverTalents", "ForeverSpecSpells", "CoreSettings", "CoreState", "CoreClassData", "CoreLocale", "CoreButtons", "CoreEvents", "CoreControls", "SettingsUI" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.macroEditorFrame = CreateFrame("Frame", nil, WowBuddyDev.mainFrame)
 WowBuddyDev.macroEditorFrame:SetSize(520, 444)
 WowBuddyDev.macroEditorFrame:SetPoint("TOPLEFT", WowBuddyDev.mainFrame, "TOPLEFT", 10, -76)

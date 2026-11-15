@@ -9,11 +9,11 @@ sys.path.insert(0,str(ROOT/'desktop'))
 sys.path.insert(0,str(ROOT/'tests/core'))
 from test_old_protocol import render_old
 from test_pipeline import render_readable
-from wowbuddy.assets import Assets
-from wowbuddy.controller import FrameController
-from wowbuddy.rotation_selection import HubState
-from wowbuddy.readable_protocol import UnverifiedDescriptorTable
-from wowbuddy.pipeline import DecisionPipeline
+from wowbuddy.engine.assets import Assets
+from wowbuddy.engine.controller import FrameController
+from wowbuddy.engine.rotation_selection import HubState
+from wowbuddy.core.readable_protocol import UnverifiedDescriptorTable
+from wowbuddy.engine.pipeline import DecisionPipeline
 
 
 def main():

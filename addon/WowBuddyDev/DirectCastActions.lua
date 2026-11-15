@@ -1,5 +1,6 @@
 -- 接入原 DirectCast 的显式施法与占槽分支；所有 API 均受游戏自身权限约束。
 -- 返回 true 沿用原 pcall 语义，只表示调用未抛错，不证明技能已经释放。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DirectCastActions", { "CoreClassData", "CoreButtons", "DirectCastSlots" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local ADDON = WowBuddyDev
 local DC = ADDON.DirectCast
 

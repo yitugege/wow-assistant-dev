@@ -4,7 +4,7 @@ from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.build_client_release import build_client
-from wowbuddy.dev_client_update import stage_update,replace_stopped_client
+from wowbuddy.update.dev_client_update import stage_update,replace_stopped_client
 
 class ClientUpdateTests(unittest.TestCase):
     def setUp(self):

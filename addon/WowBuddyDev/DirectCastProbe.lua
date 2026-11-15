@@ -1,5 +1,6 @@
 -- 保留原 EnvCloakCast 入口：在当前 Lua 环境编译并尝试一次普通 API 调用。
 -- 不提供解锁器，不改变游戏权限；true仍只表示调用没有抛错。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DirectCastProbe", { "DirectCastSlots" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local DC = WowBuddyDev.DirectCast
 function DC.EnvCloakCast(spellID, unit)
   local source = string.format("return CastSpellByID(%d, %q)", spellID, unit or "target")

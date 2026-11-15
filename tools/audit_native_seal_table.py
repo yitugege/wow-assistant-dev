@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib,json,re,sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.scheduler import SEAL_IDS
+from wowbuddy.engine.scheduler import SEAL_IDS
 
 def check():
     source=Path('D:/reverse-analysis/wow-assistant/decompiled-main/functions/0x1400a0cf0.c')
@@ -16,7 +16,7 @@ def check():
     native={int(number,16):name for name,number in pairs}
     assert len(native)==21 and native==SEAL_IDS
     return {'function':'0x1400a0cf0','pseudocode_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),
-            'implementation':'desktop/wowbuddy/scheduler.py:SEAL_IDS',
+            'implementation':'desktop/wowbuddy/engine/scheduler.py:SEAL_IDS',
             'entries':[{'spell_id':int(number,16),'field':name} for name,number in pairs],
             'equal':True,'native_execution':False,'scope':'已导出静态表常量逐项对照，不证明游戏回执或有效持续时间'}
 

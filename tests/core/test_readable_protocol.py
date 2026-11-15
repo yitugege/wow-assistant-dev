@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 import unittest
 
-from wowbuddy.pixel_geometry import BarGeometry, RGBImage
-from wowbuddy.readable_protocol import (
+from wowbuddy.core.pixel_geometry import BarGeometry, RGBImage
+from wowbuddy.core.readable_protocol import (
     MARKERS, ReadableDecoder, locate_readable_bar, readable_field_type, sample_readable_rows,
 )
 

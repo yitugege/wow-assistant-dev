@@ -1,6 +1,7 @@
 """执行源码/发布包 TOC 与指定登录事件；不模拟定时器或受保护执行。"""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import sys
 import unittest
 import zipfile
 
@@ -9,6 +10,7 @@ from tools.build_addon import build
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'addon/WowBuddyDev'
+sys.path.insert(0, str(ROOT / 'desktop'))
 
 
 class AddonFullLoadTests(unittest.TestCase):
@@ -60,6 +62,60 @@ class AddonFullLoadTests(unittest.TestCase):
 
     def test_source_complete_toc_loads(self):
         self.load(SOURCE, 'WowBuddyDev')
+
+    def test_load_and_login_stay_inside_declared_module_boundaries(self):
+        lua = self.login_fixture('MAGE', 8, 1482)
+        addon = lua.globals().WowBuddyDev
+        errors = [addon.moduleErrors[i] for i in range(1, len(addon.moduleErrors) + 1)]
+        self.assertEqual(errors, [])
+        self.assertEqual(addon.CheckModuleUses(), 0)
+        fields = addon.ModuleFields('CoreState')
+        self.assertIn('pixelData', [fields[i] for i in range(1, len(fields) + 1)])
+        state = addon.moduleExports.CoreState
+        self.assertEqual(lua.eval('type')(state.consumableByItemSpell), 'table')
+        self.assertEqual(lua.eval('type')(state.applyTalentCooldownGates), 'function')
+
+    def test_module_view_reports_undeclared_access_without_changing_values(self):
+        lua = LuaRuntime(unpack_returned_tuples=True)
+        lua.execute((SOURCE / 'Modules.lua').read_text('utf-8-sig'))
+        owner, reader, declared = lua.eval('''function()
+            local a = WowBuddyDev.Namespace("A", {})
+            local b = WowBuddyDev.Namespace("B", {})
+            local c = WowBuddyDev.Namespace("C", { "A" })
+            a.value = 7
+            return a, b, c
+        end''')()
+        addon = lua.globals().WowBuddyDev
+        self.assertEqual((reader.value, declared.value, addon.value), (7, 7, 7))
+        # 写入其他模块的字段不报告（静态分析把写入视为定义），归属仍是首次写入的 A。
+        reader.value = 8
+        self.assertEqual(addon.value, 8)
+        errors = [addon.moduleErrors[i] for i in range(1, len(addon.moduleErrors) + 1)]
+        self.assertEqual(errors, ['B 读取了未声明依赖 A 的字段 value'])
+        fields = addon.ModuleFields('A')
+        self.assertEqual([fields[i] for i in range(1, len(fields) + 1)], ['value'])
+        addon.SetModuleAudit(False)
+        self.assertEqual(reader.value, 8)
+        self.assertEqual(len(addon.moduleErrors), 1)
+
+    def test_static_owner_table_decides_field_owner(self):
+        # 生成的 staticOwners 中 DB 属于 CoreSettings：即使 Core 先在加载期写入 DB，
+        # 声明了 CoreSettings 的模块读取 DB 也不算越界。
+        lua = LuaRuntime(unpack_returned_tuples=True)
+        lua.execute((SOURCE / 'Modules.lua').read_text('utf-8-sig'))
+        lua.execute('''
+            local core = WowBuddyDev.Namespace("Core", {})
+            local settings = WowBuddyDev.Namespace("CoreSettings", {})
+            local reader = WowBuddyDev.Namespace("Reader", { "CoreSettings" })
+            local stranger = WowBuddyDev.Namespace("Stranger", {})
+            core.DB = nil
+            settings.DB = { ok = true }
+            assert(reader.DB.ok)
+            assert(stranger.DB.ok)
+        ''')
+        addon = lua.globals().WowBuddyDev
+        errors = [addon.moduleErrors[i] for i in range(1, len(addon.moduleErrors) + 1)]
+        self.assertEqual(errors, ['Stranger 读取了未声明依赖 CoreSettings 的字段 DB'])
 
     def login_fixture(self, token, class_id, spec, combat=False):
         prelude = (f"fixtureClass='{token}';fixtureClassID={class_id};fixtureSpecID={spec}\n"
@@ -197,7 +253,7 @@ class AddonFullLoadTests(unittest.TestCase):
             ''')
 
     def test_randomized_package_restores_post_kill_setting_without_reusing_a_request(self):
-        from wowbuddy.auto_target import parse_auto_target
+        from wowbuddy.core.auto_target import parse_auto_target
 
         host = (ROOT/'tests/addon_login_host.lua').read_text('utf8')
         with TemporaryDirectory() as tmp:

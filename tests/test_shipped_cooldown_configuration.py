@@ -7,7 +7,7 @@ from lupa.lua51 import LuaRuntime,lua_type
 from tests import test_addon_full_load as full_load
 ROOT=full_load.ROOT
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.packages import read_addon
+from wowbuddy.addons.packages import read_addon
 
 
 def plain(value):

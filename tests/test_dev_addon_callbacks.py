@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import test_dev_tray
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
-from wowbuddy.addon_update import AddonUpdateState
+from wowbuddy.update.addon_update import AddonUpdateState
 
 
 class AddonCallbackTests(unittest.TestCase):
@@ -20,8 +20,8 @@ class AddonCallbackTests(unittest.TestCase):
             executor.submit.return_value = future
             result = {'package': 'fixture.zip', 'tag': 'fixture'}
             with patch('concurrent.futures.ThreadPoolExecutor', return_value=executor) as pool, \
-                 patch('wowbuddy.dev_addon_update.apply_release', return_value=AddonUpdateState(pending=())) as auto, \
-                 patch('wowbuddy.dev_addon_install.install_package', return_value={
+                 patch('wowbuddy.update.dev_addon_update.apply_release', return_value=AddonUpdateState(pending=())) as auto, \
+                 patch('wowbuddy.addons.dev_addon_install.install_package', return_value={
                      'target': 'fixture', 'cleanup_deleted': 0, 'cleanup_notes': ''}) as manual, \
                  patch.object(window, '_addon_game_snapshot', side_effect=AssertionError('禁止游戏扫描')):
                 exercise(window, start, finish, future, result, pool, auto if mode == 'auto' else manual)

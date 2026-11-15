@@ -7,6 +7,7 @@
 -- 作用：多语言表（_localeEN）与界面文案
 -- ==========================================================================
 WowBuddyDev = WowBuddyDev or {}
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("Locale", {  }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev._localeEN = {
   ["自动"] = "Auto",
   ["单体"] = "ST",

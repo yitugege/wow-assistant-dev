@@ -15,13 +15,13 @@ sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.build_client_release import build_client
 from tools.check_frozen_outer import run
 from tools.check_outer_gui import close_owned_main,is_dev_window_title
-from wowbuddy.github_outer import read_payload
-from wowbuddy.packages import read_bundle
-from wowbuddy.launcher import BUSINESS_EXE
+from wowbuddy.update.github_outer import read_payload
+from wowbuddy.addons.packages import read_bundle
+from wowbuddy.legacy.launcher import BUSINESS_EXE
 from wowbuddy.release_identity import file_sha256,read_release_identity
-from wowbuddy.dev_client_update import stage_update,EXE
-from wowbuddy.dev_update_handoff import prepare_handoff
-from wowbuddy.game_windows import CtypesWindowBackend
+from wowbuddy.update.dev_client_update import stage_update,EXE
+from wowbuddy.update.dev_update_handoff import prepare_handoff
+from wowbuddy.win32.game_windows import CtypesWindowBackend
 
 
 def check(scenario='success',current_build=False):

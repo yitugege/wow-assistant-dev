@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from run_dev import launch
 from wowbuddy.cli_dump_ui import DumpUiOptions
-from wowbuddy.window_shell import ScreenRect, clamp_drag_position
+from wowbuddy.app.window_shell import ScreenRect, clamp_drag_position
 
 
 class ResponsiveUiTests(unittest.TestCase):

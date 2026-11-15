@@ -4,15 +4,15 @@ from pathlib import Path
 
 from .native_assets import NativeAssetStore, read_qt_json
 from .startup_stages import find_resource
-from .selftest_initial import run_initial_selftest
-from .selftest_bindings_thresholds import run_bindings_thresholds_selftest
-from .selftest_focus import run_focus_selftest
-from .selftest_hub import run_hub_selftest
-from .selftest_focus_dedup import run_focus_dedup_selftest
-from .selftest_auto_target import run_auto_target_selftest
-from .selftest_off_gcd import run_off_gcd_selftest
-from .selftest_aura import run_aura_selftest
-from .selftest_geometry import run_geometry_selftest
+from wowbuddy.selftest.selftest_initial import run_initial_selftest
+from wowbuddy.selftest.selftest_bindings_thresholds import run_bindings_thresholds_selftest
+from wowbuddy.selftest.selftest_focus import run_focus_selftest
+from wowbuddy.selftest.selftest_hub import run_hub_selftest
+from wowbuddy.selftest.selftest_focus_dedup import run_focus_dedup_selftest
+from wowbuddy.selftest.selftest_auto_target import run_auto_target_selftest
+from wowbuddy.selftest.selftest_off_gcd import run_off_gcd_selftest
+from wowbuddy.selftest.selftest_aura import run_aura_selftest
+from wowbuddy.selftest.selftest_geometry import run_geometry_selftest
 
 
 @dataclass(frozen=True)

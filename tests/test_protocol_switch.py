@@ -6,11 +6,11 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'));sys.path.insert(0,str(ROOT/'tests/core'))
 from test_old_protocol import render_old
 from test_pipeline import render_readable
-from wowbuddy.assets import Assets
-from wowbuddy.pipeline import DecisionPipeline
-from wowbuddy.controller import FrameController
-from wowbuddy.rotation_selection import HubState
-from wowbuddy.readable_protocol import UnverifiedDescriptorTable
+from wowbuddy.engine.assets import Assets
+from wowbuddy.engine.pipeline import DecisionPipeline
+from wowbuddy.engine.controller import FrameController
+from wowbuddy.engine.rotation_selection import HubState
+from wowbuddy.core.readable_protocol import UnverifiedDescriptorTable
 
 class ProtocolSwitchTests(unittest.TestCase):
     @classmethod
@@ -39,7 +39,7 @@ class ProtocolSwitchTests(unittest.TestCase):
 
     def test_gui_switch_rebuilds_field_metadata_and_cached_values(self):
         from types import SimpleNamespace
-        from wowbuddy.capture import CaptureResult
+        from wowbuddy.win32.capture import CaptureResult
         from test_dev_tray import TrayTests
         def exercise(window):
             current={}
@@ -62,7 +62,7 @@ class ProtocolSwitchTests(unittest.TestCase):
 
     def test_class_change_keeps_dispatch_ledgers_like_original(self):
         from types import SimpleNamespace
-        from wowbuddy.capture import CaptureResult
+        from wowbuddy.win32.capture import CaptureResult
         from test_dev_tray import TrayTests
         def exercise(window):
             current={}

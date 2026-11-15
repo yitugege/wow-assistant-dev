@@ -3,8 +3,8 @@ from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.dev_update_notice import remember_handoff,poll_notice,PENDING
-from wowbuddy.dev_update_handoff import write_json
+from wowbuddy.update.dev_update_notice import remember_handoff,poll_notice,PENDING
+from wowbuddy.update.dev_update_handoff import write_json
 
 class NoticeTests(unittest.TestCase):
     def setUp(self):
@@ -29,14 +29,14 @@ class NoticeTests(unittest.TestCase):
         self.assertTrue((self.data/PENDING).exists())
 
     def test_record_failure_cancels_handoff(self):
-        with patch('wowbuddy.dev_update_notice.write_json',side_effect=OSError('read only')),patch('wowbuddy.dev_update_notice.cancel_handoff') as cancel:
+        with patch('wowbuddy.update.dev_update_notice.write_json',side_effect=OSError('read only')),patch('wowbuddy.update.dev_update_notice.cancel_handoff') as cancel:
             with self.assertRaises(OSError):remember_handoff(self.data,self.current,{'job':str(self.job)})
             cancel.assert_called_once()
 
     def test_gui_waits_for_report_and_stops_after_completion(self):
         from test_dev_tray import TrayTests
         def exercise(window):
-            with patch('wowbuddy.dev_update_notice.poll_notice',side_effect=[{'complete':False,'text':'waiting'},{'complete':True,'text':'failed: locked'}]):
+            with patch('wowbuddy.update.dev_update_notice.poll_notice',side_effect=[{'complete':False,'text':'waiting'},{'complete':True,'text':'failed: locked'}]):
                 window._restore_update_notice()
                 self.assertTrue(window._update_notice_timer.isActive())
                 window._restore_update_notice()
@@ -46,7 +46,7 @@ class NoticeTests(unittest.TestCase):
 
     def test_actual_handoff_report_is_read_after_exchange(self):
         from test_dev_update_handoff import HandoffTests
-        from wowbuddy.dev_update_handoff import run_handoff
+        from wowbuddy.update.dev_update_handoff import run_handoff
         fixture=HandoffTests();fixture.setUp()
         try:
             data=fixture.current/'.local';data.mkdir()

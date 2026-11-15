@@ -8,7 +8,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'desktop'))
-from wowbuddy.updater import version_segments
+from wowbuddy.update.updater import version_segments
 from test_availability_display_native import QString
 
 

@@ -10,9 +10,9 @@ import tempfile
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.launcher import (BUSINESS_EXE,LauncherContext,WindowsLauncherFiles,
+from wowbuddy.legacy.launcher import (BUSINESS_EXE,LauncherContext,WindowsLauncherFiles,
                                WindowsLauncherProcess,launch_core)
-from wowbuddy.packages import Member,write_bundle,read_bundle
+from wowbuddy.addons.packages import Member,write_bundle,read_bundle
 
 
 class ObservedProcess(WindowsLauncherProcess):

@@ -16,7 +16,7 @@ import run_dev
 class TrayTests(unittest.TestCase):
     def test_project_link_and_version_use_independent_identity(self):
         from wowbuddy.dev_version import VERSION
-        from wowbuddy.github_addon import REPOSITORY
+        from wowbuddy.update.github_addon import REPOSITORY
         def exercise(window):
             expected='https://github.com/'+REPOSITORY
             self.assertEqual(window.ui.title_label.text(),f'WowBuddyDev v{VERSION}')
@@ -45,7 +45,7 @@ class TrayTests(unittest.TestCase):
                 package=root/'WowBuddyDev-dev.zip'
                 manifest=build(source,package)
                 package.with_suffix('.manifest.json').write_text(json.dumps(manifest),'utf8')
-                with patch('PySide6.QtWidgets.QFileDialog.getExistingDirectory',return_value=str(client)),patch.object(run_dev,'PACKAGE_DIR',root):
+                with patch('PySide6.QtWidgets.QFileDialog.getExistingDirectory',return_value=str(client)),patch.object(window.launch_options,'package_dir',root):
                     window.ui.addon_browse_button.click()
                     self.assertEqual(Path(window.ui.addon_path.text()),client)
                     self.assertEqual(Path(window.settings.snapshot().addon_last_dir),client)
@@ -69,7 +69,7 @@ class TrayTests(unittest.TestCase):
             seen.append(window)
             exercise(window)
             return 0
-        with TemporaryDirectory() as directory, patch('wowbuddy.game_windows.CtypesWindowBackend',return_value=backend), patch('wowbuddy.capture.make_win32_capture',return_value=NoSystemBackend()), patch('wowbuddy.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()), patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=available), patch('wowbuddy.qt_app.QSystemTrayIcon') as create_tray, patch.object(QApplication,'exec',side_effect=event_loop):
+        with TemporaryDirectory() as directory, patch('wowbuddy.win32.game_windows.CtypesWindowBackend',return_value=backend), patch('wowbuddy.win32.capture.make_win32_capture',return_value=NoSystemBackend()), patch('wowbuddy.win32.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()), patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=available), patch('wowbuddy.app.qt_app.QSystemTrayIcon') as create_tray, patch.object(QApplication,'exec',side_effect=event_loop):
             try:
                 self.assertEqual(run_dev.launch(directory,hub_online=hub_online,client_online=False,addon_online=False),0)
                 create_tray.assert_not_called()

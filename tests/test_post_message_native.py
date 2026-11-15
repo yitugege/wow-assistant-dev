@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'desktop'))
 sys.path.insert(0, str(ROOT / 'tests/core'))
 from test_windows_keys import FakeWin32
-from wowbuddy.keybindings import KeyBinding
-from wowbuddy.windows_keys import post_message
+from wowbuddy.core.keybindings import KeyBinding
+from wowbuddy.win32.windows_keys import post_message
 
 
 class PostMessageNativeTests(unittest.TestCase):

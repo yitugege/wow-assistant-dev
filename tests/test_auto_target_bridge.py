@@ -8,7 +8,7 @@ from lupa.lua51 import LuaRuntime
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'desktop'))
 sys.path.insert(0, str(ROOT/'tests/core'))
-from wowbuddy.auto_target import parse_auto_target, key_for_index
+from wowbuddy.core.auto_target import parse_auto_target, key_for_index
 
 
 class AutoTargetBridgeTests(unittest.TestCase):
@@ -119,7 +119,7 @@ class AutoTargetBridgeTests(unittest.TestCase):
     def test_original_lua_gate_failures_and_recovery(self):
         reference=Path('D:/reverse-analysis/wow-assistant/addon-source')
         if not reference.is_dir():self.skipTest('需要原内置插件参考源码')
-        from wowbuddy.packages import read_addon
+        from wowbuddy.addons.packages import read_addon
         members={m.name:m.data for m in read_addon((reference.parent/'unpacked/addon.bin').read_bytes())}
         for name in ('ActionKeyCheck.lua','AutoTarget.lua'):
             self.assertEqual((reference/name).read_bytes(),members[name])
@@ -172,7 +172,7 @@ class AutoTargetBridgeTests(unittest.TestCase):
 
     def original_pair(self):
         import hashlib
-        from wowbuddy.packages import read_addon
+        from wowbuddy.addons.packages import read_addon
         reference=Path('D:/reverse-analysis/wow-assistant/addon-source')
         package=reference.parent/'unpacked/addon.bin'
         if not package.exists():self.skipTest('需要原内置插件包')
@@ -282,9 +282,9 @@ class AutoTargetBridgeTests(unittest.TestCase):
     def test_lua_packet_through_pixels_scheduler_and_dispatch(self):
         from test_old_protocol import CONTRACT,RULES,render_old
         from test_pipeline import READABLE,READABLE_RULES,render_readable
-        from wowbuddy.pipeline import DecisionPipeline
-        from wowbuddy.scheduler import Scheduler
-        from wowbuddy.dispatch import ActionDispatcher
+        from wowbuddy.engine.pipeline import DecisionPipeline
+        from wowbuddy.engine.scheduler import Scheduler
+        from wowbuddy.engine.dispatch import ActionDispatcher
         for protocol in ('old','readable'):
             with self.subTest(protocol=protocol):
                 self.setUp()

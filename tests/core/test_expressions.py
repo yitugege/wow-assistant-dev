@@ -3,7 +3,7 @@
 import unittest
 import math
 
-from wowbuddy.expressions import EvaluationContext, UnsupportedSemantics, evaluate
+from wowbuddy.core.expressions import EvaluationContext, UnsupportedSemantics, evaluate
 
 
 class ExpressionsTest(unittest.TestCase):

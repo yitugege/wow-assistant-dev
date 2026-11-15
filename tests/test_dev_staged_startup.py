@@ -11,7 +11,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from PySide6.QtWidgets import QApplication, QWidget
 from PySide6.QtCore import QCoreApplication, QEvent
-from wowbuddy.assets import Assets
+from wowbuddy.engine.assets import Assets
 from wowbuddy.desktop import NoSystemBackend
 from wowbuddy.dev_staged_startup import create_staged_startup
 from wowbuddy.cli_dump_ui import DumpUiOptions
@@ -206,7 +206,7 @@ class StagedStartupTests(unittest.TestCase):
             self.assertTrue(host.stages.main_window._native_dump_session.delay.isActive())
             self.assertEqual(host.stages.main_window._native_dump_session.delay.interval(),2600)
             return 0
-        with TemporaryDirectory() as directory, patch('wowbuddy.dev_staged_startup.create_staged_startup',side_effect=create), patch('wowbuddy.game_windows.CtypesWindowBackend',return_value=Windows()), patch('wowbuddy.capture.make_win32_capture',return_value=NoSystemBackend()), patch('wowbuddy.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()), patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=False), patch.object(QApplication,'exec',side_effect=event_loop):
+        with TemporaryDirectory() as directory, patch('wowbuddy.dev_staged_startup.create_staged_startup',side_effect=create), patch('wowbuddy.win32.game_windows.CtypesWindowBackend',return_value=Windows()), patch('wowbuddy.win32.capture.make_win32_capture',return_value=NoSystemBackend()), patch('wowbuddy.win32.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()), patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=False), patch.object(QApplication,'exec',side_effect=event_loop):
             self.assertEqual(run_dev.launch(directory,staged=True,hub_online=False,client_online=False,addon_online=False,
                                            native_dump=(DumpUiOptions(),Path(directory))),0)
             window=hosts[0].stages.main_window

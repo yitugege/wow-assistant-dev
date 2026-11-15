@@ -7,9 +7,9 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.aura_probe import field_integer,spell_id_from_action,AuraProbeLedger,Receipt,ProbeResult
-from wowbuddy.send_gates import focus_index,should_skip_focus
-from wowbuddy.selftest_focus import _health
+from wowbuddy.core.aura_probe import field_integer,spell_id_from_action,AuraProbeLedger,Receipt,ProbeResult
+from wowbuddy.core.send_gates import focus_index,should_skip_focus
+from wowbuddy.selftest.selftest_focus import _health
 from test_availability_display_native import QString
 
 

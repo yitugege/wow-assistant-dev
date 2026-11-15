@@ -9,15 +9,15 @@ from tests import test_addon_full_load as full_load
 ROOT = full_load.ROOT
 sys.path.insert(0, str(ROOT / 'desktop'))
 
-from wowbuddy.arrival_pull import ArrivalPull
-from wowbuddy.assets import Assets
-from wowbuddy.auto_target import key_for_index
-from wowbuddy.character_state import decode_navigation_state, decode_target_bearing
-from wowbuddy.dev_protocol import RECOVERY_CONFIG_BASE, RECOVERY_DISABLED_BASE
-from wowbuddy.dispatch import ActionDispatcher
-from wowbuddy.navigation import MapDestination, TargetApproach
-from wowbuddy.pixel_geometry import RGBImage
-from wowbuddy.scheduler import Scheduler
+from wowbuddy.automation.arrival_pull import ArrivalPull
+from wowbuddy.engine.assets import Assets
+from wowbuddy.core.auto_target import key_for_index
+from wowbuddy.engine.character_state import decode_navigation_state, decode_target_bearing
+from wowbuddy.core.dev_protocol import RECOVERY_CONFIG_BASE, RECOVERY_DISABLED_BASE
+from wowbuddy.engine.dispatch import ActionDispatcher
+from wowbuddy.automation.navigation import MapDestination, TargetApproach
+from wowbuddy.core.pixel_geometry import RGBImage
+from wowbuddy.engine.scheduler import Scheduler
 
 
 class RecoveryTests(unittest.TestCase):
@@ -277,7 +277,7 @@ class RecoveryTests(unittest.TestCase):
             end
         ''')
         self.g.targetAlive = False
-        with patch('wowbuddy.character_state.decode_navigation_state',
+        with patch('wowbuddy.engine.character_state.decode_navigation_state',
                    return_value=SimpleNamespace(sight_blocked=False, idle_key_index=8)):
             frame, _ = pipeline.decode(self.game_image())
         self.assertEqual(frame.values.get('mage_prep_ready'), 'ON', {k: frame.values.get(k) for k in
@@ -312,7 +312,7 @@ class RecoveryTests(unittest.TestCase):
             with self.subTest(changes=changes):
                 self.assertNotIn('spell_2136', [a.action for a in actions(combat, **changes)])
 
-        from wowbuddy.character_state import CastFeedback
+        from wowbuddy.engine.character_state import CastFeedback
 
         full_set = dict(known_400574='ON', range_400574='ON', known_5143='ON', range_5143='ON',
                         known_2136='OFF', action_avail=str((1 << 8) | (1 << 12)))
@@ -682,7 +682,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(self.addon.GetBoundMacro('recovery_conjured_water'), '/use [nocombat,nochanneling] item:3772')
 
     def test_full_bag_blocks_empty_conjuring_but_preserves_existing_food(self):
-        from wowbuddy.dev_protocol import bag_recovery_walk_safe
+        from wowbuddy.core.dev_protocol import bag_recovery_walk_safe
 
         self.enable_ranked_conjuring()
         self.configure(healthStart='50', food='1113', water='2288')
@@ -708,7 +708,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(self.tick().selected.action, 'recovery_conjure_water')
 
     def test_full_bag_defers_conjuring_after_configured_water_fails(self):
-        from wowbuddy.dev_protocol import bag_recovery_walk_safe
+        from wowbuddy.core.dev_protocol import bag_recovery_walk_safe
 
         self.enable_ranked_conjuring()
         self.configure(healthStart='0')

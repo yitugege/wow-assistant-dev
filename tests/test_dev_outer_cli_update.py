@@ -4,9 +4,9 @@ from pathlib import Path
 from unittest.mock import patch,Mock
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.dev_cli_update import run_outer_update_now,current_outer_target
+from wowbuddy.update.dev_cli_update import run_outer_update_now,current_outer_target
 from wowbuddy.dev_native_commands import dispatch_native_command
-from wowbuddy.update_handoff import HandoffResult
+from wowbuddy.update.update_handoff import HandoffResult
 
 
 class OuterCliTests(unittest.TestCase):
@@ -43,10 +43,10 @@ class OuterCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             options=dict(assets=ROOT/'assets',application=Path(tmp),packages=Path(tmp),frozen=True)
             for outer in (None,Path(tmp)/'outer.exe'):
-                with patch('wowbuddy.dev_cli_update.current_outer_target',return_value=outer),\
-                     patch('wowbuddy.github_client.run_check_command',return_value=10) as check,\
-                     patch('wowbuddy.dev_cli_update.run_outer_update_now',return_value=0) as install,\
-                     patch('wowbuddy.dev_cli_update.run_update_now',return_value=0) as directory:
+                with patch('wowbuddy.update.dev_cli_update.current_outer_target',return_value=outer),\
+                     patch('wowbuddy.update.github_client.run_check_command',return_value=10) as check,\
+                     patch('wowbuddy.update.dev_cli_update.run_outer_update_now',return_value=0) as install,\
+                     patch('wowbuddy.update.dev_cli_update.run_update_now',return_value=0) as directory:
                     self.assertEqual(dispatch_native_command(['app','--check-update'],**options),10)
                     self.assertEqual('check' in check.call_args.kwargs,outer is not None)
                     self.assertEqual(dispatch_native_command(['app','--update-now'],**options),0)

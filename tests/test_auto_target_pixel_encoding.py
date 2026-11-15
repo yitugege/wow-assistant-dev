@@ -7,7 +7,10 @@ from lupa.lua51 import LuaRuntime
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.auto_target import PACKET_BASE,parse_auto_target
+from wowbuddy.core.auto_target import PACKET_BASE,parse_auto_target
+
+
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
 
 
 class AutoTargetPixelTests(unittest.TestCase):
@@ -59,7 +62,7 @@ class AutoTargetPixelTests(unittest.TestCase):
                 self.assertIsNone(parse_auto_target(self.packed_color()))
 
     def test_common_field_position_and_numeric_type_match_contract(self):
-        source=(ROOT/'addon/WowBuddyDev/Core.lua').read_text('utf8')
+        source=rebuilt_core()
         start=source.index('WowBuddyDev.COMMON_PIXEL_DATA = {')
         end=source.index('\n}',start)+2
         self.lua.execute(source[start:end])

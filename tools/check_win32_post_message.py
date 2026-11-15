@@ -10,10 +10,10 @@ from dataclasses import asdict
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.windows_keys import CtypesWin32Backend,KeySender
-from wowbuddy.dispatch import ActionDispatcher
-from wowbuddy.candidates import Candidate
-from wowbuddy.keybindings import parse_keybinding
+from wowbuddy.win32.windows_keys import CtypesWin32Backend,KeySender
+from wowbuddy.engine.dispatch import ActionDispatcher
+from wowbuddy.core.candidates import Candidate
+from wowbuddy.core.keybindings import parse_keybinding
 
 
 def check(*, all_registered=False):

@@ -1,4 +1,5 @@
 -- 原 DirectCast 的宏解析与只读光环判断，供 Actions 等模块使用。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DirectCastGuards", { "PanelV2", "DirectCastSlots" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local ADDON = WowBuddyDev
 local DC = ADDON.DirectCast
 local spellCache = {}

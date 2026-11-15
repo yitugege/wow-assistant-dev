@@ -30,13 +30,13 @@ class AutoUpdateTests(unittest.TestCase):
         def exercise(window):
             window.clock_ms=lambda:900
             window.settings.save_last_check_ms(100)
-            with patch('wowbuddy.github_client.check_latest',side_effect=OSError('offline')):
+            with patch('wowbuddy.update.github_client.check_latest',side_effect=OSError('offline')):
                 window.check_update();
                 with self.assertRaises(OSError):window._client_update_future.result(timeout=5)
                 window._finish_client_update_task()
             self.assertEqual(window.settings.snapshot().update_last_check_ms,100)
             info={'current_version':'0.2.1','version':'0.3.0','has_update':True}
-            with patch('wowbuddy.github_client.check_latest',return_value=info),patch.object(run_dev,'FROZEN',True):
+            with patch('wowbuddy.update.github_client.check_latest',return_value=info),patch.object(window.launch_options,'frozen',True):
                 window.check_update(manual=True);window._client_update_future.result(timeout=5);window._finish_client_update_task()
             self.assertEqual(window.settings.snapshot().update_last_check_ms,900)
             self.assertFalse(window._client_auto_chain)
@@ -47,7 +47,7 @@ class AutoUpdateTests(unittest.TestCase):
         def exercise(window):
             window._automatic_client_enabled=True;window.ui.auto_update_check.setChecked(True)
             info={'current_version':'0.2.1','version':'0.3.0','has_update':True};queued=[]
-            with patch('wowbuddy.github_client.check_latest',return_value=info),patch.object(run_dev,'FROZEN',True),patch.object(QTimer,'singleShot',side_effect=lambda delay,callback:queued.append(callback)),patch.object(window,'download_update') as download,patch.object(window,'_begin_update_handoff') as handoff:
+            with patch('wowbuddy.update.github_client.check_latest',return_value=info),patch.object(window.launch_options,'frozen',True),patch.object(QTimer,'singleShot',side_effect=lambda delay,callback:queued.append(callback)),patch.object(window,'download_update') as download,patch.object(window,'_begin_update_handoff') as handoff:
                 window.check_update(manual=False);window._client_update_future.result(timeout=5);window._finish_client_update_task()
                 self.assertTrue(window._client_auto_chain);self.assertEqual(len(queued),1)
                 queued.pop()();download.assert_called_once()

@@ -8,10 +8,10 @@ import posixpath
 import xml.etree.ElementTree as ET
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from tools.build_addon import build
-from wowbuddy.github_addon import download_latest, ZIP_NAME, MANIFEST_NAME, REPOSITORY
-from wowbuddy.dev_protocol import DEV_VERSION
-from wowbuddy.dev_addon_install import install_package
+from tools.build_addon import build, collect_files
+from wowbuddy.update.github_addon import download_latest, ZIP_NAME, MANIFEST_NAME, REPOSITORY
+from wowbuddy.core.dev_protocol import DEV_VERSION
+from wowbuddy.addons.dev_addon_install import install_package
 
 class GithubTests(unittest.TestCase):
     def test_download_random_package_references_and_stable_update(self):
@@ -30,7 +30,8 @@ class GithubTests(unittest.TestCase):
                         for node in ET.fromstring(archive.read(name)).iter():
                             if 'file' in node.attrib:
                                 self.assertIn(posixpath.normpath(posixpath.join(posixpath.dirname(name),node.attrib['file'].replace('\\','/'))),names)
-                original=sorted(p.read_bytes() for p in (ROOT/'addon/WowBuddyDev').rglob('*.lua'))
+                # 打包以 TOC 为白名单：对照源码中进包的 Lua。
+                original=sorted(p.read_bytes() for p in collect_files(ROOT/'addon/WowBuddyDev') if p.suffix=='.lua')
                 self.assertEqual(original,sorted(archive.read(n) for n in names if n.endswith('.lua')))
             base=f'https://github.com/{REPOSITORY}/releases/download/v0.2.0/'
             release={'tag_name':'v0.2.0','assets':[{'name':n,'browser_download_url':base+n} for n in (ZIP_NAME,MANIFEST_NAME)]}

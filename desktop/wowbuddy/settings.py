@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import TYPE_CHECKING, Mapping
 
-from .expressions import _trim
+from wowbuddy.core.expressions import _trim
 
 if TYPE_CHECKING:
-    from .controller import SettingsChange
+    from wowbuddy.engine.controller import SettingsChange
 
 ORGANIZATION = "wowbuddy.cn"
 ORIGINAL_APPLICATION = "WOW战斗助手"

@@ -3,8 +3,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.build_client_release import build_client
-from wowbuddy.dev_client_update import digest,stage_update
-from wowbuddy.dev_update_handoff import run_handoff,write_json
+from wowbuddy.update.dev_client_update import digest,stage_update
+from wowbuddy.update.dev_update_handoff import run_handoff,write_json
 
 class HandoffTests(unittest.TestCase):
     def setUp(self):

@@ -2,9 +2,9 @@
 import unittest
 
 from test_windows_keys import FakeWin32
-from wowbuddy.candidates import Candidate
-from wowbuddy.dispatch import ActionDispatcher
-from wowbuddy.windows_keys import KeySender
+from wowbuddy.core.candidates import Candidate
+from wowbuddy.engine.dispatch import ActionDispatcher
+from wowbuddy.win32.windows_keys import KeySender
 
 
 class AdvancingWin32(FakeWin32):

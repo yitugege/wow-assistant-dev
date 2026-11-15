@@ -6,6 +6,7 @@
 -- 重命名：b2b089.lua → PanelV2.lua（按功能重命名）
 -- 作用：横排 V2 面板：数字格、字体、契约渲染、光环容器
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("PanelV2", { "CoreSettings", "CoreState", "CoreClassData", "Core", "ChargeDisplay", "PixelBar" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local panelLeft = 16
 local panelTop = 0
 -- 【改装】格子宽度 30 → 40：冷却改成 %.1f 之后文本变成 "13.4" 这种 4 个字形，

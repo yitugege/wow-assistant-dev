@@ -7,8 +7,8 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'desktop'))
-from wowbuddy.thresholds import threshold_key, promote_rules, SwitchField, migrate_settings
-from wowbuddy.candidates import parse_rules
+from wowbuddy.engine.thresholds import threshold_key, promote_rules, SwitchField, migrate_settings
+from wowbuddy.core.candidates import parse_rules
 from test_availability_display_native import QString
 
 

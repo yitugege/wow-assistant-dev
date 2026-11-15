@@ -10,6 +10,7 @@
 -- 入参：无（工厂函数，只建状态机）。
 -- 出参：状态机表（Resolve 判定机制）。
 -- 说明：44 秒每出现一次就把轮转序号 +1（1→2→3 回绕），依次报 alluring_bubble_adds / chilling_frost / abyssal_rain；18 秒那条按原始秒数比较，不做取整。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("TimelineData_5", { "TimelineData_1" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local function createEncounter337915()
   local rotationIndex = 0
   return {

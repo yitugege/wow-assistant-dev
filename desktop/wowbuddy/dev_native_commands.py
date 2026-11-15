@@ -25,19 +25,19 @@ def dispatch_native_command(arguments,*,assets,application,packages,frozen):
         from .dev_native_selftest import run_native_selftest
         return run_native_selftest(assets,data,arguments)
     if options.command=='install_addon':
-        from .dev_cli_install import run_development_install
+        from wowbuddy.addons.dev_cli_install import run_development_install
         package=Path(packages)/'WowBuddyDev-addon.zip'
         if not package.exists():package=Path(packages)/'WowBuddyDev-dev.zip'
         return run_development_install(arguments,package,data)
     if options.command=='check_update':
-        from .github_client import run_check_command
-        from .dev_cli_update import current_outer_target
+        from wowbuddy.update.github_client import run_check_command
+        from wowbuddy.update.dev_cli_update import current_outer_target
         if current_outer_target(frozen) is not None:
-            from .github_outer import check_latest
+            from wowbuddy.update.github_outer import check_latest
             return run_check_command(data,check=check_latest)
         return run_check_command(data)
     if options.command=='update_now':
-        from .dev_cli_update import run_update_now,run_outer_update_now,current_outer_target
+        from wowbuddy.update.dev_cli_update import run_update_now,run_outer_update_now,current_outer_target
         outer=current_outer_target(frozen)
         if outer is not None:
             import sys

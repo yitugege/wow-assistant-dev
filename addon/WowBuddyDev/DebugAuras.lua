@@ -6,6 +6,7 @@
 -- 重命名：5ca004.lua → DebugAuras.lua（按功能重命名）
 -- 作用：光环/冷却调试面板与打印命令
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DebugAuras", { "CoreClassData", "Core", "CoreLocale" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local DEBUG_PREFIX = "|cff00ff88[WowBuddyDev Debug]|r"
 local DEFAULT_UNIT = "target"
 local AURA_FILTER_ALL = "ALL"
@@ -29,36 +30,6 @@ local function safeString(value)
     return "受限"
   end
   return text
-end
--- 功能：把布尔值转成「是」/「否」两个汉字。
--- 入参：value 待格式化的值（真值即「是」）。
--- 出参："是" / "否"；取不到可读值时返回「受限」。
--- 说明：单独包一层 pcall 是因为 12.1 里对保护值做条件判断也会抛错；失败时返回「受限」而不是让整块面板不刷新。
-local function formatBool(value)
-  local okText, yesNo = pcall(function()
-    if value then
-      return "是"
-    else
-      return "否"
-    end
-  end)
-  if not okText then
-    return "受限"
-  end
-  return yesNo
-end
--- 功能：把任意值收敛成严格的 true / false。
--- 入参：value 任意值。
--- 出参：true 或 false；值不可读时返回 nil（表示「不知道」）。
--- 说明：nil 和 false 必须区分开：面板上「不知道」要显示「受限」，而「否」是明确知道的 false。
-local function normalizeBool(value)
-  local okTruthy = pcall(function()
-    return value and true or false
-  end)
-  if not okTruthy then
-    return nil
-  end
-  return value and true or false
 end
 -- 功能：按「键=值」的格式打印一行调试信息。
 -- 入参：key 字段名；text 字段值。

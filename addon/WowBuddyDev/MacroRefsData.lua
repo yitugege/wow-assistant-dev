@@ -7,6 +7,7 @@
 -- 作用：宏/动作引用解析数据库（自动生成，工具产物）
 -- ==========================================================================
 WowBuddyDev = WowBuddyDev or {}
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("MacroRefsData", {  }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.MacroRefsGeneration = "379c98aeec0984b28643cf9df7705a4ad96d1c9d9d59c918baad347780c041f6"
 WowBuddyDev.MacroRefsBySpec = {
   [62] = {

@@ -10,6 +10,7 @@
 -- 入参：value 待换算的秒数。
 -- 出参：整数秒。
 -- 说明：比直接四舍五入多一层 0.1 的收敛，是为了跟写表时的口径一致——时间轴时长拆批到达时有 0.1 秒级抖动，先归到 0.1 再进整数，边界上不会差 1 秒。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("TimelineData_4", { "TimelineData_1" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local function roundDuration(value)
   local tenthsRounded = math.floor(value * 10 + .5) / 10
   return math.floor(tenthsRounded + .5)
