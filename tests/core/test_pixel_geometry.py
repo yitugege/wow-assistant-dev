@@ -1,6 +1,9 @@
 """复刻原生selftest合成图像，并检查定位/采样边界。"""
 
 from dataclasses import replace
+import ctypes
+import math
+import sys
 import unittest
 
 from wowbuddy.pixel_geometry import (
@@ -48,6 +51,24 @@ class PixelGeometryTests(unittest.TestCase):
     def test_rounding_distinction(self):
         self.assertEqual([nearbyint(x) for x in (-2.5, -1.5, .5, 1.5, 2.5)], [-2, -2, 0, 2, 2])
         self.assertEqual([lround(x) for x in (-2.5, -1.5, .5, 1.5, 2.5)], [-3, -2, 1, 2, 3])
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows CRT comparison")
+    def test_lround_matches_original_crt_at_half_steps_and_long_limits(self):
+        native_lround = ctypes.WinDLL("api-ms-win-crt-math-l1-1-0.dll").lround
+        native_lround.argtypes = [ctypes.c_double]
+        native_lround.restype = ctypes.c_long
+
+        half_steps = (0.5, 1.5, 2.5, 1023.5, 16777216.5, 2147483646.5,
+                      2147483647.5, 2147483648.5)
+        for half in half_steps:
+            neighbors = (math.nextafter(half, 0.0), half, math.nextafter(half, math.inf))
+            for value in (*neighbors, *(-neighbor for neighbor in neighbors)):
+                with self.subTest(value=value.hex()):
+                    self.assertEqual(lround(value), native_lround(value))
+
+        for value in (0.0, -0.0, math.inf, -math.inf, math.nan):
+            with self.subTest(value=value):
+                self.assertEqual(lround(value), native_lround(value))
 
     def test_first_exact_magenta_run_and_scan_limit(self):
         rows = [[0] * 30 for _ in range(130)]

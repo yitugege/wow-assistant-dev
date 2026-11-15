@@ -60,7 +60,15 @@ def nearbyint(value: float) -> int:
 
 def lround(value: float) -> int:
     """原生 lround：半整数远离零；用于整条垂直边界检查。"""
-    return math.floor(value + 0.5) if value >= 0 else math.ceil(value - 0.5)
+    # 原版从 Windows CRT 导入 lround，其 long 为有符号 32 位。
+    # 先拆分小数，避免加 0.5 使略小于半整数的值舍入到整数。
+    if not math.isfinite(value):
+        return 0
+    fraction, integer = math.modf(value)
+    rounded = int(integer)
+    if abs(fraction) >= 0.5:
+        rounded += 1 if fraction > 0 else -1
+    return rounded if -0x80000000 <= rounded <= 0x7FFFFFFF else 0
 
 
 def find_fiducial(image: RGBImage, scan_width: int = 24, min_run: int = 2) -> tuple[int, int] | None:

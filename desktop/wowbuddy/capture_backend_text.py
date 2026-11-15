@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .qt_arg import qt_arg
+
 
 NATIVE_REASONS = {
     "factory_failed": "CreateDXGIFactory1 失败",
@@ -30,7 +32,8 @@ def backend_status_text(state: CaptureBackendState, now_ms: int) -> str:
     原生最终以32位int加1，再符号扩展传入QString.arg。
     """
     if state.duplication_active:
-        return f"DXGI 桌面复制（已取 {state.frame_count} 帧新桌面帧）"
+        frames = state.frame_count & 0xffffffffffffffff
+        return f"DXGI 桌面复制（已取 {frames} 帧新桌面帧）"
     reason = NATIVE_REASONS.get(state.last_error, state.last_error)
     if state.permanent_format_failure or state.permanent_factory_failure:
         return f"GDI PrintWindow（{reason}）"
@@ -38,7 +41,8 @@ def backend_status_text(state: CaptureBackendState, now_ms: int) -> str:
         return "GDI PrintWindow"
     seconds = max(0, state.retry_after_ms - now_ms) // 1000 + 1
     seconds = (seconds + 0x80000000) % 0x100000000 - 0x80000000
-    return f"GDI PrintWindow（{reason}，{seconds} 秒后重试 DXGI）"
+    text = qt_arg("GDI PrintWindow（%1，%2 秒后重试 DXGI）", reason)
+    return qt_arg(text, seconds)
 
 
 def capture_backend_text(dxgi, now_ms: int | None = None) -> str:

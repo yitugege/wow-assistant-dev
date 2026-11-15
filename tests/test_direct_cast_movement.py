@@ -84,6 +84,24 @@ class DirectCastMovementTests(unittest.TestCase):
                 self.tick(a,b,2)
                 self.assertEqual(len(b.globals().calls),2 if mode=='error' else 1)
 
+    def test_movement_intent_uses_modern_spell_metadata_without_legacy_lookup(self):
+        _, lua = self.hosts()
+        g = lua.globals()
+        lua.execute('''
+            GetSpellInfo=nil
+            C_Spell={GetSpellInfo=function() return {spellID=116,castTime=2000} end}
+        ''')
+        self.assertTrue(g.WowBuddyDev.DirectCast.MovementGate('spell_116'))
+        g.speed = 0
+        g.tickers[1].fn()
+        self.assertEqual(list(g.calls.values()), [])
+        g.tickers[1].fn()
+        self.assertEqual(list(g.calls.values()), ['use:1:target'])
+
+        g.speed = 1
+        lua.execute("function C_Spell.GetSpellInfo() error('fixture lookup denied') end")
+        self.assertFalse(g.WowBuddyDev.DirectCast.MovementGate('spell_116'))
+
     def test_real_class_macro_lookup_can_supply_movement_intent(self):
         lua=integration.DirectCastIntegrationTests().fixture()
         lua.execute(HOST)

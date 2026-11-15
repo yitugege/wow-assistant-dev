@@ -6,6 +6,7 @@ from test_old_protocol import CONTRACT, RULES, render_old
 from test_pipeline import READABLE, READABLE_RULES
 from wowbuddy.auto_target import PACKET_BASE
 from wowbuddy.candidates import Rule
+from wowbuddy.dev_protocol import DEV_VERSION
 from wowbuddy.dispatch import ActionDispatcher
 from wowbuddy.old_protocol import OldFrame
 from wowbuddy.pipeline import DecisionPipeline, PreparedFrame
@@ -94,6 +95,37 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(self.tick().status, "sent")
         self.assertEqual(self.dispatcher.state.success_count, 2)
 
+    def test_suppressed_buff_does_not_hide_out_of_range_attack(self):
+        self.pipeline.probe_attack_range = True
+        rules = [
+            {"action": "spell_168", "when": ["flag", "frost_armor", False],
+             "tag": "增益", "holdMs": 30000},
+            {"action": "spell_116", "when": ["flag", "range_116", True], "tag": "输出"},
+        ]
+
+        def tick(**overrides):
+            values = self.base | {"frost_armor": "OFF", "range_116": "OFF", "distance": "39",
+                                  "player_moving": "OFF"} | overrides
+            frame = OldFrame("ok", spec_id="1482", version_code=DEV_VERSION, values=values)
+            prepared = PreparedFrame(frame, values, selected_rules=rules)
+            return self.scheduler.process(prepared, hwnd=10, send_interval_ms=100)
+
+        self.assertEqual(tick().selected.action, "spell_168")
+        self.backend.clock = 2600
+        # 游戏仍未显示光环，原调度的压制记账阻止续发增益。
+        waiting = tick()
+        self.assertEqual(waiting.status, "suppressed")
+        self.assertIsNone(waiting.selected)
+        self.assertTrue(waiting.decision.attack_blocked_by_range)
+        self.assertEqual([c.action for c in waiting.decision.candidates], ["spell_168"])
+
+        in_range = tick(range_116="ON", distance="28")
+        self.assertEqual(in_range.selected.action, "spell_116")
+        self.assertFalse(in_range.decision.attack_blocked_by_range)
+        paused = tick(master_switch="OFF")
+        self.assertEqual(paused.status, "stopped")
+        self.assertFalse(paused.decision.attack_blocked_by_range)
+
     def test_new_target_retains_only_self_buff_in_all_six_maps(self):
         ledger = self.dispatcher.state.auras
         for action in ("spell_168", "spell_116"):
@@ -121,6 +153,39 @@ class SchedulerTests(unittest.TestCase):
         result = self.tick()
         self.assertEqual(result.status, "gcd_blocked")
         self.assertNotIn("new_target_clear", [event[0] for event in result.events])
+
+    def test_independent_target_revision_releases_old_target_suppression(self):
+        rules = [{"action": "spell_116", "when": ["always"], "tag": "输出", "holdMs": 30000},
+                 {"action": "spell_168", "when": ["flag", "frost_armor", False],
+                  "tag": "增益", "holdMs": 30000}]
+        values = self.base | {"frost_armor": "ON"}
+
+        def tick(revision=None, *, version=DEV_VERSION, **overrides):
+            fields = values | overrides
+            frame = OldFrame("ok", spec_id="1482", version_code=version,
+                             values=fields, target_revision=revision)
+            prepared = PreparedFrame(frame, fields, selected_rules=rules)
+            return self.scheduler.process(prepared, hwnd=10, send_interval_ms=100)
+
+        self.assertEqual(tick(65520).selected.action, "spell_116")
+        ledger = self.dispatcher.state.auras
+        ledger.suppression_until["spell_168"] = 5000
+        self.backend.clock = 1800
+        self.assertEqual(tick(65520).status, "gcd_blocked")
+        self.assertEqual(tick().status, "gcd_blocked")
+        self.assertEqual(tick(0, gcd="ON").status, "no_candidates")
+        self.assertEqual(ledger.suppression_until, {"spell_168": 5000})
+        self.assertEqual(self.dispatcher.state.local_gcd_until_ms, 2510)
+        self.backend.clock = 2510
+        self.assertEqual(tick(0).selected.action, "spell_116")
+        self.backend.clock = 2700
+        result = tick(1)
+        self.assertIn(("new_target_clear", 1), result.events)
+        self.assertEqual(result.selected.action, "spell_116")
+        self.assertEqual(ledger.suppression_until["spell_168"], 5000)
+        self.backend.clock = 2900
+        self.assertEqual(tick(2, version=None).status, "gcd_blocked")
+        self.assertIsNone(self.scheduler.state.target_revision)
 
     def test_judgement_log_requires_previously_active_unexpired_seal(self):
         for seal, deadline, expected in (("", 5000, False), ("seal_command", 1000, False),

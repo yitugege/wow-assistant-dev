@@ -371,6 +371,7 @@ function WowBuddyDev.RebuildPixelBars()
   fiducialTexture:SetPoint("TOPLEFT", pixelBarFrame, "TOPLEFT", 4, -128)
   fiducialTexture:SetColorTexture(1, 0, 1, 1)
   fiducialTexture:Show()
+  if WowBuddyDev.AttachCharacterState then WowBuddyDev.AttachCharacterState(pixelBarFrame) end
   pixelBarFrame:SetShown(not (WowBuddyDev.DB and WowBuddyDev.DB.allOverlaysHidden))
   local n2 = 0
   for index10, v10 in ipairs(allFields) do
@@ -1243,6 +1244,7 @@ footerTickerFrame:SetScript("OnUpdate", function(self2, deltaTime)
     return
   end
   footerElapsed = footerElapsed - footerInterval
+  if WowBuddyDev.UpdateCharacterState then WowBuddyDev.UpdateCharacterState() end
   ensureHealthCurve()
   ensureRunicPowerCurve()
   ensureEnergyCurve()
@@ -1308,8 +1310,15 @@ footerTickerFrame:SetScript("OnUpdate", function(self2, deltaTime)
   -- ★ 本层是每帧渲染，必须自己吃掉异常：本函数体内任何一处抛错都会直接冒到插件外层
   --   （同文件的 UpdateHealingNpcMouseover / GetAutoTargetPacket 调用都已用 pcall 兜底，
   --    这一处此前漏了）。pcall 失败时按「闸门关闭」处理，等于停发，是安全侧。
+  local recoveryFood, recoveryWater, recoveryDisabled = 0, 0, nil
+  if WowBuddyDev.UpdateRecovery then
+    recoveryFood, recoveryWater, recoveryDisabled = WowBuddyDev.UpdateRecovery(masterSwitch == true)
+  end
   local gateOk, gateOpen = pcall(WowBuddyDev.IsAutoTargetGateOpen, enemyCount8yd)
-  if not gateOk or gateOpen ~= true then
+  if not gateOk or gateOpen ~= true then masterSwitch = false end
+  if recoveryFood ~= 0 then
+    -- 旧桌面读取总开关 OFF。新版在满足恢复阈值后恢复原闸门读数。
+    if masterSwitch then recoveryFood = recoveryFood + 0x200000 end
     masterSwitch = false
   end
   local forceRedTeamRow = false
@@ -1330,7 +1339,10 @@ footerTickerFrame:SetScript("OnUpdate", function(self2, deltaTime)
     end
   end
   valuesById.ttd = ttdValue
-  valuesById.ttf = 0
+  if masterSwitch and recoveryFood == 0 and WowBuddyDev.GetRecoveryHandoffWord then
+    recoveryFood = WowBuddyDev.GetRecoveryHandoffWord()
+  end
+  valuesById.ttf = recoveryFood ~= 0 and recoveryFood or recoveryDisabled or 0
   valuesById.distance = targetDistance
   if aoeMode == 1 then
     valuesById.active_enemies = 1
@@ -1359,7 +1371,7 @@ footerTickerFrame:SetScript("OnUpdate", function(self2, deltaTime)
     valuesById.combat_time = math.floor(now - encounterPending)
   else
     encounterPending = nil
-    valuesById.combat_time = 0
+    valuesById.combat_time = recoveryWater
   end
   valuesById.class = WowBuddyDev.DB.currentClass or "UNKNOWN"
   valuesById.specIndex = WowBuddyDev.DB.currentSpecIndex or 0

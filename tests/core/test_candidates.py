@@ -178,12 +178,15 @@ class CandidateEngineTests(unittest.TestCase):
         role = {"token": "priest", "groups": ["戒律", "神圣", "暗影"], "roles": {"戒律": "HEALER", "神圣": "HEALER", "暗影": "RANGED"}}
         engine = CandidateEngine(document([action()], role=role))
         fields = {"master_switch": "OFF", "priest_talents": "10/0/0"}
-        for combat in (None, "0", "—"):
-            current = dict(fields)
-            if combat is not None:
-                current["combat_time"] = combat
-            self.assertEqual(engine.generate(1, current, selected_rules=[rule()])[0].action, "a")
-        self.assertTrue(engine.generate(1, dict(fields, combat_time="1"), selected_rules=[rule()])[0].stop)
+        for combat in (None, "0", "-0", "—", "nan", "-1", "-inf"):
+            with self.subTest(combat=combat):
+                current = dict(fields)
+                if combat is not None:
+                    current["combat_time"] = combat
+                self.assertEqual(engine.generate(1, current, selected_rules=[rule()])[0].action, "a")
+        for combat in ("1", "+inf"):
+            with self.subTest(combat=combat):
+                self.assertTrue(engine.generate(1, dict(fields, combat_time=combat), selected_rules=[rule()])[0].stop)
 
     def test_role_unknown_gate_bypassed_by_loaded_rotation(self):
         role = {"token": "druid", "groups": ["平衡", "野性", "恢复"], "roles": {"平衡": "RANGED", "野性": "MELEE", "恢复": "HEALER"}}

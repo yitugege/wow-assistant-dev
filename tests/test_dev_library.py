@@ -63,6 +63,32 @@ class LocalLibraryTests(unittest.TestCase):
         self.assertEqual(profile_action_gaps(profile,rules),('shoot_wand','missing_pre'))
         self.assertEqual(profile_action_gaps(None,rules),())
 
+    def test_warlock_double_dot_rule_uses_wand_only_in_development(self):
+        from dataclasses import replace
+        from wowbuddy.assets import Assets
+        from wowbuddy.dev_protocol import DEV_VERSION
+        from wowbuddy.old_protocol import OldFrame
+
+        hub = load_snapshot((ROOT/'assets/rotations.json').read_bytes()).state
+        profile = next(profile for profile in hub.profiles if profile.id == 33)
+        pipeline = Assets.load(ROOT/'assets').pipeline()
+        self.assertEqual(profile_action_gaps(profile, pipeline.rules), ('start_attack', 'shoot_wand'))
+        self.assertEqual(profile_action_gaps(profile, pipeline.engine.document), ())
+        fields = {'master_switch': 'ON', 'player_valid': 'ON', 'target_valid': 'ON', 'player_in_combat': 'ON',
+                  'player_moving': 'OFF', 'player_casting': '空闲', 'gcd': 'OFF', 'player_health_pct': '75',
+                  'mana_pct': '75', 'agony': 'ON', 'corruption': 'ON', 'pet_valid': 'OFF', 'shoot_wand_key': 'F8'}
+        frame = OldFrame('ok', version_code=DEV_VERSION, spec_id='1490', values=fields)
+
+        def wands(observed):
+            prepared = pipeline.prepare_frame(observed, selected_profile=profile.to_json())
+            return [(c.key, c.hold_ms) for c in pipeline.generate(prepared).candidates if c.action == 'shoot_wand']
+
+        self.assertEqual(wands(frame), [('F8', 800), ('F8', 1500)])
+        self.assertEqual(wands(replace(frame, values=dict(fields, corruption='OFF'))), [('F8', 1500)])
+        self.assertEqual(wands(replace(frame, values=dict(fields, shoot_wand_key=''))), [])
+        self.assertEqual(wands(replace(frame, version_code=0)), [])
+        self.assertEqual(profile.rules[5].action, 'start_attack')
+
     def test_initial_library_loads_and_preserves_user_changes(self):
         with TemporaryDirectory() as directory:
             self.assertTrue(seed_library(ROOT/'assets', directory))

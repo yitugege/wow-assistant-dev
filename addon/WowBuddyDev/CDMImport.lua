@@ -591,8 +591,8 @@ local function refreshViewerSettings()
     return false
   end
   if settingsFrame.RefreshLayout then
-    pcall(settingsFrame.RefreshLayout, settingsFrame)
-    return true
+    local ok = pcall(settingsFrame.RefreshLayout, settingsFrame)
+    return ok
   end
   return false
 end
@@ -630,7 +630,7 @@ local refreshRetryTimer = nil
 -- 出参：真为 true；失败返回 false 加原因字符串（missing_data / cooldown_viewer_not_ready / in_combat / 异常文本）。
 -- 说明：SetLayoutData 用 pcall 包住并把异常文本打印出来；刷新失败说明暴雪面板还没建好，用 1.5 秒定时器再试一次（refreshRetryTimer 保存定时器句柄，重入时先 Cancel）。
 local function loadDataConfig(layoutData)
-  if not layoutData then
+  if type(layoutData) ~= "string" or layoutData == "" then
     return false, "missing_data"
   end
   if not ensureCooldownViewerReady() then
@@ -721,7 +721,14 @@ local function saveProfile(profileName)
     print("|cffff0000[WowBuddyDev CDM]|r: 数据配置保存失败")
     return false
   end
-  local editModeSettings = ExtractEditModeSettings()
+  local previous = getProfile(profileName)
+  local editModeSettings = previous and previous.editModeSettings
+  if type(ExtractEditModeSettings) == "function" then
+    local ok, settings = pcall(ExtractEditModeSettings)
+    if ok and settings ~= nil then
+      editModeSettings = settings
+    end
+  end
   local db = getDB()
   local profile = {
     dataConfig = layoutData,
@@ -742,26 +749,28 @@ local function saveProfile(profileName)
   return true
 end
 -- 功能：载入一份命名配置档：写回布局数据、编辑模式设置、字体设置，并还原框体位置。
--- 入参：profileName 配置档名（省略时用当前档名）。
--- 出参：真为 true；战斗中或档不存在时返回假。
+-- 入参：profileName 配置档名（省略时用当前档名），importedProfile 为待验证的新档。
+-- 出参：真为 true；战斗中、档不存在或布局写入失败时返回假。
 -- 说明：字体文件先试探能否加载，加载不了只打印警告不中断（配置照样还原）；编辑模式设置写回后再用 C_EditMode.SetActiveLayout 让暴雪面板真正刷新一次。
-local function loadProfile(profileName)
+local function loadProfile(profileName, importedProfile)
   if InCombatLockdown() then
     print("|cffff0000[CDM]|r 战斗中无法加载配置")
     return false
   end
   profileName = profileName or s or "default"
-  s = profileName
-  local activeProfileDB = getDB()
-  activeProfileDB.activeProfile = profileName
-  local profile = getProfile(profileName)
+  local profile = importedProfile or getProfile(profileName)
   if not profile then
     print("|cffff0000[WowBuddyDev CDM]|r: 未找到配置 '" .. profileName .. "'")
     return false
   end
-  if profile.dataConfig then
-    loadDataConfig(profile.dataConfig)
+  if profile.dataConfig ~= nil then
+    local applied, reason = loadDataConfig(profile.dataConfig)
+    if not applied then
+      print("|cffff0000[WowBuddyDev CDM]|r: 配置未载入: " .. tostring(reason))
+      return false
+    end
   end
+  setProfile(profileName, profile)
   do
     local db = getDB()
     if profile.cooldownFontSize then
@@ -789,11 +798,16 @@ local function loadProfile(profileName)
     reanchorViewerTexts()
   end
   if profile.editModeSettings then
-    local applyResult = ApplyEditModeSettings(profile.editModeSettings)
+    if type(ApplyEditModeSettings) == "function" then
+      local applied, reason = pcall(ApplyEditModeSettings, profile.editModeSettings)
+      if not applied then
+        print("|cffff0000[CDM]|r 编辑模式附加设置未应用: " .. tostring(reason))
+      end
+    end
     applyEditModeSettings(profile.editModeSettings)
-    if not InCombatLockdown() and (C_EditMode and C_EditMode.SetActiveLayout) then
-      local editModeLayouts = C_EditMode.GetLayouts()
-      if editModeLayouts and editModeLayouts.activeLayout then
+    if not InCombatLockdown() and (C_EditMode and C_EditMode.GetLayouts and C_EditMode.SetActiveLayout) then
+      local readOk, editModeLayouts = pcall(C_EditMode.GetLayouts)
+      if readOk and editModeLayouts and editModeLayouts.activeLayout then
         local setActiveOk, setActiveErr = pcall(C_EditMode.SetActiveLayout, editModeLayouts.activeLayout)
         if not setActiveOk then
           print("|cffff0000[CDM]|r SetActiveLayout 失败: " .. tostring(setActiveErr))
@@ -1221,7 +1235,7 @@ end
 -- 出参：配置档表；版本号不是 2 时返回 nil。
 -- 说明：键名与 encodeProfilePayload 一一对应，改一边必须改另一边；savedAt 用当前时间补（导入的档没有原始保存时间）。
 local function decodeProfilePayload(payload)
-  if not payload then
+  if type(payload) ~= "table" then
     return nil
   end
   if payload.v == 2 then
@@ -1266,8 +1280,12 @@ local function importDataConfigString(importString)
       local decompressOk, decompressed = pcall(encodingUtil.DecompressString, decoded, Enum.CompressionMethod.Deflate)
       if decompressOk and decompressed then
         local deserializeOk, payload = pcall(encodingUtil.DeserializeCBOR, decompressed)
-        if deserializeOk and (payload and payload.d) then
-          cdmManager.LoadDataConfig(payload.d)
+        if deserializeOk and type(payload) == "table" and payload.d then
+          local applied, reason = cdmManager.LoadDataConfig(payload.d)
+          if not applied then
+            print("|cffff0000[WowBuddyDev CDM]|r: 配置未导入: " .. tostring(reason))
+            return false
+          end
           local db = cdmManager.GetDB()
           db.specDataConfigs = db.specDataConfigs or {}
           local className = select(2, UnitClass("player"))
@@ -1311,9 +1329,7 @@ local function importProfileString(profileName, importString)
           if deserializeOk and payload then
             local profile = decodeProfilePayload(payload)
             if profile then
-              cdmManager.SetProfile(profileName, profile)
-              cdmManager.LoadProfile(profileName)
-              return true
+              return cdmManager.LoadProfile(profileName, profile)
             end
           end
         end

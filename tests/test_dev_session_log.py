@@ -38,6 +38,8 @@ class SessionLogTests(unittest.TestCase):
             path=Path(window.logger.file.path)
             window.logger.append('清空前标记')
             before=path.read_bytes()
+            self.assertEqual(before.count('已开始监控'.encode()),1)
+            self.assertEqual(window.ui.log_view.toPlainText().count('已开始监控'),1)
             window.logger.buffer='待清缓冲'
             handle=window.logger.file
             window.ui.clear_log_button.click()
@@ -57,6 +59,7 @@ class SessionLogTests(unittest.TestCase):
             self.assertEqual(Path(window.logger.file.path),path)
             self.assertTrue(path.read_bytes().startswith(stopped))
             before_shutdown=path.read_bytes()
+            self.assertEqual(before_shutdown.count('已开始监控'.encode()),2)
             window.shutdown()
             self.assertEqual(path.read_bytes(),before_shutdown)
             self.assertFalse(window.poll_timer.isActive())

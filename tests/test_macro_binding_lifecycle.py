@@ -201,7 +201,8 @@ class BindingLifecycleTests(unittest.TestCase):
         self.lua.execute('''
         function callBoolSafe(fn) return fn() end
         autoTargetState={};secureButtonName='auto_fixture';autoTargetMacroText='/targetenemy'
-        function findFirstFreeKey() return 'F5',5 end
+        function WowBuddyDev.FindFreeAutomationKey() return 'F5',5 end
+        function WowBuddyDev.GetPostKillAutoTargetEnabled() return false end
         WowBuddyDev.classData={};WowBuddyDev.NormalizeActionKey=function(k) return k end
         local original=WowBuddyDev.CreateSecureButton
         WowBuddyDev.CreateSecureButton=function(id,key,body)

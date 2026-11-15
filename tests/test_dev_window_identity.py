@@ -9,17 +9,19 @@ from unittest.mock import Mock, patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 import run_dev
-from wowbuddy.window_identity import NativeWindowIdentity, TitleCache
+from wowbuddy.dev_version import VERSION
+from wowbuddy.window_identity import NativeWindowIdentity, TitleCache, native_title_enabled
 
 
 class WindowIdentityTests(unittest.TestCase):
-    def test_gui_dispatch_uses_raw_exact_flag(self):
+    def test_legacy_flag_parsing_does_not_change_independent_gui(self):
         for raw,enabled in [(['app'],True),(['app','--no-stealth'],False),
                             (['app','--NO-STEALTH'],True),(['app','--no-stealth=true'],True),
                             (['app','-style','--no-stealth'],False)]:
             with self.subTest(raw=raw),patch.object(run_dev,'launch',return_value=0) as launch:
                 self.assertEqual(run_dev.main(['app','--no-watch'],native_arguments=raw),0)
-                self.assertEqual(launch.call_args.kwargs['native_identity_enabled'],enabled)
+                self.assertEqual(native_title_enabled(raw),enabled)
+                self.assertNotIn('native_identity_enabled',launch.call_args.kwargs)
 
     def test_disabled_does_not_request_native_handle(self):
         window=Mock();api=Mock()
@@ -38,15 +40,16 @@ class WindowIdentityTests(unittest.TestCase):
         self.assertEqual([c.args for c in api.set_title.call_args_list],
                          [(123,'系统服务管理器 (1000)')]*2)
 
-    def test_independent_window_show_hook_is_connected(self):
+    def test_independent_window_keeps_regular_caption_and_style(self):
         from test_dev_tray import TrayTests
-        calls=[]
-        with patch('wowbuddy.window_identity.NativeWindowIdentity.apply',side_effect=lambda w:calls.append(w)):
+        from PySide6.QtCore import Qt
+        with patch('wowbuddy.window_identity.NativeWindowIdentity.apply') as apply_identity:
             def exercise(window):
-                self.assertIn(window,calls)
-                self.assertEqual(window.ui.title_label.text(),'WowBuddyDev')
                 window.hide();window.show()
-                self.assertGreaterEqual(calls.count(window),2)
+                self.assertEqual(window.windowTitle(),f'WowBuddyDev v{VERSION} — 独立开发版')
+                self.assertEqual(window.ui.title_label.text(),f'WowBuddyDev v{VERSION}')
+                self.assertEqual(window.windowType(),Qt.WindowType.Window)
+                apply_identity.assert_not_called()
             TrayTests().run_window(False,exercise)
 
     @unittest.skipUnless(sys.platform=='win32','需要 Windows')

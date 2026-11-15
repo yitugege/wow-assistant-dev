@@ -8,6 +8,10 @@
 -- ==========================================================================
 local secureButtonName = "auto_target"
 local autoTargetMacroText = "/targetenemy [combat,nochanneling,noexists][combat,nochanneling,dead]"
+local postKillMacroText = "/targetenemy [nochanneling,noexists][nochanneling,dead][nocombat,nochanneling,exists,noharm]"
+local postKillSeconds = 4
+local postKillRecoveryMaxSeconds = 90
+local combatTargetSettleSeconds = 1.25
 local packetBase = 13631488
 WowBuddyDev.AUTO_TARGET_KEYS = {}
 for index, v in ipairs(WowBuddyDev.ACTION_KEY_ORDER) do
@@ -56,6 +60,91 @@ local function hasKeyboardFocus()
 end
 local sessionReady = false
 local lastSpecID = nil
+local combatTargetGapStartedAt
+local trackedTarget, trackedUntil, deadTarget, continueUntil
+local heldForRecovery, recoveryHoldUsed = false, false
+local recoveryDeadline
+
+local function clearPendingPostKill()
+  deadTarget, continueUntil, recoveryDeadline = nil, nil, nil
+  heldForRecovery, recoveryHoldUsed = false, false
+end
+
+local function clearPostKill()
+  trackedTarget, trackedUntil = nil, nil
+  clearPendingPostKill()
+end
+
+function WowBuddyDev.GetPostKillAutoTargetEnabled()
+  return WowBuddyDev.DB and WowBuddyDev.DB.autoTargetAfterKill == true or false
+end
+
+function WowBuddyDev.SetPostKillAutoTargetEnabled(enabled)
+  if callBoolSafe(InCombatLockdown) ~= false then return false end
+  WowBuddyDev.DB.autoTargetAfterKill = enabled == true
+  clearPostKill()
+  WowBuddyDev.RefreshMacroBindings()
+  return true
+end
+
+local function postKillEnabled()
+  return autoTargetState.postKillBound and WowBuddyDev.GetPostKillAutoTargetEnabled()
+    and WowBuddyDev.DB.masterSwitch == true and callBoolSafe(WowBuddyDev.GetAutoTargetEnabled) == true
+end
+
+local function readableGuid(guid)
+  return type(guid) == "string" and (not issecretvalue or not issecretvalue(guid)) and guid ~= ""
+end
+
+local function targetGuid()
+  local ok, guid = pcall(function()
+    local value = UnitGUID("target")
+    if readableGuid(value) then return value end
+  end)
+  if ok then return guid end
+end
+
+local function observeTargetDeath(guid)
+  local now = GetTime()
+  if trackedUntil and guid == trackedTarget and now <= trackedUntil then
+    trackedTarget, trackedUntil = nil, nil
+    deadTarget, continueUntil = guid, now + postKillSeconds
+  end
+end
+
+local function observePostKillTarget(inCombat)
+  if not postKillEnabled() or callBoolSafe(UnitIsDeadOrGhost, "player") ~= false
+      or hasKeyboardFocus() ~= false then
+    clearPostKill()
+    return false
+  end
+  local exists = callBoolSafe(UnitExists, "target")
+  local dead = exists == true and callBoolSafe(UnitIsDeadOrGhost, "target")
+  local corpse = dead == true and targetGuid()
+  local now = GetTime()
+  if exists == true and dead == false then
+    clearPostKill()
+    if inCombat == true and callBoolSafe(UnitCanAttack, "player", "target") == true then
+      trackedTarget, trackedUntil = targetGuid(), now + postKillSeconds
+    end
+  elseif dead == true then
+    observeTargetDeath(corpse)
+    if continueUntil and corpse ~= deadTarget then clearPostKill() end
+  end
+  if continueUntil and not recoveryHoldUsed and (not recoveryDeadline or now < recoveryDeadline)
+      and WowBuddyDev.IsRecoveryActive and WowBuddyDev.IsRecoveryActive() then
+    if heldForRecovery or now < continueUntil then
+      heldForRecovery = true
+      recoveryDeadline = recoveryDeadline or now + postKillRecoveryMaxSeconds
+    end
+  elseif heldForRecovery and continueUntil then
+    heldForRecovery = false
+    continueUntil = math.min(now, recoveryDeadline) + postKillSeconds
+  end
+  if continueUntil and not heldForRecovery and now >= continueUntil then clearPostKill() end
+  return inCombat == false and continueUntil ~= nil
+    and (exists == false or (dead == true and corpse == deadTarget))
+end
 -- 功能：把自动选目标的会话状态清零。
 -- 入参：无。
 -- 出参：无。
@@ -102,12 +191,54 @@ function WowBuddyDev.IsRemoteAutoTargetSessionReady()
   if hasAttackableTarget() then
     sessionReady = true
   end
-  return sessionReady
+  return sessionReady or callBoolSafe(WowBuddyDev.HasInterruptedLootTarget) == true
 end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-frame:SetScript("OnEvent", resetSessionState)
+frame:RegisterEvent("PLAYER_TARGET_CHANGED")
+frame:RegisterEvent("UNIT_HEALTH")
+if type(CombatLogGetCurrentEventInfo) == "function" then
+  pcall(function()
+    if not (C_EventUtils and C_EventUtils.IsEventValid)
+        or C_EventUtils.IsEventValid("COMBAT_LOG_EVENT_UNFILTERED") then
+      frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    end
+  end)
+end
+frame:SetScript("OnEvent", function(_, event, unit)
+  if event == "UNIT_HEALTH" then
+    if unit == "target" and postKillEnabled() then
+      observePostKillTarget(callBoolSafe(UnitAffectingCombat, "player"))
+    end
+    return
+  elseif event == "PLAYER_TARGET_CHANGED" then
+    if postKillEnabled() then
+      local exists = callBoolSafe(UnitExists, "target")
+      local guid = exists == true and targetGuid()
+      -- 读不到GUID时，仅接受从同一次选中目标直接观察到的死亡。
+      if not trackedTarget or (exists == true and guid ~= trackedTarget) then
+        trackedTarget, trackedUntil = nil, nil
+      end
+      if exists ~= false and (not deadTarget or guid ~= deadTarget) then
+        clearPendingPostKill()
+      end
+    end
+    return
+  elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
+    if postKillEnabled() and trackedTarget then
+      pcall(function()
+        local _, kind, _, _, _, _, _, guid = CombatLogGetCurrentEventInfo()
+        if kind == "UNIT_DIED" and readableGuid(guid) then observeTargetDeath(guid) end
+      end)
+    end
+    return
+  elseif event == "PLAYER_ENTERING_WORLD" then
+    clearPostKill()
+  end
+  combatTargetGapStartedAt = nil
+  resetSessionState()
+end)
 -- 功能：判断自动选目标自己用的键，是否和玩家设置的主键/爆发键/AOE 键撞了。
 -- 入参：无。
 -- 出参：布尔。
@@ -126,6 +257,38 @@ local function isKeyConflictWithUserKeys()
   end
   return matchesNormalizedKey(WowBuddyDev.DB.masterKey) or matchesNormalizedKey(WowBuddyDev.DB.burstKey) or matchesNormalizedKey(WowBuddyDev.DB.aoeKey)
 end
+
+-- 只供桌面在已到达练级点时核对现有安全宏。战斗内换怪包的语义不变。
+function WowBuddyDev.GetIdleAutoTargetKeyIndex()
+  if not postKillEnabled() or WowBuddyDev.DB.masterSwitch ~= true or isKeyConflictWithUserKeys()
+      or callBoolSafe(UnitAffectingCombat, "player") ~= false
+      or callBoolSafe(UnitIsDeadOrGhost, "player") ~= false or hasKeyboardFocus() ~= false then return 0 end
+  local exists = callBoolSafe(UnitExists, "target")
+  local eligible = exists == false
+  if exists == true then
+    local dead = callBoolSafe(UnitIsDeadOrGhost, "target")
+    eligible = dead == true or (dead == false and callBoolSafe(UnitCanAttack, "player", "target") == false)
+  end
+  if not eligible then return 0 end
+  local button = WowBuddyDev.GetSecureButton(secureButtonName)
+  if not button or button:GetAttribute("type") ~= "macro" or button:GetAttribute("macrotext") ~= postKillMacroText
+      or GetBindingAction(autoTargetState.key, true) ~= "CLICK " .. button:GetName() .. ":LeftButton" then return 0 end
+  return autoTargetState.keyIndex
+end
+
+function WowBuddyDev.IsPostKillAutoTargetReady()
+  if not WowBuddyDev.GetPostKillAutoTargetEnabled() then return false end
+  if isKeyConflictWithUserKeys() then
+    clearPostKill()
+    return false
+  end
+  return observePostKillTarget(callBoolSafe(UnitAffectingCombat, "player"))
+end
+
+function WowBuddyDev.IsAutoTargetCombatSettling()
+  return combatTargetGapStartedAt ~= nil
+    and GetTime() < combatTargetGapStartedAt + combatTargetSettleSeconds
+end
 -- 功能：发现有按键冲突、且不在战斗中时，刷新一次宏绑定。
 -- 入参：无。
 -- 出参：无。
@@ -143,6 +306,7 @@ end
 -- 出参：状态码 —— 0 不动作；1 没有目标或目标已死；2 当前目标可攻击；3 当前目标是友方；4 状态读不到。
 -- 说明：任何一处读到 nil（受保护值或接口缺失）都归到 4；只有明确读出来的 true / false 才用来下「没有目标」「目标没死」这类结论。
 local function computeGateState()
+  if WowBuddyDev.IsPostKillAutoTargetReady() then return 1 end
   local sessionReadyNow = WowBuddyDev.IsRemoteAutoTargetSessionReady()
   -- 近战放行：Core.IsAutoTargetGateOpen 对「近战 + 附近有敌人」已放行 masterSwitch，
   -- 但近战 DB.autoTarget 默认关，这里若照旧硬性要求 GetAutoTargetEnabled==true，
@@ -169,6 +333,7 @@ local function computeGateState()
     return 1
   end
   if targetDeadOrGhost ~= false then
+    if callBoolSafe(WowBuddyDev.HasInterruptedLootTarget) == true then return 1 end
     return 4
   end
   local canAttackTarget = callBoolSafe(UnitCanAttack, "player", "target")
@@ -196,7 +361,7 @@ end
 -- 功能：收集当前已经被占用的动作键集合。
 -- 入参：无。
 -- 出参：集合表 { [归一化键名] = true }。
--- 说明：来源有三处 —— 动作键映射表、DB 里的主键/爆发键/AOE 键、以及可选的团队焦点键；GetRaidFocusKeys 用 pcall 调，返回的不是表就跳过。
+-- 说明：保留已有的助手动作、控制键、团队焦点键和游戏原生交互键。
 local function collectUsedKeys()
   local usedKeys = {}
   -- 功能：把一个键名归一化后记进「已占用」集合。
@@ -208,6 +373,11 @@ local function collectUsedKeys()
     if normalizedKey then
       usedKeys[normalizedKey] = true
     end
+  end
+  local ok, interactPrimary, interactSecondary = pcall(GetBindingKey, "INTERACTTARGET")
+  if ok then
+    markKeyUsed(interactPrimary)
+    markKeyUsed(interactSecondary)
   end
   for _, keyName in ipairs(WowBuddyDev.GetClassMacroKeys and WowBuddyDev.GetClassMacroKeys() or {}) do
     markKeyUsed(keyName)
@@ -233,10 +403,11 @@ end
 -- 功能：在自动选目标的候选键里找第一个没被占用的键。
 -- 入参：无。
 -- 出参：键名 + 它在候选表里的下标；全被占用时返回 nil 加 0。
-local function findFirstFreeKey()
+function WowBuddyDev.FindFreeAutomationKey(reserved)
   local usedKeySet = collectUsedKeys()
+  if autoTargetState.bound then usedKeySet[autoTargetState.key] = true end
   for index3, candidateKey in ipairs(WowBuddyDev.AUTO_TARGET_KEYS) do
-    if not usedKeySet[WowBuddyDev.NormalizeActionKey(candidateKey)] then
+    if not usedKeySet[WowBuddyDev.NormalizeActionKey(candidateKey)] and not (reserved and reserved[candidateKey]) then
       return candidateKey, index3
     end
   end
@@ -267,6 +438,14 @@ local function hookAutoTargetClick(button)
     return false
   end
   button:HookScript("OnClick", function()
+    -- 吃喝间歇只恢复倒计时，首个脱战选怪按键才结束这次恢复等待。
+    if recoveryDeadline and continueUntil and not recoveryHoldUsed
+        and callBoolSafe(UnitAffectingCombat, "player") == false then
+      if heldForRecovery then
+        continueUntil = math.min(GetTime(), recoveryDeadline) + postKillSeconds
+      end
+      heldForRecovery, recoveryHoldUsed = false, true
+    end
     WowBuddyDev.RecordAutoTargetAttempt()
   end)
   hookedButton = button
@@ -279,7 +458,14 @@ end
 function WowBuddyDev.GetAutoTargetPacket()
   autoTargetState.sequence = autoTargetState.sequence % 31 + 1
   refreshMacroBindingsIfNeeded()
-  return packetBase + autoTargetState.keyIndex * 8192 + computeGateState() * 1024 + autoTargetState.ack * 32 + autoTargetState.sequence
+  local gate = computeGateState()
+  -- 游戏可能先清掉目标，后更新战斗标志。暂缓补目标仍不等于确认击杀。
+  if gate == 1 and postKillEnabled() and callBoolSafe(UnitAffectingCombat, "player") == true then
+    combatTargetGapStartedAt = combatTargetGapStartedAt or GetTime()
+  else
+    combatTargetGapStartedAt = nil
+  end
+  return packetBase + autoTargetState.keyIndex * 8192 + gate * 1024 + autoTargetState.ack * 32 + autoTargetState.sequence
 end
 -- 功能：给自动选目标挑一个没被占用的动作键并绑定安全按钮。
 -- 入参：无。
@@ -292,14 +478,17 @@ function WowBuddyDev.ApplyAutoTargetBinding()
   autoTargetState.keyIndex = 0
   autoTargetState.key = nil
   autoTargetState.bound = false
+  autoTargetState.postKillBound = false
   if type(WowBuddyDev.classData) ~= "table" or type(WowBuddyDev.CreateSecureButton) ~= "function" or type(WowBuddyDev.NormalizeActionKey) ~= "function" then
     return false
   end
-  local keyName, keyIndex = findFirstFreeKey()
+  local keyName, keyIndex = WowBuddyDev.FindFreeAutomationKey()
   if not keyName then
     return false
   end
-  local ok, bound = pcall(WowBuddyDev.CreateSecureButton, secureButtonName, keyName, autoTargetMacroText)
+  local postKill = WowBuddyDev.GetPostKillAutoTargetEnabled()
+  local macroText = postKill and postKillMacroText or autoTargetMacroText
+  local ok, bound = pcall(WowBuddyDev.CreateSecureButton, secureButtonName, keyName, macroText)
   if not ok or not bound then
     if not ok and type(WowBuddyDev.ReportMacroBindingError) == "function" then
       WowBuddyDev.ReportMacroBindingError(secureButtonName, bound)
@@ -317,5 +506,6 @@ function WowBuddyDev.ApplyAutoTargetBinding()
   autoTargetState.keyIndex = keyIndex
   autoTargetState.key = keyName
   autoTargetState.bound = true
+  autoTargetState.postKillBound = postKill
   return true
 end

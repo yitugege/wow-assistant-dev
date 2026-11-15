@@ -60,9 +60,13 @@ def check():
         addons.mkdir(parents=True)
         other=addons/'OtherAddon';other.mkdir()
         (other/'OtherAddon.toc').write_text('## Title: unrelated\n','utf8')
+        legacy=addons/'eygo6tps';legacy.mkdir()
+        from wowbuddy.addon_install import SIGNATURE_FILES
+        for name in SIGNATURE_FILES:
+            (legacy/name).write_text('-- legacy install sentinel\n','utf8')
         wtf=addons.parent.parent/'WTF';wtf.mkdir()
         (wtf/'settings.lua').write_text('sentinel="保留"','utf8')
-        sentinels=(snapshot(other),snapshot(wtf))
+        sentinels=(snapshot(other),snapshot(legacy),snapshot(wtf))
         data=home/'data';data.mkdir()
         report=data/'_install_addon_result.txt'
         backup_root=addons.parent.parent/'WowBuddyDev-backups'
@@ -80,7 +84,7 @@ def check():
             log=(data/'startup.log').read_text('utf8')
             assert f'正常退出，返回码 {expected_exit}' in log.splitlines()[-1],log[-500:]
             outcome['business_logged_exit']=expected_exit
-            assert (snapshot(other),snapshot(wtf))==sentinels
+            assert (snapshot(other),snapshot(legacy),snapshot(wtf))==sentinels
             assert not list(data.glob('logs/monitor_*.log'))
             return outcome
 
@@ -98,7 +102,7 @@ def check():
         count=verify_payload(package)
         assert not backup_root.exists()
         before=snapshot(installed)
-        cases.append({'mode':mode,'scenario':'first_install','files':count,'passed':True,**outcome})
+        cases.append({'mode':mode,'scenario':'first_install','files':count,'legacy_unchanged':True,'passed':True,**outcome})
 
         # 只在隔离目录版加入真实随机命名发布包，验证优先选包及已安装身份保留。
         random_directory=None

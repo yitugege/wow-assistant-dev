@@ -97,6 +97,12 @@ class AssistantFilterTests(unittest.TestCase):
         backend=Windows({1:r'C:\Python\python.exe',2:r'C:\Game\Wow.exe'})
         self.assertEqual([w.hwnd for w in enumerate_windows(AssistantWindowFilter(backend)).windows],[1,2])
 
+    def test_source_mode_does_not_monitor_a_verified_frozen_assistant(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old, _ = self.make_cached(tmp, '7' * 16)
+            backend = Windows({1: str(old), 2: r'C:\Game\Wow.exe'})
+            self.assertEqual(find_game_window(AssistantWindowFilter(backend)), 2)
+
     def test_original_collision_reproduced_and_product_instance_excluded(self):
         backend=Windows({1:r'D:\download\WowBuddyDev.exe'})
         self.assertEqual(find_game_window(backend),1)

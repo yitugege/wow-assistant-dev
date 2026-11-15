@@ -72,7 +72,7 @@ class AssistantWindow(QWidget):
                  tray_enabled=True, hub_files=None, addon_files=None, addon_dialogs=None,
                  update_client=None, update_handoff=None, application_arguments=None,
                  native_window_identity=None, addon_update_client=None, startup_record=None,
-                 startup_log_path=""):
+                 startup_log_path="", game_windows_only=False):
         super().__init__()
         self.assets, self.settings = assets, settings
         self.application_dir = Path(application_dir)
@@ -98,6 +98,8 @@ class AssistantWindow(QWidget):
         snapshot = settings.snapshot()
         self.ui = build_ui(self, app_name="WOW战斗助手", version=CURRENT_VERSION,
                            website="wowbuddy.cn", auto_update=snapshot.update_auto_check)
+        if game_windows_only:
+            self.ui.window_combo.setPlaceholderText('等待魔兽世界窗口')
         self.ui.addon_path.setText(snapshot.addon_last_dir)
         self.ui.poll_interval_spin.setValue(snapshot.poll_interval_ms)
         self.ui.send_interval_spin.setValue(snapshot.send_interval_ms)
@@ -124,7 +126,7 @@ class AssistantWindow(QWidget):
         self.monitor = WindowMonitor(window_backend, self.session,
                                      interval_ms=self.ui.poll_interval_spin.value(),
                                      on_selection=self._monitor_selection,
-                                     on_diagnostic=self._record_window_diagnostic)
+                                     on_diagnostic=self._record_window_diagnostic, game_only=game_windows_only)
         # 原082920的路径初始化早于循环库缓存读取及首次网络请求。
         self._install_addon_actions(window_backend, environment or {}, addon_files, addon_dialogs)
         self.hub = HubSynchronizer(hub_files or LocalFileBackend(), application_dir=str(application_dir),
@@ -431,11 +433,17 @@ class AssistantWindow(QWidget):
 
     def auto_start_once(self):
         """081850：一次性 --auto；不刷新下拉框，不停止已经活动的监控。"""
-        hwnd = find_game_window(self.monitor.backend, on_diagnostic=self._record_window_diagnostic)
+        hwnd = find_game_window(self.monitor.backend, on_diagnostic=self._record_window_diagnostic,
+                                game_only=self.monitor.game_only)
         if not hwnd:
             self.logger.append("--auto：未找到魔兽窗口，请手动选择")
             return
         index = self.ui.window_combo.findData(hwnd)
+        if index < 0 and self.monitor.game_only:
+            self.refresh_windows()
+            index = self.ui.window_combo.findData(hwnd)
+            if index < 0:
+                return
         if index >= 0:
             self.ui.window_combo.setCurrentIndex(index)
         # 原生未在现有列表找到句柄也会对当前选择调用开始；不改成watch逻辑。

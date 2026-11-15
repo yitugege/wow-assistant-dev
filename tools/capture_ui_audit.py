@@ -12,6 +12,7 @@ os.environ['QT_QPA_PLATFORM']='offscreen'
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QFontDatabase,QFontMetrics
 from wowbuddy.desktop import NoSystemBackend
+from wowbuddy.dev_version import VERSION
 import run_dev
 
 
@@ -23,7 +24,7 @@ def main():
     output=ROOT/'dist/ui-audit';output.mkdir(parents=True,exist_ok=True)
     def capture():
         window=next(w for w in app.topLevelWidgets()
-                    if w.windowTitle()=='WowBuddyDev — 独立开发版' and not getattr(w,'_closed',True))
+                    if w.windowTitle()==f'WowBuddyDev v{VERSION} — 独立开发版' and not getattr(w,'_closed',True))
         app.processEvents()
         if not window.grab().save(str(output/'main-window-fonts.png')):
             raise RuntimeError('无法写入主窗截图')

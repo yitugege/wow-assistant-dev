@@ -1,4 +1,4 @@
-"""原生主窗三栏静态布局。无信号连接、定时器、联网、文件修改或发键。
+"""桌面助手主窗布局。宽屏显示三栏，窄屏切换为标签页。
 
 需要调用者先创建 QApplication；build_ui 不 show、不进入事件循环。
 顶层使用原版 QWidget 直接承载外层布局，壳层行为另接。
@@ -11,7 +11,7 @@ from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QFrame, QGraphicsDropShadowEffect, QGridLayout, QHBoxLayout,
     QLabel, QLineEdit, QPlainTextEdit, QProgressBar, QPushButton,
-    QScrollArea, QSpinBox, QVBoxLayout, QWidget,
+    QScrollArea, QSizeGrip, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
 
 
@@ -26,6 +26,7 @@ class UiWidgets:
     website_button: QPushButton
     minimize_button: QPushButton
     close_button: QPushButton
+    workspace: Workspace
     left_scroll: QScrollArea
     center_panel: QWidget
     right_panel: QWidget
@@ -129,6 +130,59 @@ def _transparent_viewport(scroll: QScrollArea) -> None:
     scroll.viewport().setAutoFillBackground(True)
 
 
+def _scroll_panel(content: QWidget) -> QScrollArea:
+    scroll = QScrollArea()
+    scroll.setWidgetResizable(True)
+    scroll.setFrameShape(QFrame.Shape.NoFrame)
+    _transparent_viewport(scroll)
+    scroll.setWidget(content)
+    content.setAutoFillBackground(False)
+    return scroll
+
+
+class Workspace(QWidget):
+    def __init__(self, controls: QScrollArea, fields: QScrollArea, activity: QScrollArea):
+        super().__init__()
+        self._panels = (controls, fields, activity)
+        self._labels = ('控制与路线', '实时字段与阈值', '建议与日志')
+        self._stretches = (4, 5, 4)
+        self._compact = False
+        self._selected_tab = 0
+        self._layout = QHBoxLayout(self)
+        self._layout.setContentsMargins(12, 4, 12, 8)
+        self._layout.setSpacing(12)
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet(
+            'QTabWidget::pane { border: 1px solid #253048; }'
+            'QTabBar::tab { color: #e6eeff; background: #161d2d; padding: 6px 8px; }'
+            'QTabBar::tab:selected { color: #00e5ff; background: #253048; }'
+        )
+        self.tabs.hide()
+        self._layout.addWidget(self.tabs)
+        for panel, stretch in zip(self._panels, self._stretches):
+            self._layout.addWidget(panel, stretch)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        compact = event.size().width() < 1080
+        if compact == self._compact:
+            return
+        self._compact = compact
+        if compact:
+            for panel, label in zip(self._panels, self._labels):
+                self._layout.removeWidget(panel)
+                self.tabs.addTab(panel, label)
+            self.tabs.setCurrentIndex(self._selected_tab)
+            self.tabs.show()
+        else:
+            self._selected_tab = self.tabs.currentIndex()
+            self.tabs.hide()
+            for panel, stretch in zip(self._panels, self._stretches):
+                self.tabs.removeTab(0)
+                self._layout.addWidget(panel, stretch)
+                panel.show()
+
+
 def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str = '',
              website: str = 'wowbuddy.cn', auto_update: bool = True) -> UiWidgets:
     """创建原版控件并返回引用；业务连接/资源动态数据/壳层事件全部交调用方。"""
@@ -136,8 +190,6 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
         raise ValueError('build_ui 需要尚无布局的 QWidget')
     window.setWindowTitle(app_name)
     window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-    window.setMinimumSize(1160, 740)
-    window.resize(1330, 830)
     window.setStyleSheet(NATIVE_STYLESHEET)
     outer = QVBoxLayout(window)
     outer.setContentsMargins(18, 18, 18, 18)
@@ -186,10 +238,6 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
         title_layout.addWidget(button)
     root_layout.addWidget(title_bar)
 
-    body = QWidget()
-    body_layout = QHBoxLayout(body)
-    body_layout.setContentsMargins(16, 4, 16, 8)
-    body_layout.setSpacing(13)
     cards = {}
     left_body, left_layout = _column()
     left_body.setObjectName('ScrollBody')
@@ -207,11 +255,34 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
     row.addWidget(refresh_button)
     row.addWidget(monitor_button, 1)
     target_layout.addLayout(row)
+    rotation_combo = QComboBox()
+    rotation_combo.setMinimumContentsLength(6)
+    rotation_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+    rotation_combo.addItem('未选择（不自动发键）', '')
+    rotation_combo.setToolTip('软件不自带循环：必须从下面选一套循环库方案才会发键。\n'
+        '列表会自动保持最新（启动检查一次、之后每 30 分钟一次），\n'
+        '没有合适的就点「拉取」立即刷新，或到循环库页面自己传一套。')
+    hub_pull_button = _button('拉取', 29)
+    hub_pull_button.setToolTip('立即联网检查循环库更新。\n平时不用点：启动时会自动检查一次，之后每 30 分钟自动检查，\n'
+        '有更新会自动下载并生效（快照存到软件目录的 hub\\ 下，离线也能用）。')
+    row = QHBoxLayout()
+    row.addWidget(_label('循环方案'))
+    row.addWidget(rotation_combo, 1)
+    target_layout.addLayout(row)
+    row = QHBoxLayout()
+    row.addWidget(hub_pull_button)
+    hub_online_button = _button('GitHub刷新', 29)
+    hub_online_button.setVisible(False)
+    row.addWidget(hub_online_button)
+    row.addStretch(1)
+    target_layout.addLayout(row)
     calibration_label = _label('基准标记：未校准', name='Dim', wrap=True)
     addon_version_label = _label('插件版本：—', name='Dim', wrap=True)
     for label in (calibration_label, addon_version_label):
         label.setMinimumHeight(window.fontMetrics().height() * 2 + 4)
         target_layout.addWidget(label)
+    hub_status = _label('尚未拉取循环库', name='Dim', wrap=True)
+    target_layout.addWidget(hub_status)
     send_interval_spin, poll_interval_spin = QSpinBox(), QSpinBox()
     for name, spin, lo, hi, step, value in (
         ('发送频率', send_interval_spin, 50, 5000, 50, 100),
@@ -227,26 +298,6 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
     send_interval_spin.setToolTip('两次发键之间的最小间隔')
     poll_interval_spin.setToolTip('越小反应越快、CPU 越高。\n一帧（抓屏+解码）约 25ms 打底，\n'
         '低于 25ms 不会更快，只会空转。\n实际每秒帧数 ≈ 1000 / 本值（定时器已用精确定时器）。')
-    rotation_combo = QComboBox()
-    rotation_combo.setMinimumContentsLength(6)
-    rotation_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-    rotation_combo.addItem('未选择（不自动发键）', '')
-    rotation_combo.setToolTip('软件不自带循环：必须从下面选一套循环库方案才会发键。\n'
-        '列表会自动保持最新（启动检查一次、之后每 30 分钟一次），\n'
-        '没有合适的就点「拉取」立即刷新，或到循环库页面自己传一套。')
-    hub_pull_button = _button('拉取', 29)
-    hub_pull_button.setToolTip('立即联网检查循环库更新。\n平时不用点：启动时会自动检查一次，之后每 30 分钟自动检查，\n'
-        '有更新会自动下载并生效（快照存到软件目录的 hub\\ 下，离线也能用）。')
-    row = QHBoxLayout()
-    row.addWidget(_label('循环方案'))
-    row.addWidget(rotation_combo, 1)
-    row.addWidget(hub_pull_button)
-    hub_online_button = _button('GitHub刷新', 29)
-    hub_online_button.setVisible(False)
-    row.addWidget(hub_online_button)
-    target_layout.addLayout(row)
-    hub_status = _label('尚未拉取循环库', name='Dim', wrap=True)
-    target_layout.addWidget(hub_status)
     target_layout.addWidget(_label('开启后自动发键 · 后台投递 · 读条期间停发', name='Dim', wrap=True))
     left_layout.addWidget(target_card)
 
@@ -344,14 +395,7 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
     footer = _label(f'{website}   ·   v{version}', name='Dim')
     footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
     left_layout.addWidget(footer)
-    left_scroll = QScrollArea()
-    left_scroll.setFixedWidth(336)
-    left_scroll.setWidgetResizable(True)
-    left_scroll.setFrameShape(QFrame.Shape.NoFrame)
-    left_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    _transparent_viewport(left_scroll)
-    left_scroll.setWidget(left_body)
-    body_layout.addWidget(left_scroll)
+    left_scroll = _scroll_panel(left_body)
 
     center_panel, center_layout = _column()
     # 原0x140081c50构造实时字段/阈值区域；显示全部回调为08cfe0。
@@ -385,24 +429,18 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
     threshold_grid.setColumnMinimumWidth(2, 56)
     layout.addWidget(threshold_host)
     center_layout.addWidget(threshold_card)
-    field_scroll = QScrollArea()
-    field_scroll.setWidgetResizable(True)
-    field_scroll.setFrameShape(QFrame.Shape.NoFrame)
     field_container = QWidget()
     field_container.setObjectName('Card')
     field_container.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
     field_grid = QGridLayout(field_container)
     field_grid.setContentsMargins(10, 10, 10, 10)
     field_grid.setSpacing(4)
-    _transparent_viewport(field_scroll)
-    field_scroll.setWidget(field_container)
+    field_scroll = _scroll_panel(field_container)
     field_scroll.setParent(center_panel)
     field_scroll.hide()  # 原函数明确hide且未加入中栏layout。
     center_layout.addStretch(1)
-    body_layout.addWidget(center_panel, 1)
 
     right_panel, right_layout = _column()
-    right_panel.setFixedWidth(344)
     suggestions_card, layout = _card('动作建议')
     cards['suggestions'] = suggestions_card
     suggestions = QPlainTextEdit()
@@ -419,22 +457,21 @@ def build_ui(window: QWidget, *, app_name: str = 'WOW战斗助手', version: str
     clear_log_button = _button('清空日志')
     layout.addWidget(clear_log_button)
     right_layout.addWidget(log_card, 1)
-    body_layout.addWidget(right_panel)
-    root_layout.addWidget(body, 1)
+    workspace = Workspace(left_scroll, _scroll_panel(center_panel), _scroll_panel(right_panel))
+    root_layout.addWidget(workspace, 1)
 
     status_bar = QWidget()
-    status_bar.setFixedHeight(30)
     status_bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
     status_layout = QHBoxLayout(status_bar)
-    status_layout.setContentsMargins(20, 0, 20, 0)
-    status_layout.setSpacing(18)
-    status_label = _label('未开始')
-    send_status_label = _label('发键：未开始', name='Dim')
-    frame_status_label = _label('—', name='Dim')
-    status_layout.addWidget(status_label)
-    status_layout.addStretch(1)
-    status_layout.addWidget(send_status_label)
-    status_layout.addWidget(frame_status_label)
+    status_layout.setContentsMargins(14, 2, 7, 4)
+    status_layout.setSpacing(8)
+    status_label = _label('未开始', wrap=True)
+    send_status_label = _label('发键：未开始', name='Dim', wrap=True)
+    frame_status_label = _label('—', name='Dim', wrap=True)
+    status_layout.addWidget(status_label, 3)
+    status_layout.addWidget(send_status_label, 1)
+    status_layout.addWidget(frame_status_label, 2)
+    status_layout.addWidget(QSizeGrip(status_bar), 0, Qt.AlignmentFlag.AlignBottom)
     root_layout.addWidget(status_bar)
     values = locals()
     return UiWidgets(**{name: values[name] for name in UiWidgets.__dataclass_fields__})

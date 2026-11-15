@@ -16,14 +16,45 @@ function DC.ResolveMacro(macroBody)
   return nil
 end
 
+local function readable(value)
+  return not issecretvalue or not issecretvalue(value)
+end
+
+local function spellIdentifier(value)
+  return (type(value) == "string" or type(value) == "number") and readable(value)
+end
+
+local function spellNumber(value)
+  return type(value) == "number" and readable(value) and value or nil
+end
+
+local function modernSpellMetadata(name)
+  if not C_Spell or not C_Spell.GetSpellInfo then return end
+  local info = C_Spell.GetSpellInfo(name)
+  if type(info) == "table" and readable(info) then
+    return spellNumber(info.spellID), spellNumber(info.castTime)
+  end
+end
+
+function DC.ReadSpellMetadata(name)
+  if not spellIdentifier(name) then return nil end
+  local ok, _, _, _, castTime, _, _, id = pcall(GetSpellInfo, name)
+  id = ok and spellNumber(id) or nil
+  castTime = ok and spellNumber(castTime) or nil
+  if id == nil or castTime == nil then
+    local modernOK, modernID, modernTime = pcall(modernSpellMetadata, name)
+    if modernOK then
+      if id == nil then return modernID, modernTime or castTime end
+      if modernID == id then castTime = modernTime end
+    end
+  end
+  return id, castTime
+end
+
 function DC.SpellIDForName(name)
-  if not name then return nil end
+  if not spellIdentifier(name) then return nil end
   if spellCache[name] then return spellCache[name] end
-  local ok, id = pcall(function()
-    local _, _, _, _, _, _, sid = GetSpellInfo(name)
-    return sid
-  end)
-  spellCache[name] = ok and id or nil
+  spellCache[name] = DC.ReadSpellMetadata(name)
   return spellCache[name]
 end
 
@@ -80,7 +111,7 @@ function DC.GuardBlocked(spellName)
   if not spellName then return false end
   if not guardInfo then buildGuardIDs() end
   if not next(guardInfo) then return false end
-  local _, _, _, _, _, _, sid = GetSpellInfo(spellName)
+  local sid = DC.ReadSpellMetadata(spellName)
   if not sid or not guardInfo[sid] then return false end
   local ids = guardInfo[sid].ids
   if byIDAuraPresent(ids) then return true end

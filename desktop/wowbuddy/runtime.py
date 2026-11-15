@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Protocol
 
-from .capture import CaptureResult
+from .capture import CaptureResult, DESKTOP_HOLD_TEXT
 from .controller import FrameController
 from .readable_protocol import UnverifiedDescriptorTable
 from .scheduler import Scheduler, TickResult
@@ -43,6 +43,10 @@ class MonitoringLoop:
         self._display_revision = controller.display_revision
         self.field_change_throttle = FieldChangeThrottle()
         self._descriptor_error = None
+        self.frame_hold_reason = None
+        self._frame_hold = None
+        self._desktop_hold = None
+        self._recovery_session = None
 
     def synchronize_display_cache(self):
         """098EA0/08CFE0：布局完成时同步清缓存，勿推迟至后续采样。"""
@@ -72,7 +76,18 @@ class MonitoringLoop:
             self.session.logger.append("目标窗口已关闭，自动停止")
             self.session.stop()
             return PollResult("window_closed")
+        session = state.hwnd, state.elapsed_started_ms
+        if session != self._recovery_session:
+            self._recovery_session = session
+            self.scheduler.pipeline.recovery.reset()
         capture = self.capture.capture(state.hwnd)
+        if capture.status in DESKTOP_HOLD_TEXT:
+            state.status = DESKTOP_HOLD_TEXT[capture.status]
+            desktop_hold = session, capture.status
+            if self._desktop_hold != desktop_hold:
+                self.session.logger.append(state.status)
+            self._desktop_hold = desktop_hold
+            return PollResult(capture.status, capture)
         if capture.status == "minimized":
             state.status = "游戏窗口已最小化，恢复后自动继续"
             return PollResult("minimized", capture)
@@ -155,6 +170,21 @@ class MonitoringLoop:
         for kind, value in self.controller.events[event_cursor:]:
             if kind == "talent":
                 self.session.logger.append(talent_group_text(value))
+        if prepared.frame.ok:
+            reason = (self.frame_hold_reason(session, capture, prepared.frame, self.session.monotonic_ms())
+                      if self.frame_hold_reason is not None else None)
+            if self._desktop_hold is not None and self._desktop_hold[0] == session:
+                reason = reason or "Windows 会话已恢复，等待下一张游戏画面。"
+            self._desktop_hold = None
+            if reason:
+                state.status = reason
+                if self._frame_hold != (session, reason):
+                    self.session.logger.append(reason)
+                self._frame_hold = session, reason
+                return PollResult("frame_held", capture)
+            if self._frame_hold and self._frame_hold[0] == session:
+                self.session.logger.append("游戏画面已更新，恢复监控")
+            self._frame_hold = None
         tick = self.scheduler.process(prepared, hwnd=state.hwnd,
                                       send_interval_ms=self.send_interval_ms(),
                                       on_event=self._scheduler_event, on_probe=self._probe_event)

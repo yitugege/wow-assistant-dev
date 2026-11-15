@@ -64,35 +64,18 @@ class DirectCastKeeperTests(unittest.TestCase):
         self.tick(a,b)
         self.assertEqual(list(b.globals().calls.values()),[])
 
-    def test_complete_addon_actual_mage_buff_contract_reaches_self_target(self):
+    def test_forever_mage_has_frost_armor_binding_without_protected_keeper_ticker(self):
         lua=integration.DirectCastIntegrationTests().fixture()
         g=lua.globals();slots=g.WowBuddyDev._pixelStripV2BySpec[1482]
-        eligible=[slot for slot in slots.values() if slot.kind=='presence' and slot.unit=='player'
-                  and slot.filter=='HELPFUL' and slot.spellIDs]
-        self.assertTrue(eligible)
-        chosen=eligible[0]
-        g.keeperName=chosen.name;g.keeperID=chosen.spellIDs[1];g.keeperRanks=chosen.spellIDs
-        lua.execute('''
-            function GetSpellInfo(name)
-                if name==keeperName then return name,nil,nil,0,nil,nil,keeperID end
-            end
-            function GetActionInfo(slot) if slot==7 then return 'spell',keeperID end end
-            function GetSpellCooldown() return 0,0 end
-            C_Spell={GetSpellName=function(id)
-                for _,rank in ipairs(keeperRanks) do if id==rank then return keeperName end end
-            end}
-            C_UnitAuras={GetPlayerAuraBySpellID=function() return nil end,
-                        GetAuraDataByIndex=function() return nil end}
-        ''')
-        callbacks=[]
-        for _,ticker in g.loadTickers.items():
-            if lua.eval('debug.getinfo')(ticker.callback).source=='@DirectCastKeeper.lua':
-                callbacks.append(ticker.callback)
-        self.assertEqual(len(callbacks),1)
-        callbacks[0]()
-        self.assertEqual(len(g.directCalls),1)
-        self.assertEqual(g.directCalls[1].slot,7)
-        self.assertEqual(g.directCalls[1].unit,'player')
+        frost_armor=next(slot for slot in slots.values() if slot.key=='frost_armor')
+        self.assertEqual(frost_armor.unit,'player')
+        self.assertEqual(frost_armor.spellIDs[1],168)
+        button=g.WowBuddyDev.GetSecureButton('class_NUMPAD2')
+        self.assertEqual(button.attributes.macrotext,'/cast [@player,nochanneling] 霜甲术')
+        self.assertEqual(button.bindings.NUMPAD2.button,button.name)
+        sources=[lua.eval('debug.getinfo')(ticker.callback).source for ticker in g.loadTickers.values()]
+        self.assertNotIn('@DirectCastKeeper.lua',sources)
+        self.assertEqual(len(g.directCalls),0)
 
 
 if __name__=='__main__':unittest.main()

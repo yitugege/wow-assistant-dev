@@ -8,17 +8,6 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 
-SUPPORTED_TYPES = frozenset({
-    "switch", "bool", "burst", "count", "distance", "isMoving", "health",
-    "number", "castcolor", "cooldown", "validity", "aura_state", "playercast",
-    "talents", "presence", "spell",
-})
-
-
-class UnsupportedFieldType(ValueError):
-    """尚未确认的字段类型，不能静默套用其他类型规则。"""
-
-
 @dataclass(frozen=True, slots=True)
 class DecodedField:
     value_text: str
@@ -42,8 +31,8 @@ def decode_field(
     返回文本与原生 decoder 一致，包括 UNKNOWN、十六进制色值、— 的区别。
     非法输入报错；已知类型的未知读数保留原版文本，不能转成 False 或 0。
     """
-    if field_type not in SUPPORTED_TYPES:
-        raise UnsupportedFieldType(f"未经确认的像素字段类型：{field_type!r}")
+    if not isinstance(field_type, str):
+        raise TypeError("field_type 必须是字符串")
     if not isinstance(field_id, str):
         raise TypeError("field_id 必须是字符串")
     if (isinstance(rgb, (str, bytes)) or not isinstance(rgb, Sequence)
@@ -152,7 +141,8 @@ def decode_field(
         return result(str(raw), "移动档位")
     if field_type == "number":
         return result(str(raw))
-    raise AssertionError("SUPPORTED_TYPES 与分派实现不同步")
+    # 026570 的默认分支调用 0295f0，保留色值和空说明。
+    return result(hexc)
 
 
 class PixelFieldDecoder:

@@ -522,19 +522,122 @@ end
 createSeparator(WowBuddyDev.configFrame, -185)
 local autoTargetCheck = CreateFrame("CheckButton", nil, WowBuddyDev.configFrame, "UICheckButtonTemplate")
 autoTargetCheck:SetPoint("TOPLEFT", WowBuddyDev.configFrame, "TOPLEFT", 20, -199)
+local postKillCheck = CreateFrame("CheckButton", "WowBuddyDevPostKillAutoTargetCheck", WowBuddyDev.configFrame, "UICheckButtonTemplate")
+postKillCheck:SetPoint("TOPLEFT", WowBuddyDev.configFrame, "TOPLEFT", 20, -289)
+local postKillLabel = WowBuddyDev.configFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+postKillLabel:SetPoint("LEFT", postKillCheck, "RIGHT", 4, 0)
+postKillLabel:SetText(WowBuddyDev.L("击杀后继续选怪"))
 -- 功能：把「自动寻怪」勾选框同步成当前设置并解除禁用。
 -- 入参：无。
 -- 出参：无。
 -- 说明：同时挂在 P07483180.RefreshAutoTargetSettingUI 上，别处改了这个开关也能同步过来；初始化时也要调一次。
 local function refreshAutoTargetCheck()
-  autoTargetCheck:SetChecked(WowBuddyDev.GetAutoTargetEnabled())
+  local enabled = WowBuddyDev.GetAutoTargetEnabled()
+  autoTargetCheck:SetChecked(enabled)
   autoTargetCheck:Enable()
+  postKillCheck:SetChecked(WowBuddyDev.GetPostKillAutoTargetEnabled())
+  if enabled and not InCombatLockdown() then
+    postKillCheck:Enable()
+  else
+    postKillCheck:Disable()
+  end
 end
 WowBuddyDev.RefreshAutoTargetSettingUI = refreshAutoTargetCheck
 autoTargetCheck:SetScript("OnClick", function(self)
   WowBuddyDev.SetAutoTargetEnabled(self:GetChecked() and true or false)
+  refreshAutoTargetCheck()
 end)
+postKillCheck:SetScript("OnClick", function(self)
+  WowBuddyDev.SetPostKillAutoTargetEnabled(self:GetChecked() and true or false)
+  refreshAutoTargetCheck()
+end)
+postKillCheck:RegisterEvent("PLAYER_REGEN_DISABLED")
+postKillCheck:RegisterEvent("PLAYER_REGEN_ENABLED")
+postKillCheck:SetScript("OnEvent", refreshAutoTargetCheck)
 refreshAutoTargetCheck()
+local recoveryButton = WowBuddyDev.CreateStyledButton(WowBuddyDev.configFrame, "自动恢复设置…", 140, 24)
+recoveryButton:SetPoint("TOPLEFT", WowBuddyDev.configFrame, "TOPLEFT", 260, -291)
+
+local recoveryPanel = CreateFrame("Frame", "WowBuddyDevRecoverySettings", WowBuddyDev.configFrame,
+  BackdropTemplateMixin and "BackdropTemplate")
+recoveryPanel:SetSize(460, 242)
+recoveryPanel:SetPoint("CENTER", WowBuddyDev.configFrame, "CENTER")
+recoveryPanel:SetFrameStrata("FULLSCREEN_DIALOG")
+recoveryPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8", edgeFile="Interface\\Buttons\\WHITE8X8", edgeSize=1})
+recoveryPanel:SetBackdropColor(.08, .08, .09, .98)
+recoveryPanel:SetBackdropBorderColor(.35, .35, .38, 1)
+recoveryPanel:EnableMouse(true)
+recoveryPanel:Hide()
+
+local function recoveryLabel(text, x, y)
+  local label = recoveryPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  label:SetPoint("TOPLEFT", recoveryPanel, "TOPLEFT", x, y)
+  label:SetText(text)
+  return label
+end
+
+recoveryLabel("脱战自动恢复", 18, -16)
+local recoveryEnabled = CreateFrame("CheckButton", "WowBuddyDevRecoveryEnabled", recoveryPanel, "UICheckButtonTemplate")
+recoveryEnabled:SetPoint("TOPLEFT", recoveryPanel, "TOPLEFT", 14, -33)
+recoveryLabel("启用自动吃喝，恢复期间暂停攻击和选怪", 53, -43)
+recoveryLabel("低于此值开始", 82, -78)
+recoveryLabel("达到此值继续", 184, -78)
+recoveryLabel("物品 ID（可从背包拖入）", 291, -78)
+recoveryLabel("血量", 21, -108)
+recoveryLabel("法力", 21, -141)
+
+local recoveryInputs = {}
+for _, input in ipairs({
+  {"healthStart", 90, -101}, {"healthResume", 190, -101}, {"food", 292, -101, true},
+  {"manaStart", 90, -134}, {"manaResume", 190, -134}, {"water", 292, -134, true},
+}) do
+  local key, x, y, item = unpack(input)
+  local box = CreateFrame("EditBox", "WowBuddyDevRecovery_" .. key, recoveryPanel, "InputBoxTemplate")
+  box:SetPoint("TOPLEFT", recoveryPanel, "TOPLEFT", x, y)
+  box:SetSize(item and 133 or 62, 22)
+  box:SetAutoFocus(false)
+  box:SetNumeric(not item)
+  box:SetMaxLetters(item and 256 or 3)
+  box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  if item then
+    box:EnableMouse(true)
+    box:SetScript("OnReceiveDrag", function(self)
+      if not GetCursorInfo then return end
+      local kind, id = GetCursorInfo()
+      if kind == "item" and type(id) == "number" then
+        self:SetText(tostring(id))
+        if ClearCursor then ClearCursor() end
+      end
+    end)
+  end
+  recoveryInputs[key] = box
+end
+
+local recoveryHint = recoveryLabel("开始填 0 可关闭对应检查；血量行放食物，法力行放水。", 18, -170)
+recoveryHint:SetWidth(424)
+recoveryHint:SetJustifyH("LEFT")
+local saveRecovery = WowBuddyDev.CreateStyledButton(recoveryPanel, "保存", 78, 24)
+saveRecovery:SetPoint("BOTTOMRIGHT", recoveryPanel, "BOTTOMRIGHT", -111, 12)
+saveRecovery:SetScript("OnClick", function()
+  local settings = {enabled=recoveryEnabled:GetChecked() and true or false}
+  for key, box in pairs(recoveryInputs) do settings[key] = box:GetText() end
+  local ok, message = WowBuddyDev.SaveRecoverySettings(settings)
+  if ok then
+    recoveryPanel:Hide()
+  else
+    recoveryHint:SetText(message)
+  end
+end)
+local closeRecovery = WowBuddyDev.CreateStyledButton(recoveryPanel, "取消", 78, 24)
+closeRecovery:SetPoint("BOTTOMRIGHT", recoveryPanel, "BOTTOMRIGHT", -18, 12)
+closeRecovery:SetScript("OnClick", function() recoveryPanel:Hide() end)
+recoveryButton:SetScript("OnClick", function()
+  local settings = WowBuddyDev.GetRecoverySettings()
+  recoveryEnabled:SetChecked(settings.enabled)
+  for key, box in pairs(recoveryInputs) do box:SetText(tostring(settings[key])) end
+  recoveryHint:SetText("开始填 0 可关闭对应检查；血量行放食物，法力行放水。")
+  recoveryPanel:Show()
+end)
 local autoTargetLabel = WowBuddyDev.configFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 autoTargetLabel:SetPoint("LEFT", autoTargetCheck, "RIGHT", 4, 0)
 autoTargetLabel:SetText(WowBuddyDev.L("自动寻怪"))
@@ -772,6 +875,13 @@ resetButton:SetScript("OnClick", function()
   WowBuddyDev.DB.autoTarget = false
   WowBuddyDev.DB.healerAutoTarget = true
   WowBuddyDev.DB.protectionPaladinAutoTarget = false
+  local hadRecovery = WowBuddyDev.DB.recovery ~= nil
+  WowBuddyDev.DB.recovery = nil
+  if WowBuddyDev.GetPostKillAutoTargetEnabled() then
+    WowBuddyDev.SetPostKillAutoTargetEnabled(false)
+  elseif hadRecovery then
+    WowBuddyDev.RefreshMacroBindings()
+  end
   WowBuddyDev.DB.masterSwitch = true
   if WowBuddyDev.UpdateMasterSwitchUI then
     WowBuddyDev.UpdateMasterSwitchUI(true)

@@ -1,4 +1,4 @@
-"""原生候选、可用技能和日志呈现；无 Qt、时钟、发键或文件副作用。
+"""原生候选、可用技能和日志呈现；不构建控件、不读时钟、不发送按键。
 
 0a2d70 的候选控件原本是纯文本。candidate_html 仅是转义后的 UI 适配。
 诊断节流状态由调用者持有，时间和原始 fields 均须显式传入。
@@ -16,6 +16,7 @@ from .candidates import Action, Candidate
 from .aura_probe import ProbeEvent, ProbeResult, Receipt
 from .dispatch import DispatchResult
 from .expressions import UnsupportedSemantics, _int, _trim
+from .qt_arg import one_decimal as _one_decimal, qt_arg as _arg
 
 
 READY_COLOR = "#22e58b"
@@ -26,22 +27,10 @@ DIAGNOSTIC_KEYS = (
 )
 
 
-def _arg(template: str, *values: object) -> str:
-    """QString::arg 的最低编号替换；多参数一次替换，不重扫插入字符串。"""
-    pattern = r"%([1-9][0-9]?)"
-    indices = sorted({int(m.group(1)) for m in re.finditer(pattern, template)})
-    replacements = dict(zip(indices, map(str, values)))
-    return re.sub(pattern, lambda m: replacements.get(int(m.group(1)), m.group(0)), template)
-
-
 def _pad(text: str, width: int) -> str:
     # QString::size 计 UTF-16 单元；CJK 不是按终端显示列宽计算。
     length = len(text.encode("utf-16-le", "surrogatepass")) // 2
     return text + " " * max(0, width - length)
-
-
-def _one_decimal(value: float) -> str:
-    return str(Decimal.from_float(value).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
 
 
 def hold_text(hold_ms: int) -> str:
@@ -203,6 +192,8 @@ def frame_status(status: str, candidates: Sequence[Candidate] = (), *, send_inte
         return FrameDisplay("无建议", "本帧没有任何规则命中")
     if status == "interval":
         return FrameDisplay(f"节流中（{send_interval_ms}ms）")
+    if status == "movement_stopping":
+        return FrameDisplay("正在停步，等待游戏确认后施法")
     if status == "suppressed":
         return FrameDisplay("高优先级动作均在压制期", "所有建议都在压制期内")
     if status == "gcd_blocked":
@@ -241,7 +232,7 @@ def timestamped(message: str, when: datetime) -> str:
     return f"[{when:%H:%M:%S}.{when.microsecond // 1000:03d}] {message}"
 
 
-def _arg_chain(template: str, *values: object) -> str:
+def _arg_chain(template: str, *values: str | int | float) -> str:
     """逐次 QString::arg；原生这些日志会重新扫描前次插入的占位符。"""
     for value in values:
         template = _arg(template, value)
@@ -352,9 +343,9 @@ def probe_event_text(event: ProbeEvent, *, now_ms: int) -> str | None:
         reason = ("施法代次没跳（这一下根本没成功，被打断或够不着）"
                   if event.receipt == Receipt.NOT_FIRED else "光环没出现（施法被打断？）")
         return _arg_chain("⚠ %1 按出去了但" + reason + "→ 压制期从 %2s 缩到 %3s，重试",
-                          event.action, _one_decimal((before - now_ms) / 1000), "1.0")
+                          event.action, (before - now_ms) / 1000, 1.0)
     if event.result == ProbeResult.IMMUNE and before < after:
-        hold = _one_decimal((after - now_ms) / 1000)
+        hold = (after - now_ms) / 1000
         if event.receipt == Receipt.FIRED_SAME:
             return _arg_chain("⛔ %1 技能确实出手了（施法代次已跳、成功ID 对得上）但光环始终没出现 → 这个目标对它免疫，压制期恢复成 %2s，不再试第二次",
                               event.action, hold)

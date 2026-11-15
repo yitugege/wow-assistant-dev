@@ -15,6 +15,7 @@ from wowbuddy.qt_app import AssistantWindow
 class AutoStartTests(unittest.TestCase):
     def invoke(self,handle,active=False,index=2):
         window=Mock()
+        window.monitor.game_only=False
         window.session.is_active.return_value=active
         window.ui.window_combo.findData.return_value=index
         with patch('wowbuddy.qt_app.find_game_window',return_value=handle):

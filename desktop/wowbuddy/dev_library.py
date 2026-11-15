@@ -13,6 +13,14 @@ def read_local_library(path, previous):
     return parsed.state
 
 
+def runtime_profile_action(spec_id, profile_id, action, reason):
+    # 术士方案 33 的双 DOT 规则明确要求魔杖，原术士动作表没有 start_attack。
+    if (spec_id == 1490 and profile_id == 33 and action == 'start_attack'
+            and reason == '填充：双DOT齐全，使用魔杖自动射击'):
+        return 'shoot_wand'
+    return action
+
+
 def profile_action_gaps(profile, *documents):
     """报告所有协议动作表均未注册的动作；动态目标动作单独处理。"""
     if profile is None:
@@ -23,7 +31,11 @@ def profile_action_gaps(profile, *documents):
         available.update(action.get('name') for action in spec.get('actions', []))
     missing = []
     for rule in profile.rules:
-        for name in (rule.action, rule.pre):
+        action = rule.action
+        if 'shoot_wand' in available:
+            action = runtime_profile_action(profile.spec_id, getattr(profile, 'id', None), action,
+                                            getattr(rule, 'reason', ''))
+        for name in (action, rule.pre):
             if (not name or name in available or name == 'auto_target'
                     or name.startswith('focus_') or name in missing):
                 continue

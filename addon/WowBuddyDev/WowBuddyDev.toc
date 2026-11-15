@@ -3,7 +3,7 @@
 ## Notes: 独立开发版
 ## Author: Unknown
 ## Version: 0.2.8-dev
-## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics, WowBuddyDevHookProbe
+## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics, WowBuddyDevHookProbe, WowBuddyDevHookLog
 
 ForeverCompat.lua
 ForeverTalentData.lua
@@ -22,6 +22,9 @@ Locale.lua
 ActionKeyCheck.lua
 RaidFocus.lua
 AutoTarget.lua
+Recovery.lua
+WandShot.lua
+CharacterState.lua
 PanelV2.lua
 ChargeDisplay.lua
 MacroRefsData.lua
@@ -70,4 +73,6 @@ DirectCastActions.lua
 DirectCastProbe.lua
 DirectCastKeeper.lua
 DirectCastMovement.lua
+DirectCastHook.lua
 DecisionBridge.lua
+ManualRoutes.lua

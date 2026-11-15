@@ -68,7 +68,8 @@ class AssistantWindowFilter:
                 return
             if path and self.current_executable and ntpath.normcase(ntpath.normpath(path))==self.current_executable:
                 return
-            if path and is_cached_assistant(path,self.cache_namespace):
+            namespace = self.cache_namespace or (_cache_namespace(path) if not self.current_executable else None)
+            if path and is_cached_assistant(path, namespace):
                 return
             visitor(hwnd)
         self.backend.enum_windows(visit)

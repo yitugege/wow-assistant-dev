@@ -11,7 +11,7 @@ WEBSITE_URL = "https://wowbuddy.cn"
 TRAY_TOOLTIP = "WOW战斗助手（运行中）"
 TOPMOST_HINT = 0x40000
 INITIAL_FLAGS = 0x801 | TOPMOST_HINT
-MINIMUM_SIZE = (1160, 740)
+MINIMUM_SIZE = (360, 300)
 INITIAL_SIZE = (1330, 830)
 TITLEBAR_HEIGHT = 48
 TRAY_ACTION_LABELS = ("显示主界面", "停止/开始监控", "退出", "切换置顶")
@@ -44,14 +44,11 @@ def round_global_coordinate(value):
 
 
 def clamp_drag_position(position, window_size, available):
-    """0880d0 uses QRect's INCLUSIVE right/bottom; height is irrelevant."""
     if available is None:
         return tuple(position)
     x, y = position
-    right = available.left + available.width - 1
-    bottom = available.top + available.height - 1
-    return (max(available.left - 60, min(x, right + 60 - window_size[0])),
-            max(available.top, min(y, bottom - 48)))
+    return (max(available.left, min(x, available.left + available.width - window_size[0])),
+            max(available.top, min(y, available.top + available.height - window_size[1])))
 
 
 def _integer(value):
@@ -94,6 +91,8 @@ class WindowShell:
         self._connections = []
         self._filtered = []
         self._filter = None
+        self._screen = None
+        self._screen_tracking = False
         self.tray_available = True
         self.notice_title = WINDOW_TITLE
         self.website_url = WEBSITE_URL
@@ -101,11 +100,12 @@ class WindowShell:
     def configure_window(self):
         """Explicit setup, before showing; layout remains caller-owned."""
         from PySide6.QtCore import Qt
+        from PySide6.QtGui import QCursor
         self.window.setWindowTitle(WINDOW_TITLE)
         self.window.setWindowFlags(Qt.WindowType(INITIAL_FLAGS))
         self.window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.window.setMinimumSize(*MINIMUM_SIZE)
-        self.window.resize(*INITIAL_SIZE)
+        self._fit(self.available_screen(_xy(QCursor.pos())), initial=True)
 
     def _connect(self, signal, callback):
         # Adapt clicked(bool)/triggered(bool) without leaking their argument.
@@ -197,15 +197,47 @@ class WindowShell:
                 self._notice("已最小化到托盘。单击托盘图标恢复界面。")
                 self.notices.window_minimize_shown = True
 
-    def _clamp(self, position):
+    def _fit(self, available, *, initial=False, position=None):
+        if available is None:
+            if initial:
+                self.window.resize(*INITIAL_SIZE)
+            return
         size = self.window.size()
-        width = size.width()
-        probe = (position[0] + width // 2, position[1] + 10)
-        return clamp_drag_position(position, (width, size.height()), self.available_screen(probe))
+        width, height = INITIAL_SIZE if initial else (size.width(), size.height())
+        width, height = min(width, available.width), min(height, available.height)
+        if (width, height) != (size.width(), size.height()):
+            self.window.resize(width, height)
+        if initial:
+            position = (available.left + (available.width - width) // 2,
+                        available.top + (available.height - height) // 2)
+        elif position is None:
+            position = _xy(self.window.pos())
+        actual = self.window.size()
+        bounded = clamp_drag_position(position, (actual.width(), actual.height()), available)
+        if bounded != _xy(self.window.pos()):
+            self.window.move(*bounded)
+
+    def _screen_changed(self, screen):
+        if self._screen is not screen:
+            if self._screen is not None:
+                self._screen.availableGeometryChanged.disconnect(self._available_changed)
+            self._screen = screen
+            if screen is not None:
+                screen.availableGeometryChanged.connect(self._available_changed)
+        if screen is not None:
+            self._available_changed(screen.availableGeometry())
+
+    def _available_changed(self, rect):
+        self._fit(ScreenRect(rect.left(), rect.top(), rect.width(), rect.height()))
 
     def handle_show_event(self):
         """Call AFTER super().showEvent(event). Optional native hook is explicit."""
-        self.window.move(*self._clamp(_xy(self.window.pos())))
+        handle = self.window.windowHandle()
+        if handle is not None:
+            if not self._screen_tracking:
+                handle.screenChanged.connect(self._screen_changed)
+                self._screen_tracking = True
+            self._screen_changed(handle.screen())
         if self.on_native_show is not None:
             self.on_native_show(self.window)
 
@@ -219,14 +251,11 @@ class WindowShell:
             position = tuple(round_global_coordinate(v) for v in global_position)
             origin = _xy(self.window.frameGeometry().topLeft())
             self.drag_offset = tuple(a - b for a, b in zip(position, origin))
-            handle = self.window.windowHandle()
-            if handle is not None:
-                handle.startSystemMove()
             return True
         if kind == 5 and self.drag_active and _integer(buttons) & 1:
-            position = tuple(round_global_coordinate(v) - delta
-                             for v, delta in zip(global_position, self.drag_offset))
-            self.window.move(*self._clamp(position))
+            cursor = tuple(round_global_coordinate(v) for v in global_position)
+            position = tuple(v - delta for v, delta in zip(cursor, self.drag_offset))
+            self._fit(self.available_screen(cursor), position=position)
             return True
         if kind == 3:
             self.drag_active = False
@@ -259,6 +288,10 @@ class WindowShell:
 
     def close(self):
         """Idempotent adapter cleanup; does not close window, stop timer or quit."""
+        if self._screen_tracking:
+            self.window.windowHandle().screenChanged.disconnect(self._screen_changed)
+            self._screen_changed(None)
+            self._screen_tracking = False
         for signal, slot in self._connections:
             try:
                 signal.disconnect(slot)

@@ -38,6 +38,7 @@ class OldFrame:
     fallback_readable: bool = False
     allow_unknown_availability: bool = False
     protocol: str = "old"
+    target_revision: int | None = None  # 独立插件的已核对活怪编号，由图像管线填充。
 
     @property
     def ok(self) -> bool:
