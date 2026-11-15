@@ -9,7 +9,7 @@ from types import SimpleNamespace
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.build_addon import build
-from wowbuddy.dev_cli_install import run_development_install
+from wowbuddy.addons.dev_cli_install import run_development_install
 
 class CommandInstallTests(unittest.TestCase):
     def test_direct_unicode_path_update_and_no_window_detection(self):

@@ -35,7 +35,7 @@ def main():
         (output/'font-check.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),'utf8')
         print(json.dumps(report))
         return 0
-    with TemporaryDirectory() as directory,patch('wowbuddy.game_windows.CtypesWindowBackend',return_value=NoSystemBackend()),patch('wowbuddy.capture.make_win32_capture',return_value=NoSystemBackend()),patch('wowbuddy.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()),patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=False),patch.object(QApplication,'exec',side_effect=capture):
+    with TemporaryDirectory() as directory,patch('wowbuddy.win32.game_windows.CtypesWindowBackend',return_value=NoSystemBackend()),patch('wowbuddy.win32.capture.make_win32_capture',return_value=NoSystemBackend()),patch('wowbuddy.win32.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()),patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=False),patch.object(QApplication,'exec',side_effect=capture):
         return run_dev.launch(directory,hub_online=False,client_online=False,addon_online=False)
 
 

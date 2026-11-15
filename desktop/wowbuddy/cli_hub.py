@@ -9,7 +9,7 @@ from typing import Callable
 
 from .hub_sync import HubSynchronizer, LocalFileBackend, cache_path
 from .native_cli import NativeCliOptions
-from .rotation_selection import HubState, consume_update
+from wowbuddy.engine.rotation_selection import HubState, consume_update
 
 
 FETCH_TIMEOUT_MS = 20_000
@@ -161,7 +161,7 @@ def run_local_hub_command(options: NativeCliOptions, *, application_dir: str | P
     sync = CliHubSynchronizer(files if files is not None else LocalFileBackend(),
         application_dir=str(application_dir), environment=dict(os.environ if environment is None else environment))
     if write_report is None:
-        from .cli_install import write_local_report
+        from wowbuddy.addons.cli_install import write_local_report
         write_report = write_local_report
     return run_hub_command(options, synchronizer=sync,
         exists=exists if exists is not None else lambda path: Path(path).exists(),

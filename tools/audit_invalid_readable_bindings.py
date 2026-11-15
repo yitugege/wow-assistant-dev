@@ -4,8 +4,8 @@ import hashlib,json,sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.audit_original_addon_origin import resource_inventory
-from wowbuddy.packages import read_bundle
-from wowbuddy.keybindings import parse_keybinding
+from wowbuddy.addons.packages import read_bundle
+from wowbuddy.core.keybindings import parse_keybinding
 
 def check():
     original=Path('D:/download/WOW战斗助手.exe').read_bytes()

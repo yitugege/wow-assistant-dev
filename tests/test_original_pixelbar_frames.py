@@ -8,10 +8,13 @@ from lupa.lua51 import LuaRuntime, lua_type
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.packages import read_addon
-from wowbuddy.dev_protocol import DEV_VERSION
-from wowbuddy.assets import Assets
-from wowbuddy.pixel_geometry import RGBImage
+from wowbuddy.addons.packages import read_addon
+from wowbuddy.core.dev_protocol import DEV_VERSION
+from wowbuddy.engine.assets import Assets
+from wowbuddy.core.pixel_geometry import RGBImage
+
+
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
 
 
 class OriginalPixelBarFramesTests(unittest.TestCase):
@@ -54,7 +57,7 @@ class OriginalPixelBarFramesTests(unittest.TestCase):
               end
               return selected
             end''')
-            def source(path):return original[path] if old else (ROOT/'addon/WowBuddyDev'/path).read_text('utf8')
+            def source(path):return original[path] if old else addon_source(path)
             namespace='P07483180' if old else 'WowBuddyDev'
             core=source('Core.lua');start=core.index(namespace+'.COMMON_PIXEL_DATA = {')
             lua.execute(core[start:core.index('\n}',start)+2])

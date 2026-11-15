@@ -8,10 +8,10 @@ from tempfile import TemporaryDirectory
 from tests import test_addon_full_load as full_load
 ROOT=full_load.ROOT
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.assets import Assets
-from wowbuddy.pixel_geometry import RGBImage
-from wowbuddy.scheduler import SealMemory
-from wowbuddy.packages import read_addon
+from wowbuddy.engine.assets import Assets
+from wowbuddy.core.pixel_geometry import RGBImage
+from wowbuddy.engine.scheduler import SealMemory
+from wowbuddy.addons.packages import read_addon
 
 
 class SealReceiptIntegrationTests(unittest.TestCase):

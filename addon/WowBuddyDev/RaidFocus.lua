@@ -6,6 +6,7 @@
 -- 重命名：a2842b.lua → RaidFocus.lua（按功能重命名）
 -- 作用：团队焦点/焦点施法/血量图层与绑定
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("RaidFocus", { "CoreState", "CoreClassData", "CoreButtons", "CoreEvents", "Bindings", "ActionKeyCheck" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local MAX_RAID_SLOTS = 30
 local MAX_RAID_INDEX = 40
 local TICK_INTERVAL = .05

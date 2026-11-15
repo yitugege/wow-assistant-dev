@@ -2,8 +2,8 @@ import json,sys,tempfile,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.dev_cli_update import run_update_now
-from wowbuddy.dev_update_handoff import wait_until_ready
+from wowbuddy.update.dev_cli_update import run_update_now
+from wowbuddy.update.dev_update_handoff import wait_until_ready
 
 class UpdateCliTests(unittest.TestCase):
     def test_no_update_never_downloads_or_prepares(self):

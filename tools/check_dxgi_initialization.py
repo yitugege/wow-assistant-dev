@@ -10,7 +10,7 @@ sys.path.insert(0,str(ROOT/'desktop'))
 
 
 def check():
-    import wowbuddy.capture as capture
+    import wowbuddy.win32.capture as capture
     from PySide6.QtWidgets import QApplication
     app=QApplication.instance() or QApplication([])
     if app.platformName()!='windows':raise RuntimeError('需要 Windows Qt 平台')

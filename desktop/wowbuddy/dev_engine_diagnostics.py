@@ -2,10 +2,10 @@
 from dataclasses import asdict
 import json
 from pathlib import Path
-from .assets import Assets
+from wowbuddy.engine.assets import Assets
 from .cli_selftest import run_local_selftest_command
 from .dev_library import read_local_library, seed_library
-from .rotation_selection import HubState
+from wowbuddy.engine.rotation_selection import HubState
 
 
 def run_engine_diagnostics(assets_dir, data_dir):

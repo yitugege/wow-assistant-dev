@@ -9,7 +9,7 @@ import ctypes as C
 from contextlib import contextmanager
 from check_frozen_outer import ROOT, run, file_sha256
 from build_addon import build
-from wowbuddy.dev_addon_install import read_package
+from wowbuddy.addons.dev_addon_install import read_package
 
 
 def snapshot(path):
@@ -61,7 +61,7 @@ def check():
         other=addons/'OtherAddon';other.mkdir()
         (other/'OtherAddon.toc').write_text('## Title: unrelated\n','utf8')
         legacy=addons/'eygo6tps';legacy.mkdir()
-        from wowbuddy.addon_install import SIGNATURE_FILES
+        from wowbuddy.addons.addon_install import SIGNATURE_FILES
         for name in SIGNATURE_FILES:
             (legacy/name).write_text('-- legacy install sentinel\n','utf8')
         wtf=addons.parent.parent/'WTF';wtf.mkdir()

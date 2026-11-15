@@ -8,13 +8,16 @@ from lupa.lua51 import LuaRuntime
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.auto_target import parse_auto_target
-from wowbuddy.dev_protocol import DEV_VERSION
-from wowbuddy.assets import Assets
-from wowbuddy.pixel_geometry import RGBImage
-from wowbuddy.scheduler import Scheduler
-from wowbuddy.dispatch import ActionDispatcher
-from wowbuddy.expressions import EvaluationContext
+from wowbuddy.core.auto_target import parse_auto_target
+from wowbuddy.core.dev_protocol import DEV_VERSION
+from wowbuddy.engine.assets import Assets
+from wowbuddy.core.pixel_geometry import RGBImage
+from wowbuddy.engine.scheduler import Scheduler
+from wowbuddy.engine.dispatch import ActionDispatcher
+from wowbuddy.core.expressions import EvaluationContext
+
+
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
 
 
 class PixelBarModuleTests(unittest.TestCase):
@@ -48,7 +51,7 @@ class PixelBarModuleTests(unittest.TestCase):
         lua.execute('''WowBuddyDev.DB.currentSpecID=fixtureSpec
         function GetSpecializationInfo() return fixtureSpec end
         function WowBuddyDev.GetPackedGameIdentity() return fixtureSpec end''')
-        source=(ROOT/'addon/WowBuddyDev/Core.lua').read_text('utf8')
+        source=rebuilt_core()
         start=source.index('WowBuddyDev.COMMON_PIXEL_DATA = {')
         lua.execute(source[start:source.index('\n}',start)+2])
         if class_name:

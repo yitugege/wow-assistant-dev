@@ -14,7 +14,7 @@ from PySide6.QtCore import QCoreApplication,QEvent
 from wowbuddy.dev_staged_startup import create_staged_startup
 from wowbuddy.cache_cleanup_host import cleanup_source_release
 from wowbuddy.release_identity import ReleaseIdentity,CACHE_NAMESPACE,file_sha256
-from wowbuddy.launcher import BUSINESS_EXE,APPLICATION_NAME
+from wowbuddy.legacy.launcher import BUSINESS_EXE,APPLICATION_NAME
 
 
 class OuterCleanupTests(unittest.TestCase):

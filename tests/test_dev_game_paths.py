@@ -6,7 +6,7 @@ import json
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.dev_game_paths import discover_clients,normalize_client
+from wowbuddy.addons.dev_game_paths import discover_clients,normalize_client
 from wowbuddy.settings import open_ini_settings
 
 class GamePathsTests(unittest.TestCase):
@@ -39,8 +39,8 @@ class GamePathsTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as tmp:
                 client=Path(tmp)/'_forever_';client.mkdir();(client/'Wow.exe').touch()
                 with (patch.dict(os.environ),
-                      patch('wowbuddy.addon_games.selected_executable', return_value=str(client/'Wow.exe')),
-                      patch('wowbuddy.dev_game_paths.common_roots', return_value=())):
+                      patch('wowbuddy.addons.addon_games.selected_executable', return_value=str(client/'Wow.exe')),
+                      patch('wowbuddy.addons.dev_game_paths.common_roots', return_value=())):
                     # 仅启用这次按钮测试，所有客户端候选都来自临时目录。
                     os.environ.pop('WOWBUDDY_NO_GAME_SCAN', None)
                     window.ui.addon_clean_button.click()

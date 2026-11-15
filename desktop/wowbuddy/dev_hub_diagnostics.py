@@ -1,8 +1,6 @@
 """独立版循环库本地诊断；原缓存报告与动作缺口分别记录。"""
 import json
 from pathlib import Path
-from .cli_hub import run_local_hub_command
-from .native_cli import parse_native_cli
 from .dev_library import seed_library, profile_action_gaps
 
 
@@ -12,14 +10,8 @@ def run_hub_diagnostics(assets_dir, data_dir, *, fetch_online=False, fetch=None)
     data_dir.mkdir(parents=True,exist_ok=True)
     seeded=seed_library(assets_dir,data_dir)
     # 显式环境隔离，不能继承历史WOWBUDDY_HOME或服务器地址。
-    from .dev_hub_online import HUB_URL,BackupHubFiles
-    arguments=['WowBuddyDev','--hub-selftest']
-    if fetch_online:
-        from PySide6.QtCore import QCoreApplication
-        app=QCoreApplication.instance() or QCoreApplication(['WowBuddyDev'])
-        arguments.append('--hub-fetch')
-    result=run_local_hub_command(parse_native_cli(arguments),files=BackupHubFiles(),fetch=fetch,
-        application_dir=data_dir,environment={'WOWBUDDY_HOME':str(data_dir),'WOWBUDDY_HUB_URL':HUB_URL})
+    from .dev_native_hub import hub_command_result
+    result=hub_command_result(data_dir,data_dir,fetch_online=fetch_online,fetch=fetch)
     documents=[json.loads((assets_dir/name).read_text('utf8'))
                for name in ('rules.json','rules_readable.json')]
     gaps=[]

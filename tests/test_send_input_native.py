@@ -10,8 +10,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = Path('D:/reverse-analysis')
 sys.path.insert(0, str(ROOT / 'desktop'))
-from wowbuddy.keybindings import KEY_VKS, KeyBinding
-from wowbuddy.windows_keys import CtypesWin32Backend, KeyboardInput, activate_and_send, send_input
+from wowbuddy.core.keybindings import KEY_VKS, KeyBinding
+from wowbuddy.win32.windows_keys import CtypesWin32Backend, KeyboardInput, activate_and_send, send_input
 from tests.core.test_windows_keys import FakeWin32
 
 

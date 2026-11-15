@@ -10,7 +10,7 @@ sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 import run_dev
 from wowbuddy.dev_paths import default_data_dir
 from wowbuddy.release_identity import ReleaseIdentity,validated_outer_target,file_sha256
-from wowbuddy.launcher import BUSINESS_EXE
+from wowbuddy.legacy.launcher import BUSINESS_EXE
 from wowbuddy.dev_startup import run_logged
 
 

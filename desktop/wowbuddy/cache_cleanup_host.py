@@ -1,13 +1,9 @@
 """原清理顺序的本地执行宿主；删除仅限显式验证的源码缓存父目录。"""
 import os
 from pathlib import Path
-import stat
 import time
 from .cache_cleanup import snapshot_qt_cleanup,plan_old_unpack_cleanup
-
-
-def _reparse(path):
-    return bool(path.lstat().st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT) if os.name=='nt' else path.is_symlink()
+from .addons.dev_addon_install import is_reparse_point as _reparse
 
 
 def _checked_tree(path,parent,current):

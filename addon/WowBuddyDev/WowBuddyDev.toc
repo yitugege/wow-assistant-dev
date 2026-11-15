@@ -3,8 +3,9 @@
 ## Notes: 独立开发版
 ## Author: Unknown
 ## Version: 0.2.8-dev
-## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics, WowBuddyDevHookProbe, WowBuddyDevHookLog
+## SavedVariables: WowBuddyDevDB, WowBuddyDevDiagnostics, WowBuddyDevHookProbe, WowBuddyDevHookLog, WowBuddyDevRuntimeLog
 
+Modules.lua
 ForeverCompat.lua
 ForeverTalentData.lua
 ForeverTalents.lua
@@ -13,8 +14,21 @@ Libs/LibStub/LibStub.lua
 Libs/CallbackHandler-1.0/CallbackHandler-1.0.lua
 Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua
 Libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua
+CoreSettings.lua
+CoreState.lua
+CoreCooldownLedger.lua
+CoreConsumables.lua
+CoreClassData.lua
 Core.lua
+CoreCastState.lua
+CoreLocale.lua
+CoreButtons.lua
+CoreEvents.lua
+CoreControls.lua
+CoreMovement.lua
+CoreDiagnostics.lua
 SecurityDiagnostics.lua
+RuntimeDiagnostics.lua
 HookOrderProbe.lua
 Bindings.lua
 HealingNpcFocus.lua

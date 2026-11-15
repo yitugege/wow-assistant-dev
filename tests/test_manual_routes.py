@@ -8,18 +8,18 @@ from unittest.mock import Mock, patch
 from lupa.lua51 import LuaRuntime
 
 import test_dev_tray
-from wowbuddy.arrival_pull import ArrivalPull
-from wowbuddy.auto_target import PACKET_BASE
-from wowbuddy.candidates import Candidate
-from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-from wowbuddy.leveling_route import AutomaticLeveling
-from wowbuddy.manual_routes import manual_camp_road, parse_fixed_camp, parse_manual_connection, parse_manual_route
-from wowbuddy.navigation import MapDestination, MapNavigator
-from wowbuddy.old_protocol import OldFrame
-from wowbuddy.pipeline import Decision
-from wowbuddy.scheduler import TickResult
+from wowbuddy.automation.arrival_pull import ArrivalPull
+from wowbuddy.core.auto_target import PACKET_BASE
+from wowbuddy.core.candidates import Candidate
+from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+from wowbuddy.automation.leveling_route import AutomaticLeveling
+from wowbuddy.automation.manual_routes import manual_camp_road, parse_fixed_camp, parse_manual_connection, parse_manual_route
+from wowbuddy.automation.navigation import MapDestination, MapNavigator
+from wowbuddy.core.old_protocol import OldFrame
+from wowbuddy.engine.pipeline import Decision
+from wowbuddy.engine.scheduler import TickResult
 from wowbuddy.settings import open_ini_settings
-from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ManualRouteTests(unittest.TestCase):
     def test_corpse_trail_requires_revival_and_matches_a_nearby_corpse(self):
-        from wowbuddy.death_recovery import CorpseTrail
+        from wowbuddy.automation.death_recovery import CorpseTrail
 
         trail = CorpseTrail()
         corpse = (1440, 20.0, 15.0)
@@ -113,8 +113,8 @@ class ManualRouteTests(unittest.TestCase):
         test_dev_tray.TrayTests().run_window(False, exercise)
 
     def test_four_point_patrol_waits_for_loot_wraps_and_keeps_the_supply_destination(self):
-        from wowbuddy.character_state import LevelProgress, MobState, VendorState
-        from wowbuddy.walking_route import rejoin_darkshore_patrol_return
+        from wowbuddy.engine.character_state import LevelProgress, MobState, VendorState
+        from wowbuddy.automation.walking_route import rejoin_darkshore_patrol_return
 
         text = 'WBDROUTE2|1439|黑海岸|4029,5567|3851,6999|3966,6044|3966,5185'
 
@@ -152,9 +152,9 @@ class ManualRouteTests(unittest.TestCase):
                                       catalog=True, repair_needed=repairing)
 
                 def report(status, at):
-                    with (patch('wowbuddy.character_state.decode_vendor_state',
+                    with (patch('wowbuddy.engine.character_state.decode_vendor_state',
                                 side_effect=lambda *_args, repair=False: status if repair == repairing else None),
-                          patch('wowbuddy.character_state.decode_navigation_state', return_value=at),
+                          patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=at),
                           patch.object(window, 'monotonic_ms', return_value=status.sequence * 2000)):
                         window._poll_vendor(session, object(), frame, result, character)
 
@@ -181,8 +181,8 @@ class ManualRouteTests(unittest.TestCase):
                 character = CharacterState('alive', True, True, 'alliance', 19, 1439, '黑海岸', x, y)
 
                 def poll(*, loot_open=False):
-                    with (patch('wowbuddy.character_state.decode_navigation_state', return_value=position),
-                          patch('wowbuddy.character_state.decode_mob_state',
+                    with (patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position),
+                          patch('wowbuddy.engine.character_state.decode_mob_state',
                                 return_value=MobState(1, 1, 4, '', 1, loot_open)),
                           patch.object(window, '_observe_local_access', return_value=(None, None))):
                         window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
@@ -194,7 +194,7 @@ class ManualRouteTests(unittest.TestCase):
                 if index == 0:
                     fields['enemies_8yd'] = '2'
                     outside = replace(position, x=x - 0.6)
-                    with patch('wowbuddy.character_state.decode_navigation_state', return_value=outside):
+                    with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=outside):
                         window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                     self.assertFalse(active.complete)
                     self.assertIn('暂停前往', window.ui.suggestions.toPlainText())
@@ -241,13 +241,13 @@ class ManualRouteTests(unittest.TestCase):
                              'inbound': (*outbound.approach_road[::-1], (before.x, before.y), (x, y))}
                     reading = VendorState(1, 2, 0, False, False, False, False, ',', 0x76, None, catalog=True)
                     with (patch.object(window, '_travel_identity', return_value=('法师', 19)),
-                          patch('wowbuddy.vendor_run.read_vendor_travel', return_value=saved)):
+                          patch('wowbuddy.automation.vendor_run.read_vendor_travel', return_value=saved)):
                         self.assertTrue(window._resume_vendor_travel(session, character, blocked, reading))
                     resumed = window._leveling_trip[2]
                     self.assertEqual(resumed.goal, active.goal)
                     resumed.observe(blocked)
                     self.assertTrue(resumed.complete)
-                    with patch('wowbuddy.character_state.decode_navigation_state', return_value=blocked):
+                    with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=blocked):
                         window._poll_vendor(session, object(), frame, result, character)
                     self.assertIsNone(window._online_vendor)
                     self.assertEqual(window._leveling_destination, (session, character.route_key, active.goal))
@@ -313,7 +313,7 @@ class ManualRouteTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_vendor_trip_waits_for_same_merchant_and_bag_receipt_then_replans_the_fixed_camp(self):
-        from wowbuddy.character_state import VendorState
+        from wowbuddy.engine.character_state import VendorState
 
         def exercise(window):
             window.grind_check.setChecked(True)
@@ -363,10 +363,10 @@ class ManualRouteTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_online_camp_vendor_uses_marked_road_and_returns_without_requerying(self):
-        from wowbuddy.character_state import VendorState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.qt_app import AssistantWindow
-        from wowbuddy.runtime import PollResult
+        from wowbuddy.engine.character_state import VendorState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.app.qt_app import AssistantWindow
+        from wowbuddy.engine.runtime import PollResult
 
         def exercise(window):
             window.grind_check.setChecked(True)
@@ -388,15 +388,15 @@ class ManualRouteTests(unittest.TestCase):
             reading = VendorState(1, 2, 3, False, False, False, False, ',', 0x76, None)
 
             def poll_vendor(reading, at):
-                with (patch('wowbuddy.character_state.decode_vendor_state', return_value=reading),
-                      patch('wowbuddy.character_state.decode_navigation_state', return_value=at),
+                with (patch('wowbuddy.engine.character_state.decode_vendor_state', return_value=reading),
+                      patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=at),
                       patch.object(window, 'monotonic_ms', return_value=reading.sequence * 2000)):
                     window._poll_vendor(session, object(), frame, result, character)
 
             def follow(trip, at):
                 visited = []
                 for _ in range(6):
-                    with (patch('wowbuddy.character_state.decode_navigation_state', return_value=at),
+                    with (patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=at),
                           patch.object(window, '_observe_local_access', return_value=(None, None))):
                         window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                     if trip.complete:
@@ -454,7 +454,7 @@ class ManualRouteTests(unittest.TestCase):
                       patch.object(window, '_poll_navigation')):
                     window.poll_once()
                 self.assertTrue(window.pipeline.unattended_travel)
-                with (patch('wowbuddy.character_state.decode_navigation_state', return_value=displaced),
+                with (patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=displaced),
                       patch.object(window, '_observe_local_access', return_value=(None, None))):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                 self.assertEqual(navigator.observe.call_args.args[3], camp)
@@ -470,8 +470,8 @@ class ManualRouteTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_full_bag_uses_darkshore_vendor_without_manual_route_or_wild_junk_count(self):
-        from wowbuddy.character_state import VendorState
-        from wowbuddy.navigation import MapDestination
+        from wowbuddy.engine.character_state import VendorState
+        from wowbuddy.automation.navigation import MapDestination
 
         def exercise(window):
             window.grind_check.setChecked(True)
@@ -487,8 +487,8 @@ class ManualRouteTests(unittest.TestCase):
             reading = VendorState(1, 0, 0, False, False, False, False, ',', 0x76, None, catalog=True)
 
             def poll(reading, position):
-                with (patch('wowbuddy.character_state.decode_vendor_state', return_value=reading),
-                      patch('wowbuddy.character_state.decode_navigation_state', return_value=position),
+                with (patch('wowbuddy.engine.character_state.decode_vendor_state', return_value=reading),
+                      patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position),
                       patch.object(window, 'monotonic_ms', return_value=reading.sequence * 2000)):
                     window._poll_vendor(session, object(), frame, result, character)
 
@@ -547,8 +547,8 @@ class ManualRouteTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_full_bag_recovery_can_walk_only_the_vendor_leg_when_health_is_safe(self):
-        from wowbuddy.character_state import VendorState
-        from wowbuddy.dev_protocol import DEV_VERSION, RECOVERY_CONFIG_BASE
+        from wowbuddy.engine.character_state import VendorState
+        from wowbuddy.core.dev_protocol import DEV_VERSION, RECOVERY_CONFIG_BASE
 
         def exercise(window):
             window.grind_check.setChecked(True)
@@ -571,8 +571,8 @@ class ManualRouteTests(unittest.TestCase):
                 result = SimpleNamespace(tick=TickResult('stopped', Decision(frame, frame.values, (candidate,))),
                                          capture=SimpleNamespace(client_rect=None))
                 at = replace(position, sequence=sequence, moving=moving)
-                with (patch('wowbuddy.character_state.decode_vendor_state', return_value=replace(reading, sequence=sequence, free=free)),
-                      patch('wowbuddy.character_state.decode_navigation_state', return_value=at)):
+                with (patch('wowbuddy.engine.character_state.decode_vendor_state', return_value=replace(reading, sequence=sequence, free=free)),
+                      patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=at)):
                     window._poll_vendor(session, object(), frame, result, character)
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                 return navigator.observe.call_args.args[2:4]
@@ -592,8 +592,8 @@ class ManualRouteTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_vendor_after_interrupted_confirmation_uses_a_new_shop_receipt(self):
-        from wowbuddy.character_state import VendorState
-        from wowbuddy.vendor_run import VendorRun
+        from wowbuddy.engine.character_state import VendorState
+        from wowbuddy.automation.vendor_run import VendorRun
 
         run = VendorRun()
         session = (123, 1, 0)
@@ -626,8 +626,8 @@ class ManualRouteTests(unittest.TestCase):
                          ['sell', 'confirm', 'select', 'sell'])
 
     def test_vendor_dismisses_stale_sell_dialog_after_space_is_freed(self):
-        from wowbuddy.character_state import VendorState
-        from wowbuddy.vendor_run import VendorRun
+        from wowbuddy.engine.character_state import VendorState
+        from wowbuddy.automation.vendor_run import VendorRun
 
         run = VendorRun()
         send = Mock(return_value=True)
@@ -652,8 +652,8 @@ class ManualRouteTests(unittest.TestCase):
         self.assertEqual([call.args[0] for call in send.call_args_list], ['sell', 'dismiss', 'close'])
 
     def test_vendor_reconciles_partial_sale_before_selling_remaining_junk(self):
-        from wowbuddy.character_state import VendorState
-        from wowbuddy.vendor_run import VendorRun
+        from wowbuddy.engine.character_state import VendorState
+        from wowbuddy.automation.vendor_run import VendorRun
 
         run = VendorRun()
         send = Mock(return_value=True)
@@ -690,8 +690,8 @@ class ManualRouteTests(unittest.TestCase):
                          ['sell', 'confirm', 'sell', 'confirm', 'close'])
 
     def test_red_equipment_routes_to_auberdine_and_waits_for_repair_before_returning(self):
-        from wowbuddy.character_state import VendorState
-        from wowbuddy.navigation import MapDestination
+        from wowbuddy.engine.character_state import VendorState
+        from wowbuddy.automation.navigation import MapDestination
 
         def exercise(window):
             window.grind_check.setChecked(True)
@@ -708,9 +708,9 @@ class ManualRouteTests(unittest.TestCase):
                               catalog=True, repair_needed=True)
 
             def poll(reading, at):
-                with (patch('wowbuddy.character_state.decode_vendor_state',
+                with (patch('wowbuddy.engine.character_state.decode_vendor_state',
                             side_effect=lambda *_args, repair=False: reading if repair else None),
-                      patch('wowbuddy.character_state.decode_navigation_state', return_value=at),
+                      patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=at),
                       patch.object(window, 'monotonic_ms', return_value=reading.sequence * 2000)):
                     window._poll_vendor(session, object(), frame, result, character)
 
@@ -745,8 +745,8 @@ class ManualRouteTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_quest_travel_yields_to_repair_and_recovery_and_stops_at_the_pin(self):
-        from wowbuddy.character_state import QuestTurnInPin
-        from wowbuddy.manual_routes import ManualRoute
+        from wowbuddy.engine.character_state import QuestTurnInPin
+        from wowbuddy.automation.manual_routes import ManualRoute
 
         def exercise(window):
             window.grind_check.setChecked(True)
@@ -757,8 +757,8 @@ class ManualRouteTests(unittest.TestCase):
             route = ManualRoute(52, ((32, 36), (34, 40), (41.23, 56.78)))
             fields = {'player_valid': 'ON', 'player_in_combat': 'OFF'}
             frame = OldFrame('ok', values=fields)
-            with (patch('wowbuddy.character_state.decode_quest_turn_in_pin', return_value=pin),
-                  patch('wowbuddy.character_state.decode_navigation_state', return_value=position),
+            with (patch('wowbuddy.engine.character_state.decode_quest_turn_in_pin', return_value=pin),
+                  patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position),
                   patch.object(window, '_manual_routes', return_value=(route,))):
                 fields['equipment_red'] = 'ON'
                 self.assertIsNone(window._observe_quest_route(session, object(), frame, character))
@@ -787,8 +787,8 @@ class ManualRouteTests(unittest.TestCase):
                 window._walk_to_quest(ready, session, character, arrived, trip)
             self.assertIsNone(window._quest_trip)
             self.assertIn('恢复练级', window.ui.suggestions.toPlainText())
-            with (patch('wowbuddy.character_state.decode_quest_turn_in_pin', return_value=pin),
-                  patch('wowbuddy.character_state.decode_navigation_state', return_value=arrived),
+            with (patch('wowbuddy.engine.character_state.decode_quest_turn_in_pin', return_value=pin),
+                  patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=arrived),
                   patch.object(window, 'monotonic_ms', return_value=75100) as clock):
                 clock.return_value = 75099
                 self.assertIsNone(window._observe_quest_route(session, object(), frame, character))
@@ -820,7 +820,7 @@ class ManualRouteTests(unittest.TestCase):
                 fields = {'player_valid': 'ON', 'player_in_combat': 'OFF', 'target_valid': target}
                 frame = OldFrame('ok', values=fields)
                 tick = TickResult('no_candidates', Decision(frame, fields, (), recovery_ready=True))
-                with (patch('wowbuddy.character_state.decode_navigation_state', return_value=sample),
+                with (patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample),
                       patch.object(window, '_observe_local_access', return_value=(None, None))):
                     window._poll_navigation(SimpleNamespace(tick=tick), session, object(), frame,
                                             replace(character, x=sample.x), None, navigate=True)
@@ -863,9 +863,9 @@ class ManualRouteTests(unittest.TestCase):
                                                              attack_blocked_by_range=valid and not sight and not in_range,
                                                              attack_blocked_by_sight=sight), display_now_ms=at)
                 sample = replace(position, sequence=sequence, target_revision=revision)
-                with (patch('wowbuddy.character_state.decode_navigation_state', return_value=sample),
-                      patch('wowbuddy.character_state.decode_target_bearing', return_value=None),
-                      patch('wowbuddy.windows_keys.is_foreground', return_value=True),
+                with (patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample),
+                      patch('wowbuddy.engine.character_state.decode_target_bearing', return_value=None),
+                      patch('wowbuddy.win32.windows_keys.is_foreground', return_value=True),
                       patch.object(window, 'monotonic_ms', return_value=at)):
                     window._poll_navigation(SimpleNamespace(tick=tick), session, object(), frame,
                                             None, None, navigate=True)
@@ -961,7 +961,7 @@ class ManualRouteTests(unittest.TestCase):
         test_dev_tray.TrayTests.run_window(self, False, exercise)
 
     def test_redridge_graveyard_uses_a_narrow_exit_before_resuming_corpse_navigation(self):
-        from wowbuddy.manual_routes import GHOST_ACCESS_ROUTES, LocalAccess
+        from wowbuddy.automation.manual_routes import GHOST_ACCESS_ROUTES, LocalAccess
 
         route, = (route for route in GHOST_ACCESS_ROUTES if route.map_id == 1433)
         start = NavigationState('ghost', 1, 1433, *route.points[0], 0, 2170, 1448, (87, 65, 68))
@@ -976,7 +976,7 @@ class ManualRouteTests(unittest.TestCase):
             death = DeathState('ghost', 1, None, False, corpse, popup='missing')
 
             def poll(position):
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                     window._poll_navigation(result, session, object(), frame, None, death, navigate=True)
                 return navigator.observe.call_args.args[3]
 
@@ -998,7 +998,7 @@ class ManualRouteTests(unittest.TestCase):
         self.assertEqual((waypoint.x, waypoint.y), manual.points[0])
 
     def test_sentinel_hill_routes_merge_north_of_the_east_building(self):
-        from wowbuddy.manual_routes import GHOST_ACCESS_ROUTES, LocalAccess
+        from wowbuddy.automation.manual_routes import GHOST_ACCESS_ROUTES, LocalAccess
 
         routes = tuple(route for route in GHOST_ACCESS_ROUTES if route.map_id == 1436)
         exit_start = (54.12, 51.95)
@@ -1037,7 +1037,7 @@ class ManualRouteTests(unittest.TestCase):
             window._leveling_trip = 'alliance', 18, leveling_trip
 
             def poll(sample, state=death):
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                     window._poll_navigation(result, session, object(), frame, None, state, navigate=True)
                 return navigator.observe.call_args.args[2:4]
 
@@ -1073,7 +1073,7 @@ class ManualRouteTests(unittest.TestCase):
         self._exercise_local_access(blocked=True)
 
     def test_revival_resumes_only_the_confirmed_living_access_segment(self):
-        from wowbuddy.death_recovery import AutomaticRevival
+        from wowbuddy.automation.death_recovery import AutomaticRevival
 
         def exercise(window):
             window.grind_check.setChecked(True)
@@ -1094,7 +1094,7 @@ class ManualRouteTests(unittest.TestCase):
                 position = NavigationState(life, sequence, 1436, x, y, 0, 3500, 2300, (87, 65, 68))
                 result = SimpleNamespace(tick=TickResult('stopped', Decision(frame, frame.values, (), recovery_ready=ready)))
                 window._poll_revival(session, state, None, recovery_ready=ready)
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                     window._poll_navigation(result, session, object(), frame,
                                             character if life == 'alive' else None, state, navigate=True)
                 return navigator._target[1]
@@ -1145,7 +1145,7 @@ class ManualRouteTests(unittest.TestCase):
             def poll(sequence, *, ready=True, **changes):
                 result = SimpleNamespace(tick=TickResult('stopped', Decision(frame, frame.values, (), recovery_ready=ready)))
                 sample = replace(position, sequence=sequence, **changes)
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                 return navigator._target[1]
 
@@ -1324,7 +1324,7 @@ class ManualRouteTests(unittest.TestCase):
             def navigate(character, sequence):
                 position = NavigationState('alive', sequence, 1432, character.x, character.y,
                                            0, 2758, 1840, (87, 65, 68))
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                     window._poll_navigation(SimpleNamespace(tick=tick), session, object(), frame,
                                             character, None, navigate=True)
 
@@ -1474,8 +1474,8 @@ class ManualRouteTests(unittest.TestCase):
                         self.assertEqual((next_waypoint.x, next_waypoint.y), second.points[0])
 
     def test_loch_east_corpse_revival_crosses_the_dam_from_graveyard_or_wetlands(self):
-        from wowbuddy.capture import Rect
-        from wowbuddy.death_recovery import AutomaticRevival
+        from wowbuddy.win32.capture import Rect
+        from wowbuddy.automation.death_recovery import AutomaticRevival
 
         def exercise(window):
             window.grind_check.setChecked(True)
@@ -1507,7 +1507,7 @@ class ManualRouteTests(unittest.TestCase):
                             nonlocal time
                             time += 250
                             window._poll_revival(session, state, rect, position=sample)
-                            with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                            with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                                 window._poll_navigation(result, session, object(), frame, None, state, navigate=True)
                             return navigator.observe.call_args.args[3]
 

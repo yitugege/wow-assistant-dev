@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'desktop')]
 import run_dev
 from tools.build_client_release import build_client
-from wowbuddy import github_client
+from wowbuddy.update import github_client
 
 
 class ManualUpdateTests(unittest.TestCase):
@@ -70,7 +70,7 @@ class ManualUpdateTests(unittest.TestCase):
                         window._handoff_deadline=0
                         window.ui.update_check_button.setEnabled(False)
                         window.ui.update_apply_button.setEnabled(False)
-                        with patch('wowbuddy.dev_update_handoff.write_json',side_effect=OSError('read only')), \
+                        with patch('wowbuddy.update.dev_update_handoff.write_json',side_effect=OSError('read only')), \
                              patch.object(window,'_quit_development_app') as quit_app:
                             window._poll_update_handoff()
                             if initially_running:
@@ -125,7 +125,7 @@ class ManualUpdateTests(unittest.TestCase):
             def download(info, workspace, **kwargs):
                 return original_download(info, workspace, fetch=fetch, **kwargs)
             def exercise(window):
-                with patch.object(run_dev, 'FROZEN', True), patch.object(run_dev, 'APP_ROOT', root / 'client'), \
+                with patch.object(window.launch_options, 'frozen', True), patch.object(window.launch_options, 'app_root', root / 'client'), \
                      patch.object(github_client, 'check_latest', check), \
                      patch.object(github_client, 'download_checked', download):
                     window.ui.update_check_button.click()
@@ -144,7 +144,7 @@ class ManualUpdateTests(unittest.TestCase):
                     self.assertTrue(window.ui.update_apply_button.isEnabled())
                     job = root / 'handoff.json'
                     handoff = {'job': str(job), 'process': SimpleNamespace(poll=lambda: None)}
-                    with patch('wowbuddy.dev_update_handoff.prepare_handoff', side_effect=[OSError('runtime copy failed'), handoff]) as prepare:
+                    with patch('wowbuddy.update.dev_update_handoff.prepare_handoff', side_effect=[OSError('runtime copy failed'), handoff]) as prepare:
                         window.ui.update_apply_button.click()
                         with self.assertRaises(OSError):
                             window._client_update_future.result(timeout=5)

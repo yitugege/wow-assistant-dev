@@ -4,8 +4,8 @@ import struct
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
-from wowbuddy.capture import DxgiCapture,DxgiInitialization,Rect,DXGI_ERROR_WAIT_TIMEOUT,WindowCapture,Win32WindowAPI
-from wowbuddy.pixel_geometry import RGBImage
+from wowbuddy.win32.capture import DxgiCapture,DxgiInitialization,Rect,DXGI_ERROR_WAIT_TIMEOUT,WindowCapture,Win32WindowAPI
+from wowbuddy.core.pixel_geometry import RGBImage
 
 
 class Backend:

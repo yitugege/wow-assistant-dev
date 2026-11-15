@@ -9,11 +9,11 @@ sys.path[:0]=[str(ROOT/'desktop'),str(ROOT/'tests/core')]
 from test_dispatch import AdvancingWin32
 from test_old_protocol import CONTRACT,RULES
 from test_pipeline import READABLE,READABLE_RULES
-from wowbuddy.dispatch import ActionDispatcher
-from wowbuddy.old_protocol import OldFrame
-from wowbuddy.pipeline import DecisionPipeline,PreparedFrame
-from wowbuddy.scheduler import Scheduler
-from wowbuddy.windows_keys import KeySender
+from wowbuddy.engine.dispatch import ActionDispatcher
+from wowbuddy.core.old_protocol import OldFrame
+from wowbuddy.engine.pipeline import DecisionPipeline,PreparedFrame
+from wowbuddy.engine.scheduler import Scheduler
+from wowbuddy.win32.windows_keys import KeySender
 
 
 class HealingDispatchFlowTests(unittest.TestCase):

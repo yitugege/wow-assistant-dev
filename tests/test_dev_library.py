@@ -8,7 +8,7 @@ sys.path.insert(0, str(ROOT/'desktop'))
 from wowbuddy.dev_library import seed_library, profile_action_gaps, read_local_library
 import json
 from types import SimpleNamespace
-from wowbuddy.rotation_selection import load_snapshot,SelectionState,apply_selection,refresh_library
+from wowbuddy.engine.rotation_selection import load_snapshot,SelectionState,apply_selection,refresh_library
 
 
 class LocalLibraryTests(unittest.TestCase):
@@ -65,9 +65,9 @@ class LocalLibraryTests(unittest.TestCase):
 
     def test_warlock_double_dot_rule_uses_wand_only_in_development(self):
         from dataclasses import replace
-        from wowbuddy.assets import Assets
-        from wowbuddy.dev_protocol import DEV_VERSION
-        from wowbuddy.old_protocol import OldFrame
+        from wowbuddy.engine.assets import Assets
+        from wowbuddy.core.dev_protocol import DEV_VERSION
+        from wowbuddy.core.old_protocol import OldFrame
 
         hub = load_snapshot((ROOT/'assets/rotations.json').read_bytes()).state
         profile = next(profile for profile in hub.profiles if profile.id == 33)

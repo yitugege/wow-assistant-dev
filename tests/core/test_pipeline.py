@@ -5,8 +5,8 @@ import unittest
 
 from test_old_protocol import CONTRACT, ROOT, RULES, render_old
 from test_readable_protocol import image_with_rows
-from wowbuddy.pipeline import DecisionPipeline, readable_key_maps
-from wowbuddy.pixel_geometry import RGBImage
+from wowbuddy.engine.pipeline import DecisionPipeline, readable_key_maps
+from wowbuddy.core.pixel_geometry import RGBImage
 
 READABLE = json.loads((ROOT / "assets/contract_readable.json").read_bytes())
 READABLE_RULES = json.loads((ROOT / "assets/rules_readable.json").read_bytes())
@@ -44,7 +44,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result.candidates[0].key, "NUMPAD5")
 
     def test_independent_pause_hint_distinguishes_no_target_from_saved_switch(self):
-        from wowbuddy.dev_protocol import DEV_VERSION
+        from wowbuddy.core.dev_protocol import DEV_VERSION
         fields = {"master_switch": 0xff0000, "player_in_combat": 0xff0000, "target_valid": 0xff0000}
         original, _ = render_old(1482, fields)
         original_stop = self.pipeline.evaluate(original).candidates[0]
@@ -83,7 +83,7 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(result.frame.allow_unknown_availability)
 
     def test_protocol_fallback_keeps_the_verified_target_policy(self):
-        from wowbuddy.dev_protocol import DEV_VERSION
+        from wowbuddy.core.dev_protocol import DEV_VERSION
 
         readable = render_readable()
         profile = self.profile
@@ -161,7 +161,7 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(pipeline.evaluate(render_readable(), selected_profile=profile).candidates, ())
 
     def test_shipped_invalid_readable_bindings_do_not_create_base_actions(self):
-        from wowbuddy.keybindings import parse_keybinding
+        from wowbuddy.core.keybindings import parse_keybinding
         checked=0
         for spec,definition in READABLE_RULES['specs'].items():
             base={a['name'] for a in RULES['specs'][spec]['actions']}

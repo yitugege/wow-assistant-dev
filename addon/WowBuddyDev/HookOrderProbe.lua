@@ -1,4 +1,5 @@
 -- 手动取证工具：安全按钮只点击本插件记录按钮，不施法、不绑定按键。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("HookOrderProbe", {  }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local addonName = ...
 local probe, marker
 local sequence = 0

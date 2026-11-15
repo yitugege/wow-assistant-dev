@@ -9,8 +9,8 @@ import test_outer_path_native as path_tests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.launcher_host import read_module_path, WideBufferResult, WindowsHostAPI
-from wowbuddy.launcher import module_directory, _mkdir_chain
+from wowbuddy.legacy.launcher_host import read_module_path, WideBufferResult, WindowsHostAPI
+from wowbuddy.legacy.launcher import module_directory, _mkdir_chain
 
 
 class ModulePathNativeTests(unittest.TestCase):

@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 from typing import Callable
 
-from .expressions import _double, _int, _string
-from .pipeline import readable_key_maps
+from wowbuddy.core.expressions import _double, _int, _string
+from wowbuddy.engine.pipeline import readable_key_maps
 from .startup_stages import LoadOutcome
 
 
@@ -253,6 +253,6 @@ class NativeAssetStore:
 
     def to_assets(self, directory: str | Path):
         """快照适配现有Assets；valid/错误须由宿主另行保留，不能视作全有效。"""
-        from .assets import Assets
+        from wowbuddy.engine.assets import Assets
         return Assets(Path(directory), *(deepcopy(state.document) for state in
             (self.contract, self.readable_contract, self.rules, self.readable_rules)))

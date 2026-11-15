@@ -7,7 +7,7 @@ import sys
 import unittest
 from PySide6.QtWidgets import QApplication
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'desktop'))
-from wowbuddy.swatch_strip import SwatchStrip, SwatchItem
+from wowbuddy.app.swatch_strip import SwatchStrip, SwatchItem
 from test_availability_display_native import QString
 
 class StringView(C.Structure):

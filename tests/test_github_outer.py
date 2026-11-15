@@ -8,9 +8,9 @@ from tempfile import TemporaryDirectory
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.github_outer import (EXE_NAME,MANIFEST_NAME,REPOSITORY,check_latest,download_checked,verify_outer,validate_manifest)
-from wowbuddy.packages import Member,write_bundle
-from wowbuddy.launcher import BUSINESS_EXE
+from wowbuddy.update.github_outer import (EXE_NAME,MANIFEST_NAME,REPOSITORY,check_latest,download_checked,verify_outer,validate_manifest)
+from wowbuddy.addons.packages import Member,write_bundle
+from wowbuddy.legacy.launcher import BUSINESS_EXE
 from wowbuddy.release_identity import ReleaseIdentity,file_sha256
 
 

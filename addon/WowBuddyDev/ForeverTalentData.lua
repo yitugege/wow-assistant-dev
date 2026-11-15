@@ -1,4 +1,5 @@
 -- Generated from Forever 1.60.1.69913 TraitNode.csv; do not infer retail spec IDs.
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("ForeverTalentData", {  }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.ForeverTalentData = {
   [1482] = { class = "法师", token = "MAGE", tree = 1112, groups = {
     { name = "奥术", nodes = { 105798, 105799, 105800, 105801, 105802, 105803, 105804, 105805, 105806, 105807, 105808, 105809, 105810, 105811, 105812, 105813, 105814, 105815 } },

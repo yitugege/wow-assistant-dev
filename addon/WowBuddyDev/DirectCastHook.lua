@@ -4,6 +4,7 @@
 -- 只做两件事：读条技能在移动中、或自 Buff 光环仍在时，让这一次点击不触发宏。
 -- 不调用 UseAction / CastSpellByID，也不登记停步补发；重发由桌面端循环重新决策。
 -- 战斗中游戏禁止插件改写安全按钮属性，此时不做任何改动，点击照常走宏。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DirectCastHook", { "DirectCastSlots" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local ADDON = WowBuddyDev
 local DC = ADDON.DirectCast
 local SWALLOW_TYPE = "emptybutton"

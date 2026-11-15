@@ -8,14 +8,14 @@ import tempfile
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.release_identity import file_sha256,read_release_identity,CACHE_NAMESPACE
-from wowbuddy.launcher import release_directory,BUSINESS_EXE
+from wowbuddy.legacy.launcher import release_directory,BUSINESS_EXE
 from check_frozen_outer import run
 
 
 def driver(config_path):
     from dataclasses import asdict
     from PySide6.QtWidgets import QApplication
-    from wowbuddy.dev_outer_update import install_outer
+    from wowbuddy.update.dev_outer_update import install_outer
     app=QApplication([])
     config=json.loads(Path(config_path).read_text('utf8'))
     result=install_outer(config['candidate'],config['inner'],config['outer'],

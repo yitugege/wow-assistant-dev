@@ -1,4 +1,5 @@
 -- 只记录客户端报告的受保护操作；不尝试重试或绕过被拦截的调用。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("SecurityDiagnostics", { "DirectCastSlots" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local addonName = ...
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_ACTION_BLOCKED")

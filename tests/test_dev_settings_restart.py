@@ -14,9 +14,9 @@ sys.path[:0]=[str(ROOT),str(ROOT/'desktop'),str(ROOT/'tests/core')]
 from PySide6.QtWidgets import QApplication
 from wowbuddy.desktop import NoSystemBackend
 from wowbuddy.dev_version import VERSION
-from wowbuddy.game_windows import WindowInfo
-from wowbuddy.qt_app import AssistantWindow
-from wowbuddy.runtime import PollResult
+from wowbuddy.win32.game_windows import WindowInfo
+from wowbuddy.app.qt_app import AssistantWindow
+from wowbuddy.engine.runtime import PollResult
 from test_old_protocol import render_old
 import run_dev
 
@@ -29,7 +29,7 @@ class RestartSettingsTests(unittest.TestCase):
                         if w.windowTitle()==f'WowBuddyDev v{VERSION} — 独立开发版' and not getattr(w,'_closed',True))
             exercise(window)
             return 0
-        with patch('wowbuddy.game_windows.CtypesWindowBackend',return_value=NoSystemBackend()),patch('wowbuddy.capture.make_win32_capture',return_value=NoSystemBackend()),patch('wowbuddy.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()),patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=False),patch.object(QApplication,'exec',side_effect=loop):
+        with patch('wowbuddy.win32.game_windows.CtypesWindowBackend',return_value=NoSystemBackend()),patch('wowbuddy.win32.capture.make_win32_capture',return_value=NoSystemBackend()),patch('wowbuddy.win32.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()),patch('PySide6.QtWidgets.QSystemTrayIcon.isSystemTrayAvailable',return_value=False),patch.object(QApplication,'exec',side_effect=loop):
             self.assertEqual(run_dev.launch(directory,hub_online=False,client_online=False,
                                             addon_online=addon_online,**options),0)
 
@@ -86,10 +86,10 @@ class RestartSettingsTests(unittest.TestCase):
     def test_regular_monitor_approaches_without_a_camp_and_releases_before_casting(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import NavigationState, TargetBearing
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import NavigationState, TargetBearing
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -102,11 +102,11 @@ class RestartSettingsTests(unittest.TestCase):
             movement = Mock(holding_forward=False)
             movement.keep_forward.return_value = False
             movement.release_forward.return_value = True
-            with (patch('wowbuddy.character_state.decode_navigation_state',
+            with (patch('wowbuddy.engine.character_state.decode_navigation_state',
                         side_effect=(position, None, replace(position, sequence=2))) as decode,
-                  patch('wowbuddy.character_state.decode_target_bearing', return_value=bearing),
-                  patch('wowbuddy.windows_keys.is_foreground', return_value=True),
-                  patch('wowbuddy.navigation.ForegroundMovement', return_value=movement)):
+                  patch('wowbuddy.engine.character_state.decode_target_bearing', return_value=bearing),
+                  patch('wowbuddy.win32.windows_keys.is_foreground', return_value=True),
+                  patch('wowbuddy.automation.navigation.ForegroundMovement', return_value=movement)):
                 window._poll_navigation(result, session, object(), frame, None, None, navigate=False)
                 movement.hold_forward.assert_not_called()
                 combat_frame = replace(frame, values={**frame.values, 'player_in_combat': 'ON'})
@@ -126,7 +126,7 @@ class RestartSettingsTests(unittest.TestCase):
 
     def test_dispatch_waits_for_fresh_stop_after_forward_pulse_or_watchdog_release(self):
         from unittest.mock import Mock
-        from wowbuddy.navigation import ForegroundMovement, MapNavigator
+        from wowbuddy.automation.navigation import ForegroundMovement, MapNavigator
 
         def exercise(window):
             hwnd, keys = 123, (87, 65, 68)
@@ -143,15 +143,15 @@ class RestartSettingsTests(unittest.TestCase):
 
             def sample(sequence):
                 capture = SimpleNamespace(image=object(), backend='printwindow')
-                with patch('wowbuddy.character_state.decode_death_state',
+                with patch('wowbuddy.engine.character_state.decode_death_state',
                            return_value=SimpleNamespace(sequence=sequence)):
                     window._character_freshness.hold_reason(hwnd, capture, object(), sequence * 250)
 
             sample(1)
             self.assertTrue(before_dispatch({'player_moving': 'ON'}))
             sample(2)
-            with (patch('wowbuddy.navigation.Timer') as timer,
-                  patch('wowbuddy.navigation.monotonic', return_value=0.0) as clock):
+            with (patch('wowbuddy.automation.navigation.Timer') as timer,
+                  patch('wowbuddy.automation.navigation.monotonic', return_value=0.0) as clock):
                 self.assertTrue(movement.hold_forward(hwnd, keys))
                 clock.return_value = 1.0
                 timer.call_args.args[1]()
@@ -188,12 +188,12 @@ class RestartSettingsTests(unittest.TestCase):
     def test_pending_dispatch_stop_keeps_travel_paused_until_fresh_standstill(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterFrameFreshness, CharacterState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+        from wowbuddy.engine.character_state import CharacterFrameFreshness, CharacterState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
         def exercise(window):
             session = (123, 456, 0)
@@ -215,7 +215,7 @@ class RestartSettingsTests(unittest.TestCase):
 
             def sample(sequence):
                 capture = SimpleNamespace(image=object(), backend='printwindow')
-                with patch('wowbuddy.character_state.decode_death_state', return_value=SimpleNamespace(sequence=sequence)):
+                with patch('wowbuddy.engine.character_state.decode_death_state', return_value=SimpleNamespace(sequence=sequence)):
                     window._character_freshness.hold_reason(session, capture, object(), sequence * 250)
 
             def poll(status, moving, sequence):
@@ -223,7 +223,7 @@ class RestartSettingsTests(unittest.TestCase):
                                                 'player_moving': moving, 'target_valid': 'OFF'})
                 result = SimpleNamespace(tick=TickResult(status, Decision(frame, frame.values, (), recovery_ready=True)))
                 sample_position = replace(position, sequence=sequence, moving=moving == 'ON')
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample_position):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample_position):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
 
             sample(1)
@@ -249,10 +249,10 @@ class RestartSettingsTests(unittest.TestCase):
     def test_loot_hold_preserves_owned_movement_until_readings_stop_or_interaction_is_ready(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.capture import CaptureResult
-        from wowbuddy.character_state import LevelProgress, MobState, NavigationState, STALE_FRAME, TargetBearing
-        from wowbuddy.navigation import MapNavigator
-        from wowbuddy.old_protocol import OldFrame
+        from wowbuddy.win32.capture import CaptureResult
+        from wowbuddy.engine.character_state import LevelProgress, MobState, NavigationState, STALE_FRAME, TargetBearing
+        from wowbuddy.automation.navigation import MapNavigator
+        from wowbuddy.core.old_protocol import OldFrame
 
         def exercise(window):
             monitor = 123, 456
@@ -291,14 +291,14 @@ class RestartSettingsTests(unittest.TestCase):
                     window.session.state.status = reason or ''
                     return PollResult('frame_held' if reason else 'no_candidates', capture)
 
-                with (patch('wowbuddy.character_state.decode_cast_feedback', return_value=None),
-                      patch('wowbuddy.character_state.decode_mob_state', return_value=mob),
-                      patch('wowbuddy.character_state.decode_navigation_state',
+                with (patch('wowbuddy.engine.character_state.decode_cast_feedback', return_value=None),
+                      patch('wowbuddy.engine.character_state.decode_mob_state', return_value=mob),
+                      patch('wowbuddy.engine.character_state.decode_navigation_state',
                             return_value=replace(position, sequence=sample, moving=moving)),
                       patch.object(window.loop, 'poll', side_effect=capture_and_guard)):
                     return window.poll_once()
 
-            with patch('wowbuddy.windows_keys.send_input', return_value=True) as send:
+            with patch('wowbuddy.win32.windows_keys.send_input', return_value=True) as send:
                 poll(combat, 0, 1000)
                 awaiting = replace(combat, state=7)
                 self.assertEqual(poll(awaiting, 1, 1050).status, 'frame_held')
@@ -341,19 +341,19 @@ class RestartSettingsTests(unittest.TestCase):
                 send.assert_called_once()
 
         with (TemporaryDirectory() as directory,
-              patch('wowbuddy.character_state.decode_character_session', return_value=321),
-              patch('wowbuddy.character_state.decode_travel_identity', return_value=None),
-              patch('wowbuddy.character_state.decode_level_progress', return_value=None) as progress):
+              patch('wowbuddy.app.dev_window.decode_character_session', return_value=321),
+              patch('wowbuddy.app.dev_window.decode_travel_identity', return_value=None),
+              patch('wowbuddy.app.dev_window.decode_level_progress', return_value=None) as progress):
             self.window(directory, exercise, auto_grind=True)
 
     def test_unattended_releases_movement_until_recovery_is_confirmed_out_of_combat(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState, TargetBearing
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, NavigationState, TargetBearing
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -371,12 +371,12 @@ class RestartSettingsTests(unittest.TestCase):
                 frame = OldFrame('ok', values=fields)
                 tick = TickResult('no_candidates', Decision(frame, fields, (), recovery_ready=ready,
                                   recovery_disabled=disabled, attack_blocked_by_range=target == 'ON'))
-                with (patch('wowbuddy.character_state.decode_navigation_state',
+                with (patch('wowbuddy.engine.character_state.decode_navigation_state',
                             return_value=replace(position, sequence=sequence)),
-                      patch('wowbuddy.character_state.decode_target_bearing',
+                      patch('wowbuddy.engine.character_state.decode_target_bearing',
                             return_value=TargetBearing(1, 0.5, 40, continuous=True)),
-                      patch('wowbuddy.windows_keys.is_foreground', return_value=True),
-                      patch('wowbuddy.navigation.ForegroundMovement', return_value=movement)):
+                      patch('wowbuddy.win32.windows_keys.is_foreground', return_value=True),
+                      patch('wowbuddy.automation.navigation.ForegroundMovement', return_value=movement)):
                     window._poll_navigation(SimpleNamespace(tick=tick), session, object(), frame,
                                             character if combat == 'OFF' else None, None, navigate=True)
 
@@ -420,7 +420,7 @@ class RestartSettingsTests(unittest.TestCase):
                 self.assertTrue(window.session.is_active())
                 window.toggle_monitor()
                 self.assertFalse(window.session.is_active())
-                with patch('wowbuddy.game_windows.find_game_window', return_value=123) as find:
+                with patch('wowbuddy.win32.game_windows.find_game_window', return_value=123) as find:
                     window.watch_once()
                     find.assert_not_called()
                     self.assertFalse(window.session.is_active())
@@ -435,8 +435,8 @@ class RestartSettingsTests(unittest.TestCase):
             self.window(directory, lambda window: self.assertFalse(window.grind_check.isChecked()))
 
     def test_restarted_monitor_replans_felwood_from_the_current_road_while_offline(self):
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.leveling_route import LevelingGuideCache, find_grinding_point
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.leveling_route import LevelingGuideCache, find_grinding_point
         from tests.test_leveling_route import leg, stage
 
         source = 'https://forever-tavern.com/npcs/classic/7139-irontree-stomper/'
@@ -447,7 +447,7 @@ class RestartSettingsTests(unittest.TestCase):
 
         def resume(window):
             session = (123, 456, 0)
-            with (patch('wowbuddy.leveling_route.urlopen', side_effect=OSError('offline')),
+            with (patch('wowbuddy.automation.leveling_route.urlopen', side_effect=OSError('offline')),
                   patch.object(window, 'monotonic_ms', side_effect=(1000, 1300, 1600))):
                 window._poll_leveling(session, character, True)
                 window._poll_leveling(session, character, True)
@@ -473,11 +473,11 @@ class RestartSettingsTests(unittest.TestCase):
         from concurrent.futures import Future
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.leveling_route import AutomaticLeveling, read_leveling_travel
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling, read_leveling_travel
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         origin = CharacterState('alive', True, True, 'alliance', 18, 1436, '西部荒野', 51.66, 77.11)
         crossing = replace(origin, map_id=1429, zone='艾尔文森林', x=24.18, y=78.35)
@@ -546,7 +546,7 @@ class RestartSettingsTests(unittest.TestCase):
                 frame, frame.values, (), recovery_ready=True)))
             window._map_navigator = Mock(blocked=False)
             window._map_navigator.observe.return_value = None
-            with patch('wowbuddy.character_state.decode_navigation_state') as sample:
+            with patch('wowbuddy.engine.character_state.decode_navigation_state') as sample:
                 for sequence in range(1, 80):
                     sample.return_value = position
                     character = replace(arrival, x=position.x, y=position.y)
@@ -572,8 +572,8 @@ class RestartSettingsTests(unittest.TestCase):
 
     def test_restart_replans_the_portal_when_harbor_and_camp_share_the_same_map(self):
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState
-        from wowbuddy.leveling_route import AutomaticLeveling, write_leveling_result
+        from wowbuddy.engine.character_state import CharacterState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling, write_leveling_result
 
         harbor = CharacterState('alive', True, True, 'alliance', 10, 1438, '泰达希尔', 58.40098, 93.91529)
         point = {'zone': '泰达希尔', 'name': '高地营地', 'x': 39.91, 'y': 28.687}
@@ -602,11 +602,11 @@ class RestartSettingsTests(unittest.TestCase):
         from concurrent.futures import Future
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-        from wowbuddy.leveling_route import AutomaticLeveling
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         origin = CharacterState('alive', True, True, 'alliance', 19, 1439, '黑海岸', 39.8, 70.691)
         point = {'zone': '黑海岸', 'name': '南侧营地', 'x': 38.315, 'y': 77.167}
@@ -657,7 +657,7 @@ class RestartSettingsTests(unittest.TestCase):
 
             def poll(sample, ready):
                 tick = TickResult('no_candidates', Decision(frame, frame.values, (), recovery_ready=ready))
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                     window._poll_navigation(SimpleNamespace(tick=tick), session, object(), frame,
                                             replace(character, x=sample.x, y=sample.y),
                                             DeathState('alive', sample.sequence, None, False, None), navigate=True)
@@ -686,13 +686,13 @@ class RestartSettingsTests(unittest.TestCase):
         from concurrent.futures import Future
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.leveling_route import AutomaticLeveling
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingLeg, WalkingTrip
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingLeg, WalkingTrip
 
         def exercise(window):
             session = (123, 456, 0)
@@ -717,7 +717,7 @@ class RestartSettingsTests(unittest.TestCase):
 
             def poll(sample, current):
                 window._poll_leveling(session, current, True)
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                     window._poll_navigation(result, session, object(), frame, current, None, navigate=True)
                 return navigator.observe.call_args.args[3]
 
@@ -754,12 +754,12 @@ class RestartSettingsTests(unittest.TestCase):
         from concurrent.futures import Future
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
         def exercise(window):
             session = (123, 456, 0)
@@ -789,7 +789,7 @@ class RestartSettingsTests(unittest.TestCase):
                 window._poll_leveling(session, character, True)
                 create_executor.assert_not_called()
                 submit.assert_not_called()
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=replace(position, sequence=3)):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=replace(position, sequence=3)):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                 create_executor.assert_called_once_with(max_workers=1)
                 self.assertIs(navigator.observe.call_args.kwargs['path'], trip)
@@ -818,14 +818,14 @@ class RestartSettingsTests(unittest.TestCase):
         from concurrent.futures import Future
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.leveling_route import AutomaticLeveling
-        from wowbuddy.manual_routes import parse_manual_connection
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling
+        from wowbuddy.automation.manual_routes import parse_manual_connection
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip
 
         connection = 'WBDROUTE1|1436|6010,2050|6100,2000\nWBDROUTE1|1429|2418,7835|2476,7862'
         onward = 'WBDROUTE1|1429|2476,7862|9500,6800\nWBDROUTE1|1433|1100,6700|1200,6800'
@@ -844,7 +844,7 @@ class RestartSettingsTests(unittest.TestCase):
             window._map_navigator.observe.return_value = None
 
         def poll_navigation(window, session, current, position):
-            with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+            with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                 window._poll_navigation(result, session, object(), frame, current, None, navigate=True)
             return window._map_navigator.observe.call_args.args[3]
 
@@ -939,11 +939,11 @@ class RestartSettingsTests(unittest.TestCase):
     def test_restart_restores_the_same_characters_supply_trip_and_discards_a_stale_popup(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState, VendorState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, NavigationState, VendorState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         character = CharacterState('alive', True, True, 'alliance', 18, 1439, '黑海岸', 39.8, 70.691)
         position = NavigationState('alive', 1, 1439, character.x, character.y, 0, 6550, 4367, (87, 65, 68))
@@ -959,8 +959,8 @@ class RestartSettingsTests(unittest.TestCase):
             window._character_travel_identity = window._character_session, identity
 
         def poll(window, session, at, vendor):
-            with (patch('wowbuddy.character_state.decode_navigation_state', return_value=at),
-                  patch('wowbuddy.character_state.decode_vendor_state', return_value=vendor),
+            with (patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=at),
+                  patch('wowbuddy.engine.character_state.decode_vendor_state', return_value=vendor),
                   patch.object(window, 'monotonic_ms', return_value=vendor.sequence * 2000)):
                 window._poll_vendor(session, object(), frame, result, character)
 
@@ -1081,14 +1081,14 @@ class RestartSettingsTests(unittest.TestCase):
     def test_restart_restores_auberdine_flight_and_waits_for_two_ground_samples(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.capture import CaptureResult
-        from wowbuddy.character_state import CharacterState, NavigationState, TaxiState
-        from wowbuddy.leveling_route import AutomaticLeveling, write_leveling_result
-        from wowbuddy.manual_routes import parse_fixed_camp
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import _AUBERDINE_DESCENT_PROFILE
+        from wowbuddy.win32.capture import CaptureResult
+        from wowbuddy.engine.character_state import CharacterState, NavigationState, TaxiState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling, write_leveling_result
+        from wowbuddy.automation.manual_routes import parse_fixed_camp
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import _AUBERDINE_DESCENT_PROFILE
 
         point = {'zone': '黑海岸', 'name': '森林陆行雏鸟区', 'x': 38.953, 'y': 48.684}
         identity = ['character', 15, 16, 'alliance', 12]
@@ -1108,10 +1108,10 @@ class RestartSettingsTests(unittest.TestCase):
                 result = PollResult('no_candidates', CaptureResult('ok', object(), 'printwindow'), tick)
                 with (patch.object(AssistantWindow, 'poll_once', return_value=result),
                       patch.object(window, '_poll_navigation'), patch.object(window, '_poll_revival'),
-                      patch('wowbuddy.character_state.route_character', return_value=None),
-                      patch('wowbuddy.character_state.decode_death_state', return_value=None),
-                      patch('wowbuddy.character_state.decode_taxi_state', return_value=reading),
-                      patch('wowbuddy.character_state.decode_character_state',
+                      patch('wowbuddy.engine.character_state.route_character', return_value=None),
+                      patch('wowbuddy.engine.character_state.decode_death_state', return_value=None),
+                      patch('wowbuddy.engine.character_state.decode_taxi_state', return_value=reading),
+                      patch('wowbuddy.engine.character_state.decode_character_state',
                             side_effect=[replace(airborne, level=11), replace(airborne, level=13)])):
                     window.poll_once()
                     self.assertIsNone(getattr(window, '_leveling_trip', None))
@@ -1163,8 +1163,8 @@ class RestartSettingsTests(unittest.TestCase):
     def test_grinding_requeries_if_the_lookup_cannot_be_turned_into_a_land_route(self):
         from concurrent.futures import Future
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState
-        from wowbuddy.leveling_route import AutomaticLeveling, find_grinding_point
+        from wowbuddy.engine.character_state import CharacterState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling, find_grinding_point
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1201,9 +1201,9 @@ class RestartSettingsTests(unittest.TestCase):
     def test_first_exhausted_camp_after_restore_is_excluded_from_the_new_lookup(self):
         from concurrent.futures import Future
         from unittest.mock import ANY, Mock
-        from wowbuddy.character_state import CharacterState
-        from wowbuddy.leveling_route import find_grinding_point
-        from wowbuddy.navigation import MapDestination
+        from wowbuddy.engine.character_state import CharacterState
+        from wowbuddy.automation.leveling_route import find_grinding_point
+        from wowbuddy.automation.navigation import MapDestination
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1231,9 +1231,9 @@ class RestartSettingsTests(unittest.TestCase):
     def test_grinding_uses_next_camp_only_for_the_current_character_plan(self):
         from concurrent.futures import Future
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState
-        from wowbuddy.leveling_route import AutomaticLeveling, find_grinding_point
-        from wowbuddy.navigation import MapDestination
+        from wowbuddy.engine.character_state import CharacterState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling, find_grinding_point
+        from wowbuddy.automation.navigation import MapDestination
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1273,12 +1273,12 @@ class RestartSettingsTests(unittest.TestCase):
     def test_monitor_treats_the_approach_road_as_travel_and_retires_a_blocked_camp(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1299,7 +1299,7 @@ class RestartSettingsTests(unittest.TestCase):
             frame = OldFrame('ok', values={'target_valid': 'OFF', 'player_in_combat': 'OFF'})
             result = SimpleNamespace(tick=TickResult('no_candidates', Decision(
                 frame, frame.values, (), recovery_ready=True)))
-            with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+            with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                 window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                 self.assertIsNone(pull.observe.call_args.args[1])
                 self.assertIs(navigator.observe.call_args.kwargs['path'], trip)
@@ -1322,12 +1322,12 @@ class RestartSettingsTests(unittest.TestCase):
     def test_unattended_idle_suggestions_use_navigation_context(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.candidates import Candidate
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.core.candidates import Candidate
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1346,7 +1346,7 @@ class RestartSettingsTests(unittest.TestCase):
             def poll(position, *, candidates=(), selected=None):
                 tick = TickResult('stopped', Decision(frame, fields, candidates, recovery_ready=True), selected)
                 window.ui.suggestions.setPlainText('原始动作建议')
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                     window._poll_navigation(SimpleNamespace(tick=tick), session, object(), frame,
                                             character, None, navigate=True)
                 return window.ui.suggestions.toPlainText()
@@ -1369,12 +1369,12 @@ class RestartSettingsTests(unittest.TestCase):
     def test_empty_camp_checks_one_more_position_on_the_access_road(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import camp_scan_waypoint
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import camp_scan_waypoint
 
         def exercise(window, map_id, zone, camp, position, expected=None):
             session = (123, 456, 0)
@@ -1390,7 +1390,7 @@ class RestartSettingsTests(unittest.TestCase):
 
             def poll(sample, *, ready=True):
                 tick = TickResult('no_candidates', Decision(frame, frame.values, (), recovery_ready=ready))
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                     window._poll_navigation(SimpleNamespace(tick=tick), session, object(), frame,
                                             character, None, navigate=True)
 
@@ -1430,7 +1430,7 @@ class RestartSettingsTests(unittest.TestCase):
             self.assertIsNone(camp_scan_waypoint(camp, replace(position, x=position.x + 0.5)))
             short_road = ((camp.x, camp.y - 0.2), (camp.x, camp.y))
             self.assertIsNone(camp_scan_waypoint(camp, position, manual_road=short_road))
-            with patch('wowbuddy.walking_route._narrow_road_point', return_value=True):
+            with patch('wowbuddy.automation.walking_route._narrow_road_point', return_value=True):
                 self.assertIsNone(camp_scan_waypoint(camp, position, manual_road=(
                     (camp.x, camp.y - 2.5), (camp.x, camp.y))))
 
@@ -1449,10 +1449,10 @@ class RestartSettingsTests(unittest.TestCase):
     def test_camp_travel_yields_to_combat_before_and_after_attacker_is_targeted(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1469,7 +1469,7 @@ class RestartSettingsTests(unittest.TestCase):
                 frame = OldFrame('ok', values=fields)
                 result = SimpleNamespace(tick=TickResult('no_candidates',
                     Decision(frame, fields, (), recovery_ready=True)))
-                with patch('wowbuddy.character_state.decode_navigation_state',
+                with patch('wowbuddy.engine.character_state.decode_navigation_state',
                            return_value=replace(position, sequence=sequence)):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                 return navigator.observe.call_args.args[3]
@@ -1486,11 +1486,11 @@ class RestartSettingsTests(unittest.TestCase):
 
     def test_grinding_skips_an_alternative_behind_the_same_blocked_bridge(self):
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1507,7 +1507,7 @@ class RestartSettingsTests(unittest.TestCase):
             frame = OldFrame('ok', values={'target_valid': 'OFF', 'player_in_combat': 'OFF'})
             result = SimpleNamespace(tick=TickResult('no_candidates', Decision(
                 frame, frame.values, (), recovery_ready=True)))
-            with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+            with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                 window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
             blocked = navigator.observe.call_args.args[3]
             self.assertEqual((blocked.x, blocked.y, blocked.allow_detour), (62.5, 41.51, False))
@@ -1524,12 +1524,12 @@ class RestartSettingsTests(unittest.TestCase):
         from concurrent.futures import Future
         from unittest.mock import Mock
         from test_leveling_route import leg, stage
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.leveling_route import AutomaticLeveling, find_grinding_point
-        from wowbuddy.manual_routes import parse_manual_route
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling, find_grinding_point
+        from wowbuddy.automation.manual_routes import parse_manual_route
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         redridge = '/zh/zones/eastern-kingdoms/redridge-mountains/'
         westfall = '/zh/zones/eastern-kingdoms/westfall/'
@@ -1568,7 +1568,7 @@ class RestartSettingsTests(unittest.TestCase):
                 first = window._leveling_trip[2]
                 blocked_leg = first.legs[0]
                 self.assertEqual((first.goal.map_id, first.goal.x, first.goal.y), (1433, 11.6, 62.5))
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
                 self.assertTrue(first.travel_exhausted)
                 self.assertIsNone(window._leveling_trip)
@@ -1596,12 +1596,12 @@ class RestartSettingsTests(unittest.TestCase):
     def test_running_monitor_retargets_at_camp_without_resuming_map_travel(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.auto_target import PACKET_BASE
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.core.auto_target import PACKET_BASE
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1621,10 +1621,10 @@ class RestartSettingsTests(unittest.TestCase):
                 result = SimpleNamespace(tick=TickResult('no_candidates',
                     Decision(frame, fields, (), recovery_ready=True, attack_blocked_by_range=target == 'ON'),
                     display_now_ms=now + 1000))
-                with (patch('wowbuddy.character_state.decode_navigation_state',
+                with (patch('wowbuddy.engine.character_state.decode_navigation_state',
                             return_value=replace(position, sequence=sequence, target_revision=revision)),
-                      patch('wowbuddy.character_state.decode_target_bearing', return_value=None),
-                      patch('wowbuddy.navigation.ForegroundMovement', return_value=movement),
+                      patch('wowbuddy.engine.character_state.decode_target_bearing', return_value=None),
+                      patch('wowbuddy.automation.navigation.ForegroundMovement', return_value=movement),
                       patch.object(window, 'monotonic_ms', return_value=now)):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
 
@@ -1645,12 +1645,12 @@ class RestartSettingsTests(unittest.TestCase):
     def test_unattended_reselects_an_unreachable_target_away_from_the_camp(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState, TargetBearing
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+        from wowbuddy.engine.character_state import CharacterState, NavigationState, TargetBearing
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1668,14 +1668,14 @@ class RestartSettingsTests(unittest.TestCase):
                 result = SimpleNamespace(tick=TickResult('no_candidates',
                     Decision(frame, fields, (), recovery_ready=ready, attack_blocked_by_range=target == 'ON'),
                     display_now_ms=10_000))
-                with (patch('wowbuddy.character_state.decode_navigation_state',
+                with (patch('wowbuddy.engine.character_state.decode_navigation_state',
                             return_value=replace(position, sequence=sequence, target_revision=revision,
                                                  moving=moving, x=position.x if x is None else x)),
-                      patch('wowbuddy.character_state.decode_target_bearing',
+                      patch('wowbuddy.engine.character_state.decode_target_bearing',
                             return_value=TargetBearing(revision, 0.5, 37)),
-                      patch('wowbuddy.windows_keys.is_foreground', return_value=True),
+                      patch('wowbuddy.win32.windows_keys.is_foreground', return_value=True),
                       patch.object(window, 'monotonic_ms', return_value=sequence * 250),
-                      patch('wowbuddy.navigation.ForegroundMovement', return_value=movement)):
+                      patch('wowbuddy.automation.navigation.ForegroundMovement', return_value=movement)):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
 
             for sequence in range(1, 8):
@@ -1740,11 +1740,11 @@ class RestartSettingsTests(unittest.TestCase):
     def test_unattended_retires_camp_after_three_confirmed_rejections(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1765,11 +1765,11 @@ class RestartSettingsTests(unittest.TestCase):
                 result = SimpleNamespace(tick=TickResult('no_candidates', Decision(
                     frame, fields, (), recovery_ready=True,
                     target_rejection='当前怪物已被其他玩家占有' if rejected else None), display_now_ms=10_000))
-                with (patch('wowbuddy.character_state.decode_navigation_state',
+                with (patch('wowbuddy.engine.character_state.decode_navigation_state',
                             return_value=replace(position, sequence=sequence, target_revision=revision)),
-                      patch('wowbuddy.windows_keys.is_foreground', return_value=True),
+                      patch('wowbuddy.win32.windows_keys.is_foreground', return_value=True),
                       patch.object(window, 'monotonic_ms', return_value=sequence * 250),
-                      patch('wowbuddy.navigation.ForegroundMovement', return_value=movement)):
+                      patch('wowbuddy.automation.navigation.ForegroundMovement', return_value=movement)):
                     window._poll_navigation(result, session, object(), frame, character, None, navigate=True)
 
             for ordinal in range(3):
@@ -1793,10 +1793,10 @@ class RestartSettingsTests(unittest.TestCase):
 
     def test_blocked_same_map_corpse_routes_around_and_waits_for_disabled_popup(self):
         from unittest.mock import Mock
-        from wowbuddy.character_state import DeathState, NavigationState
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import DeathState, NavigationState
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1809,7 +1809,7 @@ class RestartSettingsTests(unittest.TestCase):
             window._waiting_for_movement_stop = True
             navigator = window._map_navigator = Mock(blocked=True)
             navigator.observe.return_value = '尸体直达受阻'
-            with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+            with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                 window._poll_navigation(result, session, object(), frame, None,
                     DeathState('ghost', 1, None, False, corpse, 'missing'), navigate=True)
                 self.assertEqual(navigator.observe.call_args.args[3].label, '尸体')
@@ -1836,14 +1836,14 @@ class RestartSettingsTests(unittest.TestCase):
     def test_blocked_revival_backtrack_restarts_corpse_approach_after_input_returns(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.capture import Rect
-        from wowbuddy.character_state import DeathState, NavigationState
-        from wowbuddy.death_recovery import AutomaticRevival, CorpseAccess
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip
+        from wowbuddy.win32.capture import Rect
+        from wowbuddy.engine.character_state import DeathState, NavigationState
+        from wowbuddy.automation.death_recovery import AutomaticRevival, CorpseAccess
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1863,7 +1863,7 @@ class RestartSettingsTests(unittest.TestCase):
             old_trip = window._corpse_trip = WalkingTrip(session, (), corpse)
             window._corpse_access = CorpseAccess()
 
-            with patch('wowbuddy.character_state.decode_navigation_state', return_value=at):
+            with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=at):
                 blocked = replace(popup, sequence=2, button=None, popup='input_blocked')
                 window._poll_navigation(result, session, object(), frame, None, blocked, navigate=True)
                 self.assertIsNone(navigator.observe.call_args.args[2])
@@ -1892,13 +1892,13 @@ class RestartSettingsTests(unittest.TestCase):
     def test_active_quest_turn_in_survives_missing_and_changed_map_pins(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.capture import Rect
-        from wowbuddy.character_state import CharacterState, NavigationState, QuestDialogState, QuestTurnInPin
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.quest_turn_in import QuestTurnIn
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.win32.capture import Rect
+        from wowbuddy.engine.character_state import CharacterState, NavigationState, QuestDialogState, QuestTurnInPin
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.automation.quest_turn_in import QuestTurnIn
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = 123, 456, 0
@@ -1916,8 +1916,8 @@ class RestartSettingsTests(unittest.TestCase):
             send = window._send_travel_ui_action = Mock(return_value=True)
 
             def step(reading, map_pin, now):
-                with (patch('wowbuddy.character_state.decode_quest_dialog', return_value=reading),
-                      patch('wowbuddy.character_state.decode_quest_turn_in_pin', return_value=map_pin),
+                with (patch('wowbuddy.engine.character_state.decode_quest_dialog', return_value=reading),
+                      patch('wowbuddy.engine.character_state.decode_quest_turn_in_pin', return_value=map_pin),
                       patch.object(window, 'monotonic_ms', return_value=now)):
                     active = window._observe_quest_route(session, object(), frame, character)
                     if active is not None:
@@ -1945,12 +1945,12 @@ class RestartSettingsTests(unittest.TestCase):
     def test_monitor_retains_completed_camp_route_during_quick_border_return(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+        from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
         def exercise(window):
             session = (123, 456, 0)
@@ -1974,7 +1974,7 @@ class RestartSettingsTests(unittest.TestCase):
                                            position.x, position.y)
                 death = DeathState('alive', position.sequence, None, False, None)
                 with patch.object(window, 'monotonic_ms', return_value=now), \
-                     patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+                     patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                     window._poll_leveling(session, character, True)
                     window._poll_navigation(result, session, object(), frame, character, death, navigate=True)
                 return navigator.observe.call_args.args[3]
@@ -2004,12 +2004,12 @@ class RestartSettingsTests(unittest.TestCase):
 
     def test_monitor_keeps_a_paused_trip_until_a_new_level_plan_is_ready(self):
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+        from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
         def exercise(window):
             session = (123, 456, 0)
@@ -2029,7 +2029,7 @@ class RestartSettingsTests(unittest.TestCase):
                 decision = Decision(frame, frame.values, (), recovery_ready=True, attack_blocked_by_range=target)
                 result = SimpleNamespace(tick=TickResult('no_candidates', decision))
                 with (patch.object(window, 'monotonic_ms', return_value=sequence * 250),
-                      patch('wowbuddy.character_state.decode_navigation_state', return_value=position)):
+                      patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position)):
                     window._poll_leveling(session, character, True)
                     window._poll_navigation(result, session, object(), frame, character, death, navigate=True)
                 return navigator.observe.call_args.args[2:4]
@@ -2063,10 +2063,10 @@ class RestartSettingsTests(unittest.TestCase):
     def test_corpse_route_rejoins_after_leaving_the_confirmed_corpse_map(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import DeathState, NavigationState
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import DeathState, NavigationState
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -2079,7 +2079,7 @@ class RestartSettingsTests(unittest.TestCase):
             navigator.observe.return_value = None
 
             def poll(position):
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                     window._poll_navigation(result, session, object(), frame, None,
                         DeathState('ghost', position.sequence, None, False, corpse, 'missing'), navigate=True)
                 return navigator.observe.call_args.args[3]
@@ -2108,11 +2108,11 @@ class RestartSettingsTests(unittest.TestCase):
     def test_revival_rejoins_the_camp_road_after_recovery(self):
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
+        from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
 
         def exercise(window):
             session = (123, 456, 0)
@@ -2128,7 +2128,7 @@ class RestartSettingsTests(unittest.TestCase):
 
             def poll(recovered, sample):
                 tick = TickResult('no_candidates', Decision(frame, frame.values, (), recovery_ready=recovered))
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                     window._poll_navigation(SimpleNamespace(tick=tick), session, object(), frame,
                                             character, popup, navigate=True)
                 return navigator.observe.call_args.args[2:4]
@@ -2163,10 +2163,10 @@ class RestartSettingsTests(unittest.TestCase):
 
     def test_revival_rejoins_a_marked_camp_road_or_retires_the_unreachable_plan(self):
         from dataclasses import replace
-        from wowbuddy.character_state import CharacterState, NavigationState
-        from wowbuddy.manual_routes import parse_fixed_camp, parse_manual_route
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.walking_route import WalkingTrip
+        from wowbuddy.engine.character_state import CharacterState, NavigationState
+        from wowbuddy.automation.manual_routes import parse_fixed_camp, parse_manual_route
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.automation.walking_route import WalkingTrip
 
         route_text = 'WBDROUTE1|1429|3900,6500|3950,6500|3950,6630|4210,6630'
         marked = parse_manual_route(route_text)
@@ -2246,12 +2246,12 @@ class RestartSettingsTests(unittest.TestCase):
         from concurrent.futures import Future
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import camp_access_road
+        from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import camp_access_road
 
         def exercise(window):
             session = (123, 456, 0)
@@ -2271,7 +2271,7 @@ class RestartSettingsTests(unittest.TestCase):
             window._leveling_camps = [{'zone': '赤脊山', 'name': '另一处旧候选', 'x': 30.55, 'y': 57.1}]
 
             def poll(sample):
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                     window._poll_navigation(result, session, object(), frame, character, death, navigate=True)
                 return navigator.observe.call_args.args[2:4]
 
@@ -2297,13 +2297,13 @@ class RestartSettingsTests(unittest.TestCase):
         from concurrent.futures import Future
         from dataclasses import replace
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-        from wowbuddy.manual_routes import parse_manual_connection
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip
+        from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+        from wowbuddy.automation.manual_routes import parse_manual_connection
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip
 
         connection = 'WBDROUTE1|1436|6010,2050|6100,2000\nWBDROUTE1|1429|2418,7835|2476,7862'
         leg = parse_manual_connection(connection)
@@ -2331,7 +2331,7 @@ class RestartSettingsTests(unittest.TestCase):
             def poll(sample, *, recovered=True):
                 decision = Decision(frame, frame.values, (), recovery_ready=recovered)
                 result = SimpleNamespace(tick=TickResult('no_candidates', decision))
-                with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample):
+                with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample):
                     window._poll_navigation(result, session, object(), frame, character, death, navigate=True)
                 return navigator.observe.call_args.args[3]
 
@@ -2366,12 +2366,12 @@ class RestartSettingsTests(unittest.TestCase):
         from dataclasses import replace
         from math import hypot
         from unittest.mock import Mock
-        from wowbuddy.character_state import DeathState, NavigationState
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip
+        from wowbuddy.engine.character_state import DeathState, NavigationState
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip
 
         def exercise(window):
             corpse = (1432, 50, 50)
@@ -2390,8 +2390,8 @@ class RestartSettingsTests(unittest.TestCase):
                     popup = DeathState('ghost', 1, None, False, corpse, 'missing')
 
                     def poll(sample, state):
-                        with patch('wowbuddy.character_state.decode_navigation_state', return_value=sample), \
-                             patch('wowbuddy.walking_route._on_loch_dam', return_value=narrow):
+                        with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=sample), \
+                             patch('wowbuddy.automation.walking_route._on_loch_dam', return_value=narrow):
                             window._poll_navigation(result, session, object(), frame, None, state, navigate=True)
                         return navigator.observe.call_args.args[3]
 
@@ -2420,13 +2420,13 @@ class RestartSettingsTests(unittest.TestCase):
 
     def test_blocked_travel_replans_through_the_running_monitor(self):
         from unittest.mock import Mock
-        from wowbuddy.character_state import CharacterState, DeathState, NavigationState
-        from wowbuddy.leveling_route import AutomaticLeveling
-        from wowbuddy.navigation import MapDestination
-        from wowbuddy.old_protocol import OldFrame
-        from wowbuddy.pipeline import Decision
-        from wowbuddy.scheduler import TickResult
-        from wowbuddy.walking_route import WalkingTrip, plan_walking_route
+        from wowbuddy.engine.character_state import CharacterState, DeathState, NavigationState
+        from wowbuddy.automation.leveling_route import AutomaticLeveling
+        from wowbuddy.automation.navigation import MapDestination
+        from wowbuddy.core.old_protocol import OldFrame
+        from wowbuddy.engine.pipeline import Decision
+        from wowbuddy.engine.scheduler import TickResult
+        from wowbuddy.automation.walking_route import WalkingTrip, plan_walking_route
 
         def exercise(window):
             session = (123, 456, 0)
@@ -2455,7 +2455,7 @@ class RestartSettingsTests(unittest.TestCase):
                         frame, frame.values, (), recovery_ready=life == 'alive')))
                     navigator = window._map_navigator = Mock(blocked=True)
                     navigator.observe.return_value = '路段受阻'
-                    with patch('wowbuddy.character_state.decode_navigation_state', return_value=position):
+                    with patch('wowbuddy.engine.character_state.decode_navigation_state', return_value=position):
                         window._poll_navigation(result, session, object(), frame, character, death, navigate=True)
                     self.assertIs(navigator.observe.call_args.kwargs['path'], trip)
                     self.assertEqual([leg.destination for leg in trip.legs], [1431, 1433])

@@ -9,7 +9,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'desktop'))
-from wowbuddy.launcher import module_directory
+from wowbuddy.legacy.launcher import module_directory
 
 
 class OuterPathNativeTests(unittest.TestCase):

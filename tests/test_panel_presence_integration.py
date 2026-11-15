@@ -10,8 +10,8 @@ from tests import test_addon_full_load as full_load
 
 ROOT = full_load.ROOT
 sys.path.insert(0, str(ROOT/'desktop'))
-from wowbuddy.packages import read_addon
-from wowbuddy.pixel_fields import decode_field
+from wowbuddy.addons.packages import read_addon
+from wowbuddy.core.pixel_fields import decode_field
 
 MAGE_MAINTENANCE = {'intellect', 'frost_armor', 'ice_armor', 'mage_armor'}
 

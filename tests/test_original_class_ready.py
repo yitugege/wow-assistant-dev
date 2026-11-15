@@ -8,7 +8,10 @@ from lupa.lua51 import LuaRuntime
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'desktop'))
-from wowbuddy.packages import read_addon
+from wowbuddy.addons.packages import read_addon
+
+
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
 
 
 class OriginalClassReadyTests(unittest.TestCase):
@@ -34,7 +37,7 @@ class OriginalClassReadyTests(unittest.TestCase):
             end
             function WowBuddyDev.GetForeverTalentState() return {packet=655360} end''')
             def source(path):
-                return original[path] if old else (ROOT / 'addon/WowBuddyDev' / path).read_text('utf8')
+                return original[path] if old else addon_source(path)
             core = source('Core.lua')
             namespace = 'P07483180' if old else 'WowBuddyDev'
             start = core.index(namespace + '.COMMON_PIXEL_DATA = {')

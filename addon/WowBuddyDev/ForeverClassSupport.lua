@@ -1,4 +1,5 @@
 -- Shared class observations through the existing spell and color-curve APIs.
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("ForeverClassSupport", { "ForeverTalentData", "ForeverTalents", "Core", "PixelBar" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local ADDON = WowBuddyDev
 local UNKNOWN = 16777215
 local units = {"player", "target", "party1", "party2", "party3", "party4"}

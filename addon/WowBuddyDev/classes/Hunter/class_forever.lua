@@ -2,6 +2,7 @@
 -- 无限客户端当前给猎人的职业专精 ID 是 1485，不是零售版的 253/254/255。
 -- 这里只注册当前低等级实测技能；高等级技能等技能书实测后再加入。
 
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("classes/Hunter/class_forever", { "ForeverTalents", "Core", "CoreButtons", "PanelV2", "PixelBar", "ForeverClassSupport" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.RegisterPixelStripV2(1485, {
   -- ==================== 横排 V2 数值格（OCR 读取通道）====================
   -- 只有四种 kind 会出现在横排面板上：

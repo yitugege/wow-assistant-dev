@@ -7,11 +7,11 @@ import unittest
 
 from PySide6.QtCore import QLocale
 from test_availability_display_native import QString
-from wowbuddy.aura_probe import ProbeEvent, ProbeResult, Receipt
-from wowbuddy.candidates import Candidate
+from wowbuddy.core.aura_probe import ProbeEvent, ProbeResult, Receipt
+from wowbuddy.core.candidates import Candidate
 from wowbuddy.capture_backend_text import CaptureBackendState, backend_status_text
-from wowbuddy.dispatch import DispatchResult
-from wowbuddy.presentation import candidate_text, field_change_text, probe_event_text, send_display
+from wowbuddy.engine.dispatch import DispatchResult
+from wowbuddy.engine.presentation import candidate_text, field_change_text, probe_event_text, send_display
 
 
 class StringView(C.Structure):

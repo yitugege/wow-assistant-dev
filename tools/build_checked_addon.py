@@ -3,16 +3,14 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import posixpath
 import sys
-import xml.etree.ElementTree as ET
 import zipfile
 from lupa.lua51 import LuaRuntime
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
-from tools.build_addon import build
-from wowbuddy.dev_protocol import DEV_VERSION
+from tools.build_addon import build, check_archive, collect_files
+from wowbuddy.core.dev_protocol import DEV_VERSION
 
 
 def check(output):
@@ -24,27 +22,10 @@ def check(output):
     manifest['protocol_version']=DEV_VERSION
     lua=LuaRuntime(unpack_returned_tuples=True)
     compile_lua=lua.eval('function(s,n) local f,e=loadstring(s,n);return f~=nil,e end')
-    compiled=[];references=[];packed_lua=[]
     with zipfile.ZipFile(output) as archive:
-        names=set(archive.namelist())
-        for name in sorted(names):
-            content=archive.read(name)
-            if name.endswith('.lua'):
-                ok,error=compile_lua(content.decode('utf-8-sig'),'@'+name)
-                if not ok:raise ValueError(error)
-                compiled.append(name);packed_lua.append(content)
-            targets=[]
-            if name.endswith('.toc'):
-                targets=[line.strip().replace('\\','/') for line in content.decode('utf-8-sig').splitlines()
-                         if line.strip() and not line.lstrip().startswith('#')]
-            elif name.endswith('.xml'):
-                targets=[node.attrib['file'].replace('\\','/') for node in ET.fromstring(content).iter()
-                         if 'file' in node.attrib]
-            for target in targets:
-                resolved=posixpath.normpath(posixpath.join(posixpath.dirname(name),target))
-                if resolved not in names:raise ValueError(f'包内引用缺失：{name} -> {target}')
-                references.append({'source':name,'target':resolved})
-    if sorted(packed_lua)!=sorted(p.read_bytes() for p in source.rglob('*.lua')):
+        compiled,packed_lua,references=check_archive(archive,compile_lua)
+    # 打包以 TOC 为白名单，对照源也取同一份清单，不在 TOC 中的 Lua 不进包。
+    if sorted(packed_lua)!=sorted(p.read_bytes() for p in collect_files(source) if p.suffix=='.lua'):
         raise ValueError('Lua源码与包内内容不一致')
     if before!=snapshot():raise ValueError('检查期间源码已变化')
     output.with_suffix('.manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),'utf8')

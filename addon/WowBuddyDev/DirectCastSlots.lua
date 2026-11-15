@@ -1,5 +1,6 @@
 -- 恢复原 DirectCast 的槽位登记与只读索引部分。
 -- 本文件不执行施法/占槽，由 Actions 消费；其余分支见完整性清单。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DirectCastSlots", { "CoreButtons" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local ADDON = WowBuddyDev
 local DC = ADDON.DirectCast or {}
 ADDON.DirectCast = DC

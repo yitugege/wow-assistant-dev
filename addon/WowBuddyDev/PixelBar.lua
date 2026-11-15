@@ -6,6 +6,7 @@
 -- 重命名：0c91f0.lua → PixelBar.lua（按功能重命名）
 -- 作用：竖排 V1 色块条：字段编码、曲线、坐标导出
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("PixelBar", { "ForeverTalents", "CoreSettings", "CoreState", "CoreConsumables", "CoreClassData", "Core", "CoreCastState", "CoreLocale", "CoreEvents", "CoreControls", "CoreMovement", "HealingNpcFocus", "RaidFocus", "AutoTarget", "Recovery", "CharacterState", "PanelV2", "ForeverClassSupport", "classes/Warrior/class_forever" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local ADDON_NAME = ...
 local pixelBarFrame = nil
 local pixelBarTextures = {}

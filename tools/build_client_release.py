@@ -6,7 +6,7 @@ import sys
 import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.dev_client_update import digest,member_path,NAME
+from wowbuddy.update.dev_client_update import digest,member_path,NAME
 
 def build_client(source,output,version):
     source=Path(source).resolve();output=Path(output).resolve()

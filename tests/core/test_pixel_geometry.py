@@ -6,7 +6,7 @@ import math
 import sys
 import unittest
 
-from wowbuddy.pixel_geometry import (
+from wowbuddy.core.pixel_geometry import (
     RGBImage, BarGeometry, nearbyint, lround, find_fiducial, locate_old_bar,
     refine_pitch, sample_cell, sample_old_bar,
 )

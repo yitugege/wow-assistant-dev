@@ -10,8 +10,8 @@ from wowbuddy.dev_native_commands import dispatch_native_command,command_data_di
 class NativeCommandTests(unittest.TestCase):
     def test_all_supported_command_combinations_use_native_priority(self):
         flags=['--selftest','--install-addon','--check-update','--update-now','--hub-selftest']
-        functions=['dev_native_selftest.run_native_selftest','dev_cli_install.run_development_install',
-                   'github_client.run_check_command','dev_cli_update.run_update_now','dev_native_hub.run_native_hub']
+        functions=['dev_native_selftest.run_native_selftest','addons.dev_cli_install.run_development_install',
+                   'update.github_client.run_check_command','update.dev_cli_update.run_update_now','dev_native_hub.run_native_hub']
         with tempfile.TemporaryDirectory() as tmp,ExitStack() as stack:
             calls=[stack.enter_context(patch('wowbuddy.'+name,return_value=10+i)) for i,name in enumerate(functions)]
             for size in range(1,6):
@@ -28,7 +28,7 @@ class NativeCommandTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             options=dict(assets=ROOT/'assets',application=Path(tmp),packages=Path(tmp),frozen=False)
             args=['app','--install-addon','--install-addon-dir=one','--install-addon-dir=two']
-            with patch('wowbuddy.dev_cli_install.run_development_install',return_value=0) as install:
+            with patch('wowbuddy.addons.dev_cli_install.run_development_install',return_value=0) as install:
                 self.assertEqual(dispatch_native_command(args,**options),0)
                 self.assertEqual(install.call_args.args[0],args)
             with patch('wowbuddy.dev_native_hub.run_native_hub',return_value=0) as hub:

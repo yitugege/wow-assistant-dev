@@ -6,6 +6,7 @@
 -- 重命名：f9fee1.lua → AutoTarget.lua（按功能重命名）
 -- 作用：自动选目标按键绑定
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("AutoTarget", { "CoreSettings", "CoreState", "CoreClassData", "CoreButtons", "CoreEvents", "Bindings", "ActionKeyCheck", "RaidFocus", "Recovery", "CharacterState" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local secureButtonName = "auto_target"
 local autoTargetMacroText = "/targetenemy [combat,nochanneling,noexists][combat,nochanneling,dead]"
 local postKillMacroText = "/targetenemy [nochanneling,noexists][nochanneling,dead][nocombat,nochanneling,exists,noharm]"

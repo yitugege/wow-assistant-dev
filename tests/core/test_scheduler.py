@@ -4,14 +4,14 @@ import unittest
 from test_dispatch import AdvancingWin32
 from test_old_protocol import CONTRACT, RULES, render_old
 from test_pipeline import READABLE, READABLE_RULES
-from wowbuddy.auto_target import PACKET_BASE
-from wowbuddy.candidates import Rule
-from wowbuddy.dev_protocol import DEV_VERSION
-from wowbuddy.dispatch import ActionDispatcher
-from wowbuddy.old_protocol import OldFrame
-from wowbuddy.pipeline import DecisionPipeline, PreparedFrame
-from wowbuddy.scheduler import Scheduler, SealMemory, SEAL_IDS, self_buff_actions
-from wowbuddy.windows_keys import KeySender
+from wowbuddy.core.auto_target import PACKET_BASE
+from wowbuddy.core.candidates import Rule
+from wowbuddy.core.dev_protocol import DEV_VERSION
+from wowbuddy.engine.dispatch import ActionDispatcher
+from wowbuddy.core.old_protocol import OldFrame
+from wowbuddy.engine.pipeline import DecisionPipeline, PreparedFrame
+from wowbuddy.engine.scheduler import Scheduler, SealMemory, SEAL_IDS, self_buff_actions
+from wowbuddy.win32.windows_keys import KeySender
 
 
 def packet(state, seq=1, ack=0):
@@ -281,7 +281,7 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(self.backend.of("PostMessageW"), [("PostMessageW", 10, 0x100, 0x65, 1),
                                                            ("PostMessageW", 10, 0x101, 0x65, 0xC0000001)])
         calls = len(self.backend.of("PostMessageW"))
-        from wowbuddy.pixel_geometry import RGBImage
+        from wowbuddy.core.pixel_geometry import RGBImage
         failed = self.scheduler.tick(RGBImage([]), hwnd=10, send_interval_ms=100)
         self.assertEqual(failed.status, "invalid_frame")
         self.assertEqual(len(self.backend.of("PostMessageW")), calls)

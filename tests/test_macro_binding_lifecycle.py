@@ -5,6 +5,9 @@ from lupa.lua51 import LuaRuntime
 SOURCE=Path(__file__).resolve().parents[1]/'addon/WowBuddyDev/Core.lua'
 
 
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
+
+
 class BindingLifecycleTests(unittest.TestCase):
     def setUp(self):
         self.lua=LuaRuntime(unpack_returned_tuples=True)
@@ -64,7 +67,7 @@ class BindingLifecycleTests(unittest.TestCase):
           GetUserMacro=function() return false end,
           AddErrorLog=function(category,message) errors[#errors+1]=message end}
         ''')
-        source=SOURCE.read_text('utf8')
+        source=rebuilt_core()
         start=source.index('local secureButtons = {}')
         end=source.index('SLASH_PMBIND1 =',start)
         self.lua.execute(source[start:end])

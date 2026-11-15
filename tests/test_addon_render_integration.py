@@ -13,12 +13,12 @@ from tests import test_addon_full_load as full_load
 
 ROOT = full_load.ROOT
 sys.path.insert(0, str(ROOT / 'desktop'))
-from wowbuddy.assets import Assets
-from wowbuddy.dispatch import ActionDispatcher
-from wowbuddy.pixel_geometry import RGBImage
-from wowbuddy.dev_protocol import DEV_VERSION
-from wowbuddy.scheduler import Scheduler
-from wowbuddy.windows_keys import CtypesWin32Backend, KeySender
+from wowbuddy.engine.assets import Assets
+from wowbuddy.engine.dispatch import ActionDispatcher
+from wowbuddy.core.pixel_geometry import RGBImage
+from wowbuddy.core.dev_protocol import DEV_VERSION
+from wowbuddy.engine.scheduler import Scheduler
+from wowbuddy.win32.windows_keys import CtypesWin32Backend, KeySender
 
 
 class AddonRenderIntegrationTests(unittest.TestCase):
@@ -234,7 +234,7 @@ class AddonRenderIntegrationTests(unittest.TestCase):
             self.assertTrue(result.frame.ok,result.frame.status)
             self.assertEqual(result.frame.spec_id,'1482')
             return result.frame
-        from wowbuddy.auto_target import parse_auto_target
+        from wowbuddy.core.auto_target import parse_auto_target
         initial=render()
         self.assertEqual(initial.values['master_switch'],'ON')
         self.assertEqual(parse_auto_target(float(initial.values['ttd'])).state,2)

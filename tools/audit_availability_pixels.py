@@ -9,9 +9,9 @@ from lupa.lua51 import LuaRuntime
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 sys.path.insert(0,str(ROOT/'tests/core'))
-from wowbuddy.expressions import EvaluationContext
-from wowbuddy.assets import Assets
-from wowbuddy.dev_protocol import DEV_VERSION, MAX_AVAILABILITY_SPELLS
+from wowbuddy.core.expressions import EvaluationContext
+from wowbuddy.engine.assets import Assets
+from wowbuddy.core.dev_protocol import DEV_VERSION, MAX_AVAILABILITY_SPELLS
 from test_old_protocol import render_old
 from test_pipeline import render_readable
 

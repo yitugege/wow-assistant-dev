@@ -6,6 +6,7 @@
 -- 重命名：301f9d.lua → DebugDock.lua（按功能重命名）
 -- 作用：调试窗口（充能直读、驱散开发、场景诊断）
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("DebugDock", { "CoreSettings", "CoreLocale", "CoreControls", "ChargeDisplay" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local DEBUG_PREFIX = "|cff00ff88[WowBuddyDev Dev]|r"
 local dockSections = {
   {

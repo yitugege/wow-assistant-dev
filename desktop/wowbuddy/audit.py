@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from .packages import read_addon, read_bundle, write_addon, write_bundle, compare_directory
+from wowbuddy.addons.packages import read_addon, read_bundle, write_addon, write_bundle, compare_directory
 
 EXPECTED_MAIN_SHA256 = "7b3c05fdbc2369f7a8fb7bb870fb0341ba1891223212e3a02b54d5c62fb9d488"
 

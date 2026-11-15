@@ -7,7 +7,10 @@ from lupa.lua51 import LuaRuntime
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.packages import read_addon
+from wowbuddy.addons.packages import read_addon
+
+
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
 
 
 class OriginalCastStateTests(unittest.TestCase):
@@ -17,7 +20,7 @@ class OriginalCastStateTests(unittest.TestCase):
         payload=path.read_bytes()
         self.assertEqual(hashlib.sha256(payload).hexdigest(),'361134bc9f2dd0b2c8cd8849b3741bd88d09c55ec371de9abc7b6f79502ebbed')
         old=next(m.data.decode('utf-8-sig') for m in read_addon(payload) if m.name=='Core.lua')
-        new=(ROOT/'addon/WowBuddyDev/Core.lua').read_text('utf8')
+        new=rebuilt_core()
         runtimes=[]
         for source in (old,new):
             lua=LuaRuntime(unpack_returned_tuples=True)

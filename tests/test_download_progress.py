@@ -2,7 +2,7 @@ import io,sys,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.github_addon import read_download
+from wowbuddy.update.github_addon import read_download
 
 class Response(io.BytesIO):
     def __init__(self,data,length=None):

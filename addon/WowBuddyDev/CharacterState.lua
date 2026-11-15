@@ -1,4 +1,5 @@
 -- 在原色条右侧发布角色和地图读数，原色格的顺序保持不变。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("CharacterState", { "CoreSettings", "CoreClassData", "CoreButtons", "CoreEvents", "Bindings", "AutoTarget", "Recovery", "WandShot", "ForeverClassSupport" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local addon = WowBuddyDev
 local textures = {}
 local sessionTextures = {}
@@ -1326,9 +1327,7 @@ local function targetRejection()
     if classification == "elite" or classification == "rareelite" or classification == "worldboss" then return 4 end
   end
   if read(UnitIsTrivial, "target") == true then return 3 end
-  local targetLevel = read(UnitLevel, "target")
-  if not integer(playerLevel, 5, 255) or not integer(targetLevel, 1, 255)
-      or targetLevel ~= playerLevel - 4 then return 5 end
+  -- 2026-11-15 放弃“只打比角色低 4 级的怪”（原因 5），任意等级的普通怪都可攻击。
 end
 
 local function collectDiscard(rejection)

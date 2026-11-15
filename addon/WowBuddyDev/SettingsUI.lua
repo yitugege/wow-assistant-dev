@@ -6,6 +6,7 @@
 -- 重命名：7ec6f7.lua → SettingsUI.lua（按功能重命名）
 -- 作用：设置界面：宏行/按键/天赋导入
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("SettingsUI", { "CoreSettings", "CoreState", "Core", "CoreLocale", "CoreButtons", "CoreEvents", "CoreControls", "AutoTarget", "Recovery", "PanelV2", "PixelBar" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local mainWindow = CreateFrame("Frame", "WowBuddyDevMain", UIParent, BackdropTemplateMixin and "BackdropTemplate")
 mainWindow:SetSize(540, 560)
 mainWindow:SetPoint("CENTER", UIParent, "CENTER", 0, 0)

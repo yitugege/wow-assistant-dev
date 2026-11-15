@@ -6,6 +6,7 @@
 -- 重命名：68c604.lua → ActionKeyCheck.lua（按功能重命名）
 -- 作用：动作键位规范化与校验（VERIFIED_ACTION_KEYS）
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("ActionKeyCheck", {  }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local verifiedFunctionKeys = { "F6", "F7", "F8", "F9", "F10", "F11", "F12" }
 -- 功能：把各种写法的按键名归一成统一形式：全大写、修饰键按 CTRL-ALT-SHIFT 排序、小键盘别名换成客户端叫法。
 -- 入参：rawKeyText 按键名，任意写法。

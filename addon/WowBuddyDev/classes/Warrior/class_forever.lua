@@ -1,6 +1,7 @@
 -- 作用：无限战士 1491（练级输出，按已学技能和当前姿态启用）。
 -- IDs: research/forever-warrior-20260919/warrior-spell-ids.json, build 1.60.1.69913.
 
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("classes/Warrior/class_forever", { "CoreSettings", "CoreClassData", "Core", "CoreButtons", "PanelV2", "PixelBar", "ForeverClassSupport" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 WowBuddyDev.RegisterPixelStripV2(1491, {
   -- ==================== 横排 V2 数值格（OCR 读取通道）====================
   -- 只有四种 kind 会出现在横排面板上：

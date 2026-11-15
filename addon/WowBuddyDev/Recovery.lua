@@ -1,4 +1,5 @@
 -- 脱战恢复。只从背包读取配置物品，实际使用交给现有的安全宏按钮。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("Recovery", { "CoreSettings", "Core", "CoreCastState", "CoreButtons", "AutoTarget", "PixelBar" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local addon = WowBuddyDev
 local packetBase = 0xC00000
 local conjureBase = 0x800000

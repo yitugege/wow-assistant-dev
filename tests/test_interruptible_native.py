@@ -6,7 +6,7 @@ import sys
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.expressions import EvaluationContext,evaluate
+from wowbuddy.core.expressions import EvaluationContext,evaluate
 from test_availability_display_native import QString
 
 

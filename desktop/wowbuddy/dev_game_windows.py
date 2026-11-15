@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import re
 from functools import lru_cache
-from .launcher import APPLICATION_NAME,BUSINESS_EXE
+from wowbuddy.legacy.launcher import APPLICATION_NAME,BUSINESS_EXE
 from .release_identity import CACHE_NAMESPACE,file_sha256
 
 

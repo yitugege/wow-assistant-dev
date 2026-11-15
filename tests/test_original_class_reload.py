@@ -7,7 +7,10 @@ from lupa.lua51 import LuaRuntime
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.packages import read_addon
+from wowbuddy.addons.packages import read_addon
+
+
+from addon_sources import addon_source, rebuilt_core  # Core.lua 已拆分，按原顺序拼回
 
 
 class OriginalClassReloadTests(unittest.TestCase):
@@ -31,7 +34,7 @@ class OriginalClassReloadTests(unittest.TestCase):
             function WowBuddyDev.RestorePersistentCooldowns() calls[#calls+1]='cooldowns' end
             function WowBuddyDev.RestorePersistentConsumableCooldowns() calls[#calls+1]='consumables' end
             function WowBuddyDev.RefreshStateLogo() calls[#calls+1]='logo' end''')
-            def source(name):return original[name] if old else (ROOT/'addon/WowBuddyDev'/name).read_text('utf8')
+            def source(name):return original[name] if old else addon_source(name)
             for name in ('ForeverTalentData.lua','ForeverClassSupport.lua'):
                 lua.execute(source(name))
             for name in ('Mage','Druid','Hunter','Paladin','Priest','Rogue','Shaman','Warlock','Warrior'):

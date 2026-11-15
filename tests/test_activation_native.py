@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'desktop'))
 sys.path.insert(0, str(ROOT / 'tests/core'))
 from test_windows_keys import FakeWin32
-from wowbuddy.keybindings import parse_keybinding
-from wowbuddy.windows_keys import activate_and_send
+from wowbuddy.core.keybindings import parse_keybinding
+from wowbuddy.win32.windows_keys import activate_and_send
 
 
 class ActivationNativeTests(unittest.TestCase):
@@ -134,7 +134,7 @@ class ActivationNativeTests(unittest.TestCase):
                     self.unexpected.clear()
                     native = bool(self.native(10, 65, 0, 30, 0))
                     rebuilt_backend = backend()
-                    with patch('wowbuddy.windows_keys.send_input',
+                    with patch('wowbuddy.win32.windows_keys.send_input',
                                side_effect=lambda b, binding, hold: self.fake_send(b, binding.vk, hold)):
                         rebuilt = activate_and_send(rebuilt_backend, 10, parse_keybinding('A'), 30)[0]
                     self.assertEqual(self.unexpected, [])

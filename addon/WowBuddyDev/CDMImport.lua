@@ -6,6 +6,7 @@
 -- 重命名：01b1a6.lua → CDMImport.lua（按功能重命名）
 -- 作用：冷却管理器(CDM)配置导入 + LibSharedMedia 字体注册
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("CDMImport", { "CoreSettings", "CoreLocale" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local cachedDB = nil
 local s = "default"
 local VIEWER_FRAME_NAMES = { "EssentialCooldownViewer", "UtilityCooldownViewer", "BuffIconCooldownViewer", "BuffBarCooldownViewer" }
@@ -16,9 +17,9 @@ local migrateDB
 -- 说明：优先挂在 P07483180.DB 下，插件核心没加载时退回全局 CDMStateSaverDB；首次取用时先跑 migrateDB 升级结构。注意：cachedDB 缓存的是表引用，之后不再重新查 _G，只有 /reload 才会刷新。
 local function getDB()
   if not cachedDB then
-    if _G.WowBuddyDev and _G.WowBuddyDev.DB then
-      _G.WowBuddyDev.DB.cdmStateSaverDB = _G.WowBuddyDev.DB.cdmStateSaverDB or {}
-      cachedDB = _G.WowBuddyDev.DB.cdmStateSaverDB
+    if WowBuddyDev and WowBuddyDev.DB then
+      WowBuddyDev.DB.cdmStateSaverDB = WowBuddyDev.DB.cdmStateSaverDB or {}
+      cachedDB = WowBuddyDev.DB.cdmStateSaverDB
     else
       _G.CDMStateSaverDB = _G.CDMStateSaverDB or {}
       cachedDB = _G.CDMStateSaverDB
@@ -232,23 +233,6 @@ local function measureText(fontPath, fontSize, text, fontFlags)
   probeFontString:Hide()
   local uiWidth, uiHeight = UIParent:GetWidth(), UIParent:GetHeight()
   return textWidth, textHeight, textWidth / uiWidth, textHeight / uiHeight
-end
--- 功能：量出 viewer 文本的最大宽高：冷却时间按 0:00、层数按 99 各量一次后取大值。
--- 入参：无。
--- 出参：最大宽、最大高、归一化宽、归一化高、冷却字号、层数字号。
--- 说明：取 99 是因为层数最多两位；换字体或改字号后几何会变，所以每次都要重新量，不能缓存。
-local function measureViewerTextMetrics()
-  local fontPath = getFontPath()
-  local fontFlags = getFontFlags()
-  local db = getDB()
-  local cooldownFontSize = db.cooldownFontSize or 16
-  local stackFontSize = db.stackFontSize or 14
-  local cdWidth, cdHeight, cdRelWidth, cdRelHeight = measureText(fontPath, cooldownFontSize, "0:00", fontFlags)
-  local stackTextWidth, stackTextHeight, stackRelWidth, stackRelHeight = measureText(fontPath, stackFontSize, "99", fontFlags)
-  local maxTextWidth = math.max(cdWidth, stackTextWidth)
-  local maxTextHeight = math.max(cdHeight, stackTextHeight)
-  local uiWidth, uiHeight = UIParent:GetWidth(), UIParent:GetHeight()
-  return maxTextWidth, maxTextHeight, maxTextWidth / uiWidth, maxTextHeight / uiHeight, cooldownFontSize, stackFontSize
 end
 -- 功能：把一个 FontString 重新锚到父框的指定角上。
 -- 入参：fontString 目标 FontString；point 锚点（默认 BOTTOMRIGHT）；offsetX 相对 X；offsetY 相对 Y；relativeFrame 相对框（默认取 FontString 自己的父框）。

@@ -9,12 +9,12 @@ from unittest.mock import patch
 import zipfile
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.dev_addon_install import install_package, client_directory
+from wowbuddy.addons.dev_addon_install import install_package, client_directory
 from tools.build_addon import build
 
 class InstallTests(unittest.TestCase):
     def legacy(self):
-        from wowbuddy.addon_install import SIGNATURE_FILES
+        from wowbuddy.addons.addon_install import SIGNATURE_FILES
         directory=self.client/'Interface/AddOns/legacy'
         directory.mkdir(parents=True,exist_ok=True)
         for name in SIGNATURE_FILES:(directory/name).write_text('-- legacy','utf8')
@@ -28,7 +28,7 @@ class InstallTests(unittest.TestCase):
         self.assertEqual(record['addon_directory'],result['addon_directory'])
         self.assertEqual(result['cleanup_deleted'],0)
         self.assertEqual(before,{path.name:path.read_bytes() for path in legacy.iterdir()})
-        from wowbuddy.dev_addon_cleanup import cleanup_old_addons
+        from wowbuddy.addons.dev_addon_cleanup import cleanup_old_addons
         self.assertEqual(cleanup_old_addons(self.client).deleted,1)
         self.assertFalse(legacy.exists())
         self.assertTrue((self.target/'Core.lua').is_file())
@@ -36,7 +36,7 @@ class InstallTests(unittest.TestCase):
     def test_install_failure_never_runs_cleanup(self):
         legacy=self.legacy()
         self.package.write_bytes(b'bad')
-        with patch('wowbuddy.dev_addon_cleanup.cleanup_addons_directory') as cleanup:
+        with patch('wowbuddy.addons.dev_addon_cleanup.cleanup_addons_directory') as cleanup:
             with self.assertRaises(ValueError):install_package(self.package,self.client)
             cleanup.assert_not_called()
         self.assertTrue(legacy.exists())
@@ -44,8 +44,8 @@ class InstallTests(unittest.TestCase):
     def test_explicit_cleanup_failure_preserves_both_installs(self):
         legacy=self.legacy()
         install_package(self.package,self.client)
-        from wowbuddy.dev_addon_cleanup import cleanup_old_addons
-        with patch('wowbuddy.addon_actions._remove_plugin_directory',side_effect=OSError('locked')):
+        from wowbuddy.addons.dev_addon_cleanup import cleanup_old_addons
+        with patch('wowbuddy.addons.addon_actions._remove_plugin_directory',side_effect=OSError('locked')):
             result=cleanup_old_addons(self.client)
         self.assertEqual(result.deleted,0)
         self.assertIn('删除失败',result.notes)

@@ -3,7 +3,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.build_client_release import build_client
-from wowbuddy.github_client import check_latest,download_checked,run_check_command,REPOSITORY,ZIP_NAME,MANIFEST_NAME
+from wowbuddy.update.github_client import check_latest,download_checked,run_check_command,REPOSITORY,ZIP_NAME,MANIFEST_NAME
 
 class ClientGithubTests(unittest.TestCase):
     def test_new_version_download_pins_assets_and_checks_content(self):
@@ -43,7 +43,7 @@ class ClientGithubTests(unittest.TestCase):
         from test_dev_tray import TrayTests
         from unittest.mock import patch
         def exercise(window):
-            with patch('wowbuddy.github_client.check_latest',return_value={'current_version':'0.2.1','version':'0.3.0','has_update':True}):
+            with patch('wowbuddy.update.github_client.check_latest',return_value={'current_version':'0.2.1','version':'0.3.0','has_update':True}):
                 window.ui.update_check_button.click()
                 window._client_update_future.result(timeout=5)
                 window._finish_client_update_task()

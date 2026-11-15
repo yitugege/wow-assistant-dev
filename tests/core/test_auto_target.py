@@ -2,7 +2,7 @@
 
 import unittest
 
-from wowbuddy.auto_target import AutoTargetPacket, PACKET_BASE, parse_auto_target
+from wowbuddy.core.auto_target import AutoTargetPacket, PACKET_BASE, parse_auto_target
 
 
 def packet(key: int, state: int = 1, ack: int = 0, sequence: int = 1) -> int:

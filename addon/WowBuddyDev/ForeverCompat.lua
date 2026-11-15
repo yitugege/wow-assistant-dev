@@ -35,7 +35,8 @@
 --          本文件在 _G.P07483180 不存在时会自行创建它。
 -- ==========================================================================
 
-local ADDON = _G.WowBuddyDev
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("ForeverCompat", { "ForeverTalents", "Core" }) or _G.WowBuddyDev -- @@注册表命名空间@@
+local ADDON = WowBuddyDev
 if type(ADDON) ~= "table" then
     ADDON = {}
     _G.WowBuddyDev = ADDON

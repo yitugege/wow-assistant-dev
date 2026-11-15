@@ -5,7 +5,7 @@ from unittest.mock import Mock,patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy import dev_outer_entry as entry
-from wowbuddy.launcher import LauncherResult
+from wowbuddy.legacy.launcher import LauncherResult
 
 
 class OuterEntryTests(unittest.TestCase):

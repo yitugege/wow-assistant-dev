@@ -6,9 +6,9 @@ import tempfile,json,hashlib
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
 from wowbuddy.dev_game_windows import AssistantWindowFilter,is_cached_assistant
-from wowbuddy.launcher import APPLICATION_NAME,BUSINESS_EXE
+from wowbuddy.legacy.launcher import APPLICATION_NAME,BUSINESS_EXE
 from wowbuddy.release_identity import CACHE_NAMESPACE
-from wowbuddy.game_windows import TitleResult,enumerate_windows,find_game_window
+from wowbuddy.win32.game_windows import TitleResult,enumerate_windows,find_game_window
 
 
 class Windows:

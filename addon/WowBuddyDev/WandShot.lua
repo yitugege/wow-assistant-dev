@@ -1,4 +1,5 @@
 -- 独立版的魔杖填充动作，沿用现有安全宏与有效绑定检查。
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("WandShot", { "CoreSettings", "CoreButtons", "AutoTarget" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local addon = WowBuddyDev
 local spellID = 5019
 local classes = { MAGE = true, PRIEST = true, WARLOCK = true }

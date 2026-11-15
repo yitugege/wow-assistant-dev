@@ -5,9 +5,9 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from tools.check_frozen_outer import run
 from tools.check_outer_gui import close_owned_main
-from wowbuddy.launcher import release_directory,BUSINESS_EXE
+from wowbuddy.legacy.launcher import release_directory,BUSINESS_EXE
 from wowbuddy.release_identity import read_release_identity,CACHE_NAMESPACE,file_sha256
-from wowbuddy.game_windows import CtypesWindowBackend,enumerate_windows
+from wowbuddy.win32.game_windows import CtypesWindowBackend,enumerate_windows
 from wowbuddy.dev_game_windows import AssistantWindowFilter
 
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'desktop'))
 from PySide6.QtWidgets import QApplication
-from wowbuddy.swatch_strip import SwatchStrip, SwatchItem
+from wowbuddy.app.swatch_strip import SwatchStrip, SwatchItem
 
 
 class SwatchPaintTests(unittest.TestCase):

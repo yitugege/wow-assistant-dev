@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'desktop'))
 from PySide6.QtWidgets import QApplication
 from wowbuddy.desktop import NoSystemBackend
-from wowbuddy.game_windows import TitleResult
+from wowbuddy.win32.game_windows import TitleResult
 import run_dev
 
 class Windows(NoSystemBackend):
@@ -75,9 +75,9 @@ class WatchTests(unittest.TestCase):
             return 0
 
         with (TemporaryDirectory() as directory,
-              patch('wowbuddy.game_windows.CtypesWindowBackend', return_value=backend),
-              patch('wowbuddy.capture.make_win32_capture', return_value=NoSystemBackend()),
-              patch('wowbuddy.windows_keys.CtypesWin32Backend', return_value=NoSystemBackend()),
+              patch('wowbuddy.win32.game_windows.CtypesWindowBackend', return_value=backend),
+              patch('wowbuddy.win32.capture.make_win32_capture', return_value=NoSystemBackend()),
+              patch('wowbuddy.win32.windows_keys.CtypesWin32Backend', return_value=NoSystemBackend()),
               patch.object(QApplication, 'exec', side_effect=event_loop)):
             self.assertEqual(run_dev.launch(directory, watch=True, hub_online=False, client_online=False,
                                             addon_online=False), 0)
@@ -103,7 +103,7 @@ class WatchTests(unittest.TestCase):
             self.assertTrue(window.session.is_active())
             self.assertEqual(window.monitor.target_hwnd,456)
             return 0
-        with TemporaryDirectory() as directory, patch('wowbuddy.game_windows.CtypesWindowBackend',return_value=backend), patch('wowbuddy.capture.make_win32_capture',return_value=NoSystemBackend()), patch('wowbuddy.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()), patch.object(QApplication,'exec',side_effect=event_loop):
+        with TemporaryDirectory() as directory, patch('wowbuddy.win32.game_windows.CtypesWindowBackend',return_value=backend), patch('wowbuddy.win32.capture.make_win32_capture',return_value=NoSystemBackend()), patch('wowbuddy.win32.windows_keys.CtypesWin32Backend',return_value=NoSystemBackend()), patch.object(QApplication,'exec',side_effect=event_loop):
             try:
                 self.assertEqual(run_dev.launch(directory,watch=True,hub_online=False,client_online=False,addon_online=False),0)
                 self.assertFalse(seen[0].watch_timer.isActive())

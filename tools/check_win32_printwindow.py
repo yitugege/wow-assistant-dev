@@ -21,10 +21,10 @@ def check(*, backend='printwindow', move_window=False, decorated=False, readable
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication,QWidget
     from PySide6.QtGui import QImage,QPainter
-    from wowbuddy.capture import Win32WindowAPI,Win32PrintWindow,Win32DxgiBackend,DxgiCapture,Rect,WindowCapture
-    from wowbuddy.game_windows import CtypesWindowBackend,find_game_window
-    from wowbuddy.pixel_geometry import RGBImage
-    from wowbuddy.assets import Assets
+    from wowbuddy.win32.capture import Win32WindowAPI,Win32PrintWindow,Win32DxgiBackend,DxgiCapture,Rect,WindowCapture
+    from wowbuddy.win32.game_windows import CtypesWindowBackend,find_game_window
+    from wowbuddy.core.pixel_geometry import RGBImage
+    from wowbuddy.engine.assets import Assets
     from test_old_protocol import render_old
     from test_pipeline import render_readable
     app=QApplication.instance() or QApplication([])

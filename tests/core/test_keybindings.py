@@ -5,7 +5,7 @@ import json
 import re
 import unittest
 
-from wowbuddy.keybindings import KeyBinding, KEY_VKS, is_extended_key, parse_keybinding
+from wowbuddy.core.keybindings import KeyBinding, KEY_VKS, is_extended_key, parse_keybinding
 
 
 ROOT = Path(__file__).resolve().parents[2]

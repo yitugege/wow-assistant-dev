@@ -7,6 +7,7 @@
 -- 作用：宏授权与编译校验（含中文客户端判断）
 -- ==========================================================================
 WowBuddyDev = WowBuddyDev or {}
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("MacroAuthorize", { "CoreClassData", "CoreLocale", "CoreButtons", "MacroRefsData" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local origRegisterClass = WowBuddyDev.RegisterClass
 local origGetDefaultMacro = WowBuddyDev.GetDefaultMacro
 local reportedLocalizeErrors = {}

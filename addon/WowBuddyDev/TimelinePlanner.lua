@@ -6,6 +6,7 @@
 -- 重命名：2a88b8.lua → TimelinePlanner.lua（按功能重命名）
 -- 作用：时间轴规划器主体（逐帧采集、预警）
 -- ==========================================================================
+local WowBuddyDev = (_G.WowBuddyDev and _G.WowBuddyDev.Namespace) and _G.WowBuddyDev.Namespace("TimelinePlanner", { "CoreSettings", "PixelBar", "TimelineData_1" }) or _G.WowBuddyDev -- @@注册表命名空间@@
 local ALERT_SEAL_COLOR = 3260648
 local COLOR_MASK_24BIT = 16777215
 local GEN_WRAP_LIMIT = 8388607

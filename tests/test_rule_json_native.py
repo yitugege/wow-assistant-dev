@@ -7,7 +7,7 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.candidates import Action,parse_rules
+from wowbuddy.core.candidates import Action,parse_rules
 
 
 class RuleJsonNativeTests(unittest.TestCase):

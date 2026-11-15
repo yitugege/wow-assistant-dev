@@ -8,7 +8,7 @@ import pefile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'desktop'))
-from wowbuddy.packages import read_addon, read_bundle, compare_directory
+from wowbuddy.addons.packages import read_addon, read_bundle, compare_directory
 
 
 def resource_inventory(data):

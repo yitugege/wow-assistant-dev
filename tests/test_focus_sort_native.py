@@ -11,10 +11,10 @@ from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.candidates import Candidate, _reorder_focus_health
-from wowbuddy.expressions import EvaluationContext
-from wowbuddy.focus_sort import health_order
-from wowbuddy.focus_sort import _temporary_buffer
+from wowbuddy.core.candidates import Candidate, _reorder_focus_health
+from wowbuddy.core.expressions import EvaluationContext
+from wowbuddy.core.focus_sort import health_order
+from wowbuddy.core.focus_sort import _temporary_buffer
 
 
 class FocusSortNativeTests(unittest.TestCase):
@@ -88,7 +88,7 @@ class FocusSortNativeTests(unittest.TestCase):
                     if len(calls) <= failures:
                         raise MemoryError('只注入临时缓冲区申请失败')
                     return bytearray(size)
-                with patch('wowbuddy.focus_sort._allocate_buffer', allocate):
+                with patch('wowbuddy.core.focus_sort._allocate_buffer', allocate):
                     actual, reserved = _temporary_buffer(count)
                 self.assertEqual(calls, requests)
                 self.assertEqual(actual, capacity)
@@ -96,16 +96,16 @@ class FocusSortNativeTests(unittest.TestCase):
                 rng = random.Random(count)
                 values = [rng.choice([0., 10., 50., 99., float('nan')]) for _ in range(count)]
                 calls.clear()
-                with patch('wowbuddy.focus_sort._allocate_buffer', allocate):
+                with patch('wowbuddy.core.focus_sort._allocate_buffer', allocate):
                     result = health_order(values)
                 self.assertEqual(calls, requests)
                 self.assertEqual(result, self.order(values, capacity))
 
     def test_only_buffer_memory_error_is_recoverable(self):
-        with patch('wowbuddy.focus_sort._allocate_buffer', side_effect=RuntimeError('allocator')):
+        with patch('wowbuddy.core.focus_sort._allocate_buffer', side_effect=RuntimeError('allocator')):
             with self.assertRaisesRegex(RuntimeError, 'allocator'):
                 health_order([1.] * 2049)
-        with patch('wowbuddy.focus_sort._sort', side_effect=MemoryError('intermediate')):
+        with patch('wowbuddy.core.focus_sort._sort', side_effect=MemoryError('intermediate')):
             with self.assertRaisesRegex(MemoryError, 'intermediate'):
                 health_order([1.] * 2049)
 

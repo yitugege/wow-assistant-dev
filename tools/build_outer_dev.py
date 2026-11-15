@@ -7,11 +7,11 @@ import subprocess
 import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.launcher import BUSINESS_EXE
-from wowbuddy.packages import Member,write_bundle,read_bundle
+from wowbuddy.legacy.launcher import BUSINESS_EXE
+from wowbuddy.addons.packages import Member,write_bundle,read_bundle
 from wowbuddy.release_identity import ReleaseIdentity,file_sha256,read_release_identity
 from wowbuddy.dev_version import VERSION
-from wowbuddy.github_outer import MANIFEST_NAME,verify_outer
+from wowbuddy.update.github_outer import MANIFEST_NAME,verify_outer
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
     identity=ReleaseIdentity(hashlib.sha256(payload).hexdigest(),manifest['executable_sha256'])
     stage=ROOT/'build/outer-resources';stage.mkdir(parents=True,exist_ok=True)
     (stage/'payload.bin').write_bytes(payload);(stage/'identity.json').write_bytes(identity.encode())
-    inputs=[ROOT/'run_outer_dev.py',*sorted((ROOT/'desktop/wowbuddy').glob('*.py'))]
+    inputs=[ROOT/'run_outer_dev.py',*sorted((ROOT/'desktop/wowbuddy').rglob('*.py'))]
     before={p.relative_to(ROOT).as_posix():file_sha256(p) for p in inputs}
     env=dict(os.environ);windows=Path(os.environ.get('SystemRoot',r'C:\Windows'))
     env['PATH']=os.pathsep.join(map(str,[Path(sys.executable).parent,Path(sys.base_prefix),windows/'System32',windows]))

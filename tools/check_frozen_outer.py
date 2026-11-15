@@ -11,7 +11,7 @@ import tempfile
 import time
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'desktop'))
-from wowbuddy.launcher import ChildLaunch,WindowsLauncherProcess,release_directory,BUSINESS_EXE
+from wowbuddy.legacy.launcher import ChildLaunch,WindowsLauncherProcess,release_directory,BUSINESS_EXE
 from wowbuddy.release_identity import read_release_identity,CACHE_NAMESPACE,file_sha256
 
 
