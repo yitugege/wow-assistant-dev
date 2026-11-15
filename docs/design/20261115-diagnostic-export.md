@@ -1,7 +1,7 @@
 # 一键导出诊断
 
 - 编号：20261115-diagnostic-export
-- 状态：离线自检通过（2026-11-15）；游戏验收 G1–G4 待用户执行
+- 状态：游戏验收通过（2026-11-15，G1–G4）
 - 来源：新需求（2026-11-15，流程改进第 3 条：游戏验收证据收集）
 - 发布版本：（发布后填写）
 
@@ -144,13 +144,15 @@
 
 ## 6. 游戏验收结果
 
-离线自检已全部通过；以下步骤待用户在 `D:\Program Files (x86)\World of Warcraft\_classic_`（或 `_classic_era_`）中执行，回传结果后填写。
+用户实际使用的客户端为 `D:\Program Files (x86)\World of Warcraft1.14\_forever_`（无限版，`Wow.exe`），而非最初提供的官方经典服目录；验收在该客户端上进行。
 
-| 步骤 | 操作（摘要，详见第 3 节） | 结果 | 证据 |
-|---|---|---|---|
-| G1 | 在助手中选择该客户端安装本次构建的插件（`dist/WowBuddyDev-dev.zip`），进游戏确认插件已加载（必要时勾选“加载过期插件”），登录后 `/reload` | 待执行 | 截图（如有报错或未加载） |
-| G2 | `/run error("wbd-diag-test")` → `/wbddiag` → `/reload` | 待执行 | 无 |
-| G3 | 助手中点击“导出诊断” | 待执行 | 导出的 zip |
-| G4 | 检查 zip：`manifest.json`、`WowBuddyDevRuntimeLog.luaErrors` 含 `wbd-diag-test`、搜不到账号名与 Windows 用户名 | 待执行 | zip 本身 |
+| 步骤 | 结果 | 证据 |
+|---|---|---|
+| G1 | 通过：14:01 经助手“安装”将本次构建（含 `RuntimeDiagnostics.lua`）装入 `_forever_\Interface\AddOns\WowBuddyDev`；游戏内插件运行正常（版本码 5718529 = 0x574201，自动选目标通道就绪，角色状态可读） | 监控日志 `monitor_20261115_140144.log`、`monitor_20261115_140259.log` |
+| G2 | 通过：`/run error("wbd-diag-test")` → `/wbddiag` → `/reload` 后，SavedVariables 中写入 `WowBuddyDevRuntimeLog`（`savedAt` 有值、`addonVersionCode = 5718529`、无 `snapshotError`，含 moduleErrors/luaErrors/errorLogs） | `wowbuddy-diagnostics-20261115-140800.zip` |
+| G3 | 通过：两次点击“导出诊断”（14:05:27、14:08:00）均生成 zip，无截断、无跳过，仅缺本来不存在的 `startup-error.log` | 两个 zip |
+| G4 | 通过：`clients/1/savedvariables/<ACCOUNT-1>/WowBuddyDev.lua` 中 `luaErrors` 含 `wbd-diag-test`（14:07:33）；按本机实际账号目录名与 Windows 用户名逐一检查，zip 成员名与内容中出现 0 次，用户名已替换为 `<USER>` | `wowbuddy-diagnostics-20261115-140800.zip` |
 
-结论：待游戏验收。
+结论：游戏验收通过。
+
+观察到的范围外问题（另行处理）：`World of Warcraft\_classic_era_` 于 13:58 被装入 GitHub v0.2.8 旧版插件（随机目录 `w9dc7a52c043c`）；是否由助手自动安装待用户确认。用户最初手工把导出的 zip 成员另存时文件名被打乱，不影响导出本身（以原始 zip 为准）。
