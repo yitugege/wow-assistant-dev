@@ -13,6 +13,9 @@ _REJECTED_TARGET_LIMIT = 3
 _REJECTED_TARGET_WINDOW_MS = 60_000
 _PULL_ATTEMPT_LIMIT = 2
 _SCAN_SECTORS = 4
+# 各扫向相对首个方向的转角。三向时跳过正后方（边走边找怪时刚走过来的方向已扫过）。
+_SECTOR_ANGLES = {4: (0, pi / 2, pi, 3 * pi / 2), 3: (0, pi / 2, -pi / 2)}
+_SECTOR_NAMES = {4: '四', 3: '三'}
 _TARGET_WAIT_MS = 8000
 _PULL_RECEIPT_MS = 2000
 
@@ -21,6 +24,7 @@ class ArrivalPull:
     def __init__(self, dispatcher, foreground):
         self.dispatcher = dispatcher
         self.foreground = foreground
+        self.sectors = _SCAN_SECTORS
         self._destination = None
         self._rejections = deque(maxlen=_REJECTED_TARGET_LIMIT)
         self._reset()
@@ -205,13 +209,15 @@ class ArrivalPull:
             return None
         scanning = self._scan_confirmed > 0
         attempts = self._scan_attempts if scanning else self._attempts
-        if self._scan_confirmed == _SCAN_SECTORS or attempts >= _PULL_ATTEMPT_LIMIT:
+        sectors = self.sectors if self.sectors in _SECTOR_ANGLES else _SCAN_SECTORS
+        if self._scan_confirmed >= sectors or attempts >= _PULL_ATTEMPT_LIMIT:
             self._finished = True
-            self.empty = (self._scan_confirmed == _SCAN_SECTORS if scanning
+            self.empty = (self._scan_confirmed >= sectors if scanning
                           else self._confirmed_attempts == _PULL_ATTEMPT_LIMIT)
             self._retry_at = now_ms + 45_000
             if scanning:
-                return '四个方向均未读到可攻击目标，已暂停重试。' if self.empty else '部分方向未收到选怪回执，已暂停重试。'
+                return (f'{_SECTOR_NAMES[sectors]}个方向均未读到可攻击目标，已暂停重试。' if self.empty
+                        else '部分方向未收到选怪回执，已暂停重试。')
             return ('两次首次选怪均收到回执但未读到可攻击目标，已暂停重试。' if self.empty
                     else '首次选怪回执不足，已暂停重试。')
 
@@ -228,7 +234,7 @@ class ArrivalPull:
 
         if scanning:
             sector = self._scan_confirmed
-            desired = self._scan_heading + sector * pi / 2
+            desired = self._scan_heading + _SECTOR_ANGLES[sectors][sector]
             angle = _angle_delta(desired, position.heading)
             if abs(angle) > 0.20:
                 if self._turn_until is not None and now_ms >= self._turn_until:

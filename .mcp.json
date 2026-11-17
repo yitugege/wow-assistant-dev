@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "wowbuddy": {
+      "type": "stdio",
+      "command": ".venv/Scripts/python.exe",
+      "args": ["tools/wowbuddy_mcp.py", "--data-dir", ".local"]
+    }
+  }
+}

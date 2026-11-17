@@ -69,6 +69,9 @@ class ForegroundMovement:
         self._pending_pulse_release = None
         self._watchdog = None
         self._deadline = 0.0
+        # 最近一次拒绝发键的原因与时间（monotonic 秒）；成功通过检查后清空。只用于日志与状态快照。
+        self.blocked_reason = None
+        self.blocked_at = None
 
     def can_input(self, hwnd, keys):
         return self._can_input(hwnd, keys, owned_key=None)
@@ -77,16 +80,25 @@ class ForegroundMovement:
         return is_foreground(self.keyboard, hwnd)
 
     def _can_input(self, hwnd, keys, owned_key):
+        reason = self._input_block(hwnd, keys, owned_key)
+        if reason is None:
+            self.blocked_reason = self.blocked_at = None
+            return True
+        self.blocked_reason, self.blocked_at = reason, monotonic()
+        return False
+
+    def _input_block(self, hwnd, keys, owned_key):
         keyboard = self.keyboard
-        if (not hwnd or not keyboard.IsWindow(hwnd) or not keyboard.GetAncestor(hwnd, 2)
-                or not self.in_foreground(hwnd)):
-            return False
+        if not hwnd or not keyboard.IsWindow(hwnd) or not keyboard.GetAncestor(hwnd, 2):
+            return '游戏窗口无效'
+        if not self.in_foreground(hwnd):
+            return '游戏不在前台'
         pid = self.processes.window_pid(hwnd)
         if not pid or executable_name(self.processes.process_path(pid)) not in GAME_EXECUTABLES:
-            return False
+            return '不是游戏进程'
         if any(keyboard.GetAsyncKeyState(vk) & 0x8000 for vk in (*keys, *_MANUAL_KEYS) if vk != owned_key):
-            return False
-        return self.in_foreground(hwnd)
+            return '检测到手动按键'
+        return None if self.in_foreground(hwnd) else '游戏不在前台'
 
     def keep_forward(self, hwnd, keys):
         """每次轮询都检查前台和接管按键，只有新定位帧才续期。"""
@@ -183,7 +195,7 @@ class ForegroundMovement:
         release = (KeyboardInput(event.vk, event.scan, event.flags | 2),)
         return self.keyboard.SendInput(release) == 1 or self.keyboard.SendInput(release) == 1
 
-    def pulse(self, hwnd, key, milliseconds, movement_keys, *, steering=False):
+    def pulse(self, hwnd, key, milliseconds, movement_keys, *, steering=False, limit=None):
         if steering:
             if not self.keep_forward(hwnd, movement_keys):
                 return False
@@ -197,8 +209,10 @@ class ForegroundMovement:
         try:
             if forward and self.on_forward is not None:
                 self.on_forward()
-            limit = 280 if not steering and key in movement_keys else 120
-            self.keyboard.Sleep(max(20, min(limit, milliseconds)))
+            cap = 280 if not steering and key in movement_keys else 120
+            if limit is not None and not steering and key in movement_keys[1:]:
+                cap = max(cap, min(1000, limit))     # 只放宽转向键：朝向搜索的半圈转身
+            self.keyboard.Sleep(max(20, min(cap, milliseconds)))
         finally:
             released = self._keyup(event)
             if not released:
@@ -266,7 +280,13 @@ class CombatFacing:
             error = _angle_delta(sample.target_heading, sample.heading)
             turn = left if error > 0 else right
             hold = min(280, max(45, round(abs(error) * 318)))
-        if not self.movement.pulse(session[0], turn, hold, sample.keys):
+            sent = self.movement.pulse(session[0], turn, hold, sample.keys)
+        elif self.attempts == 0:
+            # 经典版拿不到怪物方位。朝向错误说明目标在身后半圈：先转半圈（约 1 秒），一定落到正面半圈。
+            sent = self.movement.pulse(session[0], turn, 1000, sample.keys, limit=1000)
+        else:
+            sent = self.movement.pulse(session[0], turn, hold, sample.keys)
+        if not sent:
             return False
         self.last_sequence = sequence
         self.attempts += 1
@@ -274,6 +294,7 @@ class CombatFacing:
 
 
 class _LocalDetour:
+    grid = False
     radius = 1.35
     pulse_limit = 100
     stall_limit = 18
@@ -359,6 +380,34 @@ class _LocalDetour:
         return True
 
 
+class _GridDetour(_LocalDetour):
+    """按地图格子算出的绕行路点（docs/design/20261116-walk-grid-pathing.md）。
+
+    沿用 _LocalDetour 的路点跟随、脉冲与停滞计数；范围与脉冲上限按路线长度放宽，没有“另一侧”方案。
+    """
+    grid = True
+    radius = 2.5
+    stall_limit = 30
+
+    def __init__(self, position, destination, points):
+        self.anchor = MapDestination(position.map_id, position.x, position.y, position.life, '绕行起点')
+        self.plans = []
+        self.waypoints = [MapDestination(position.map_id, x, y, position.life, '格子绕行点') for x, y in points]
+        self.initial_distance = math.hypot(*destination.offset_from(position))
+        far = max((math.hypot(*point.offset_from(position)) for point in self.waypoints), default=0)
+        length, previous = 0.0, (position.x, position.y)
+        for point in self.waypoints:
+            length += map_yards(position, previous[0], previous[1], point.x, point.y)
+            previous = point.x, point.y
+        self.range_limit = far + 15
+        self.pulse_limit = 100 + int(length * 4)
+        self.visited = []
+        self.returning = False
+        self.pulses = 0
+        self.stalled_pulses = 0
+        self.best_distance = None
+
+
 class MapNavigator:
     def __init__(self, movement):
         self.movement = movement
@@ -373,9 +422,14 @@ class MapNavigator:
         self._detour = None
         self._detour_count = 0
         self._detour_origin = None
+        # 地图格子（automation/grid_route.GridRoutes）；None 时只用固定局部绕行。
+        self.grid = None
+        self._grid_attempts = 0
         self._trail = deque(maxlen=10)
         self._last_position = None
         self._position_paused = False
+        # 只读计数，供转向指标统计（automation/steering_stats）：不参与控制判断。
+        self.counters = {'stop_turns': 0, 'steer_pulses': 0, 'stalls': 0}
 
     def pause(self, session):
         if self._target is not None and self._target[0] == session:
@@ -400,6 +454,48 @@ class MapNavigator:
         self.blocked = True
         self.movement.release_forward()
         return f'已暂停前往「{destination.label}」。{reason}'
+
+    def _grid_detour(self, position, destination):
+        """返回 (_GridDetour 或 None, 未用格子的原因或 None)。"""
+        if self.grid is None or self.grid.grid(position.map_id) is None:
+            return None, None
+        if self._grid_attempts >= 3:
+            return None, '本段已按格子重算三次'
+        if not _LocalDetour.has_precision(position):
+            return None, '坐标精度不足'
+        self._grid_attempts += 1
+        self.grid.note_blocked(position)
+        prefer = None
+        for point in reversed(self._trail):
+            if math.hypot(*point.offset_from(position)) >= 1.5:
+                prefer = point.x, point.y
+                break
+        points, reason = self.grid.plan(position, destination, prefer=prefer)
+        if not points:
+            return None, reason
+        detour = _GridDetour(position, destination, points[1:-1])
+        if not detour.waypoints:
+            return None, '格子图上直线可达，但实际受阻'
+        return detour, None
+
+    def _start_detour(self, position, destination, cause=None):
+        """受阻后先试格子绕行，再退回固定局部绕行（次数上限不变）。"""
+        lead = f'{cause}，' if cause else '直行受阻，'
+        detour, grid_failure = self._grid_detour(position, destination)
+        if detour is not None:
+            self._detour = detour
+            self._detour_origin = detour.anchor
+            return f'{lead}按地图格子绕行前往「{destination.label}」（{len(detour.waypoints)} 个路点）。'
+        note = f'地图格子未找到绕行路线（{grid_failure}），' if grid_failure else ''
+        if self._detour_count >= 2:
+            return self._stop(destination, note + '本次已尝试两次局部绕行。')
+        detour = _LocalDetour(position, destination, self._trail, wider=self._detour_count > 0)
+        if not detour.waypoints:
+            return self._stop(destination, note + '当前位置缺少足够精度或空间来尝试绕行。')
+        self._detour_count += 1
+        self._detour = detour
+        self._detour_origin = detour.anchor
+        return f'{note}{lead}尝试绕行前往「{destination.label}」。'
 
     def observe(self, session, hwnd, position, destination, *, path=None):
         target = session, destination
@@ -433,6 +529,7 @@ class MapNavigator:
             self._other_map = None
             self._detour = None
             self._detour_count = 0
+            self._grid_attempts = 0
             self._detour_origin = None
             self._last_position = None
             self._position_paused = False
@@ -446,6 +543,7 @@ class MapNavigator:
                 self._other_map = position.map_id
                 self._detour = None
                 self._detour_count = 0
+                self._grid_attempts = 0
                 self._detour_origin = None
                 self._trail.clear()
                 self._last_position = None
@@ -493,6 +591,7 @@ class MapNavigator:
             self._finished = False
             self._detour = None
             self._detour_count = 0
+            self._grid_attempts = 0
             self._detour_origin = None
             self._trail.clear()
             self._reset_feedback()
@@ -509,6 +608,7 @@ class MapNavigator:
             self._reset_feedback()
         if detour is None and self._detour_origin and not self._detour_origin.contains(position, radius=24):
             self._detour_count = 0
+            self._grid_attempts = 0
             self._detour_origin = None
         if detour is None and not self._trail and destination.allow_detour:
             self._remember_progress(position)
@@ -526,6 +626,12 @@ class MapNavigator:
             if transition == 'backtrack':
                 return f'就地绕行受阻，沿刚走过的路线后退，再绕行前往「{destination.label}」。'
             if transition == 'complete':
+                if detour.grid:
+                    # 最后一个格子路点与目的地之间已确认无遮挡，交回直行。
+                    self._detour = None
+                    self._grid_attempts = 0
+                    self._trail.clear()
+                    return f'已通过格子绕行段，继续前往「{destination.label}」。'
                 if detour.initial_distance - remaining >= 3:
                     self._detour = None
                     self._trail.clear()
@@ -549,31 +655,30 @@ class MapNavigator:
             if self._turn_failures >= 5:
                 return self._stop(destination, '连续五次按键未读到预期的转向。')
             if self._forward_failures >= 5:
+                self.counters['stalls'] += 1
                 self._reset_feedback()
                 self.movement.release_forward()
                 if not destination.allow_detour:
                     reason = destination.blocked_reason or '路口未确认切图，也未读到继续前进的位移。'
                     return self._stop(destination, reason)
+                if detour is not None and detour.grid:
+                    self._detour = None
+                    return self._start_detour(position, destination, '格子绕行中受阻')
                 if detour is not None:
                     if detour.try_other_side():
                         return '当前侧绕行受阻，先沿已走过的路径退回起点。'
                     reason = '退回起点时也未读到位移。' if detour.returning else '绕行各可用方向均受阻。'
                     return self._stop(destination, reason)
-                if self._detour_count >= 2:
-                    return self._stop(destination, '本次已尝试两次局部绕行。')
-                detour = _LocalDetour(position, destination, self._trail, wider=self._detour_count > 0)
-                if not detour.waypoints:
-                    return self._stop(destination, '当前位置缺少足够精度或空间来尝试绕行。')
-                self._detour_count += 1
-                self._detour = detour
-                self._detour_origin = detour.anchor
-                return f'直行受阻，尝试绕行前往「{destination.label}」。'
+                return self._start_detour(position, destination)
 
         if detour is not None:
             detour.observe_distance(distance)
             if detour.pulses >= detour.pulse_limit or detour.stalled_pulses >= detour.stall_limit:
                 self._reset_feedback()
                 self.movement.release_forward()
+                if detour.grid:
+                    self._detour = None
+                    return self._start_detour(position, destination, '格子绕行未能接近路点')
                 if detour.try_other_side():
                     return '当前绕行方向未能接近路点，先退回绕行起点。'
                 reason = '退回绕行起点时未能接近路点。' if detour.returning else '绕行各可用方向均未能接近路点。'
@@ -617,6 +722,10 @@ class MapNavigator:
                 else self.movement.pulse(hwnd, key, hold, position.keys))
         if sent:
             self._previous = distance, position.heading, direction
+            if steering:
+                self.counters['steer_pulses'] += 1
+            elif direction:
+                self.counters['stop_turns'] += 1
             if detour is not None:
                 detour.note_pulse()
         return None

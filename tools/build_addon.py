@@ -6,9 +6,14 @@ import zipfile
 import secrets
 import re
 import posixpath
+import sys
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / 'desktop') not in sys.path:
+    sys.path.insert(0, str(ROOT / 'desktop'))
+from wowbuddy.dev_version import VERSION  # noqa: E402
+VERSION_LINE = f'## Version: {VERSION}-dev'
 NAME = 'WowBuddyDev'
 
 
@@ -113,13 +118,21 @@ def build(directory: Path, output: Path, *, random_names=False) -> dict:
                 parent=posixpath.dirname(relative)
                 paths[relative]=posixpath.join(parent,'f'+secrets.token_hex(8)+'.lua')
         paths[f'{NAME}.toc']=f'{addon_name}.toc'
+    def stamp_version(lines):
+        # 包内 TOC 的版本行固定为当前客户端版本，便于在游戏与助手中区分新旧插件。
+        lines=[line for line in lines if not line.startswith('## Version:')]
+        header=next((index for index, line in enumerate(lines) if not line.startswith('##')), len(lines))
+        return lines[:header]+[VERSION_LINE]+lines[header:]
     def transformed(path, content):
         relative=path.relative_to(directory).as_posix()
+        if path.suffix.lower()=='.toc' and not random_names:
+            return ('\n'.join(stamp_version(content.decode('utf-8-sig').splitlines()))+'\n').encode('utf8')
         if not random_names or path.suffix.lower() not in ('.toc','.xml'):
             return content
         text=content.decode('utf-8-sig')
         if path.suffix.lower()=='.toc':
-            text='\n'.join(paths.get(line.strip().replace('\\','/'),line) for line in text.splitlines())+'\n'
+            lines=stamp_version(text.splitlines())
+            text='\n'.join(paths.get(line.strip().replace('\\','/'),line) for line in lines)+'\n'
             text+='## X-WowBuddy-Product: wowbuddy-dev\n'
         else:
             parent=posixpath.dirname(relative)
@@ -147,7 +160,7 @@ def build(directory: Path, output: Path, *, random_names=False) -> dict:
                 raise RuntimeError(f'ZIP成员摘要不符：{member}')
     return {'artifact': output.name, 'sha256': hashlib.sha256(output.read_bytes()).hexdigest(),
             'members': manifest, 'source_only': True, 'game_verified': False,
-            'product':'wowbuddy-dev','addon_directory':addon_name,'random_names':random_names}
+            'product':'wowbuddy-dev','addon_directory':addon_name,'random_names':random_names,'version':VERSION}
 
 
 def main():

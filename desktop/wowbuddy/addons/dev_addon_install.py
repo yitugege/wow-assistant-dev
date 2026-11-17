@@ -26,6 +26,34 @@ def valid_install_record(record):
     return record.get('product')==PRODUCT and (name==NAME or random_addon_name(name))
 
 
+def package_version(package):
+    """插件包清单中的版本号；清单缺失或没有版本时返回空串。"""
+    try:
+        value = json.loads(Path(package).with_suffix('.manifest.json').read_text('utf8')).get('version', '')
+    except (OSError, ValueError, AttributeError):
+        return ''
+    return value if isinstance(value, str) else ''
+
+
+def installed_version(addons):
+    """AddOns 目录对应安装记录中的版本号（标准路径记录在客户端根目录，其他目录记录在本目录）；未知返回空串。"""
+    addons = Path(addons)
+    standard = addons.name.lower() == 'addons' and addons.parent.name.lower() == 'interface'
+    record_path = (addons.parent.parent if standard else addons) / '.wowbuddy-install.json'
+    try:
+        record = json.loads(record_path.read_text('utf8'))
+    except (OSError, ValueError):
+        return ''
+    value = record.get('version', '') if isinstance(record, dict) and valid_install_record(record) else ''
+    return value if isinstance(value, str) else ''
+
+
+def is_newer(candidate, current):
+    """candidate 版本号是否高于 current（按数字段比较）。"""
+    from wowbuddy.update.updater import compare_versions
+    return compare_versions(candidate, current) > 0
+
+
 def plain_path(path):
     """安装边界内不接受符号链接或Windows目录联接。"""
     for part in (path, *path.parents):
@@ -175,7 +203,11 @@ def _install_package(package, addons, backup_root, record_path):
             raise OSError('暂存插件文件验证失败')
         # 先准备安装记录；替换失败可同时恢复旧目录和原记录。
         staged_record=Path(temporary)/'install-record.json'
-        staged_record.write_text(json.dumps({'product':'wowbuddy-dev','addon_directory':installed_name},ensure_ascii=False),'utf8')
+        record={'product':'wowbuddy-dev','addon_directory':installed_name}
+        version=package_version(package)
+        if version:
+            record['version']=version
+        staged_record.write_text(json.dumps(record,ensure_ascii=False),'utf8')
         if previous.exists():
             backup_root.mkdir(exist_ok=True)
             stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
@@ -192,4 +224,4 @@ def _install_package(package, addons, backup_root, record_path):
             raise
     return {'target': str(target), 'backup': str(backup) if backup else None,
             'files': len(payload), 'addon_directory':installed_name,'game_verified': False,
-            'cleanup_deleted':0,'cleanup_notes':'其他插件目录保留。'}
+            'cleanup_deleted':0,'cleanup_notes':'其他插件目录保留。','version':package_version(package)}

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, replace
+import time
 from typing import Mapping
 
 from wowbuddy.core.candidates import Candidate, CandidateEngine
@@ -119,6 +120,40 @@ def readable_key_maps(document: Mapping) -> dict[str, dict[str, str]]:
     return result
 
 
+_COMBAT_OVERRIDABLE = frozenset({'当前怪物已被其他玩家占有', '当前怪物等级过低'})
+_COMBAT_REJECTION_PAUSE_S = 3.0
+_COMBAT_REJECTION_HEALTH = 50
+
+
+class CombatRejectionOverride:
+    """战斗中目标被拒绝时只短暂停手（docs/design/20261117-loop-issues.md L9）。
+
+    2026-11-17 02:05：目标被判“已被其他玩家占有”，同时被 3 只怪攻击，63 秒没有放技能，死亡。
+    “他人占有”“等级过低”在战斗中最多停 3 秒（给自动选目标换怪的时间），血量低于 50% 时立即还手；
+    玩家或玩家控制的单位永远不还手。
+    """
+
+    def __init__(self):
+        self.clock = time.monotonic
+        self.since = None
+
+    def reset(self):
+        self.since = None
+
+    def fight_back(self, fields, reason):
+        if fields.get('player_in_combat') != 'ON' or reason not in _COMBAT_OVERRIDABLE:
+            self.since = None
+            return False
+        now = self.clock()
+        if self.since is None:
+            self.since = now
+        try:
+            health = int(fields.get('player_health_pct', ''))
+        except (TypeError, ValueError):
+            health = 100
+        return health < _COMBAT_REJECTION_HEALTH or now - self.since >= _COMBAT_REJECTION_PAUSE_S
+
+
 @dataclass(frozen=True)
 class Decision:
     frame: Frame
@@ -177,6 +212,7 @@ class DecisionPipeline:
         self.unattended_grinding = False
         self.unattended_travel = False
         self.mob_policy_seen = False
+        self.combat_rejection = CombatRejectionOverride()
         self._arcane_target = None
         self._arcane_receipt = None
         self._arcane_step = 0
@@ -425,7 +461,13 @@ class DecisionPipeline:
                 stop = Candidate(label='装备待修理', reason='装备耐久已变红，暂停主动开怪。', tag='补给', stop=True)
                 return Decision(prepared.frame, fields, (stop,), prepared.thresholds, prepared.old_attempt,
                                 recovery_ready=recovery_ready, recovery_disabled=recovery_disabled)
-            if (self.unattended_grinding or fields.get('mob_policy') == 'ON') and (reason := fields.get('target_rejection')):
+            reason = (fields.get('target_rejection')
+                      if self.unattended_grinding or fields.get('mob_policy') == 'ON' else None)
+            if not reason:
+                self.combat_rejection.reset()
+            elif self.combat_rejection.fight_back(fields, reason):
+                reason = None                      # 战斗中停手已到上限：还手
+            if reason:
                 self.engine.last_auto_packet = None
                 stopped = (() if fields.get('player_in_combat') == 'OFF' else
                            (Candidate(label='已跳过目标', reason=reason, tag='选目标', stop=True),))

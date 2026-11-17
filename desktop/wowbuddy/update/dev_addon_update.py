@@ -2,7 +2,8 @@
 import json
 from pathlib import Path
 from wowbuddy.update.addon_update import AddonUpdater, ReinstallResult
-from wowbuddy.addons.dev_addon_install import install_addons_directory, read_package, valid_install_record
+from wowbuddy.addons.dev_addon_install import (install_addons_directory, installed_version, is_newer,
+                                               package_version, read_package, valid_install_record)
 from wowbuddy.update.github_addon import download_latest
 from wowbuddy.update.dev_update_handoff import write_json
 
@@ -44,7 +45,19 @@ def apply_release(release, pending, *, games, installed_name, on_log=None, insta
             return ReinstallResult(True,result['addon_directory'])
         except Exception as error:
             return ReinstallResult(False,error=str(error))
-    policy=AddonUpdater(None,None,pending,env={},application_dir='.',games=games,
+    release_version=package_version(release['package']) or str(release.get('tag','')).removeprefix('v')
+    def eligible_games():
+        # 已装版本不低于发布版时跳过，避免把开发构建或更新的安装替换成较旧的发布包。
+        result=[]
+        for game in games():
+            current=installed_version(game.addons_path) if game.addons_path else ''
+            if release_version and current and not is_newer(release_version,current):
+                if on_log:
+                    on_log(f'{game.label}：已装 {current}，不低于发布版 {release_version}，跳过')
+                continue
+            result.append(game)
+        return tuple(result)
+    policy=AddonUpdater(None,None,pending,env={},application_dir='.',games=eligible_games,
                         installed_name=installed_name,install=install or reinstall,on_log=on_log)
     if release['changed']:
         return policy.reinstall_games()
