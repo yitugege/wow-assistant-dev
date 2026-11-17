@@ -1,3 +1,5 @@
 -r requirements.txt
 lupa==2.8
 PyInstaller==6.22.3
+mcp==2.3.0
+numpy==2.5.5

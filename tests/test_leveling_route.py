@@ -2467,6 +2467,16 @@ class CharacterStateIntegrationTests(unittest.TestCase):
         movement.pulse.assert_called_with(123, keys[1], 159, keys)
         self.assertFalse(controller.observe(session, sample, 1))
         unknown = CombatFacingSample(0, keys)
+        # 没有方位：朝向错误说明目标在身后半圈，第一次先转半圈（约 1 秒），之后小角度补转。
+        fresh = CombatFacing(movement)
+        self.assertTrue(fresh.observe(session, unknown, 2))
+        movement.pulse.assert_called_with(123, keys[2], 1000, keys, limit=1000)
+        for sequence in range(3, 10):
+            self.assertTrue(fresh.observe(session, unknown, sequence))
+            movement.pulse.assert_called_with(123, keys[2], 280, keys)
+        self.assertFalse(fresh.observe(session, unknown, 10))     # 每个目标最多 8 次
+        self.assertTrue(fresh.observe(session, replace(unknown, revision=1), 11))
+        movement.pulse.assert_called_with(123, keys[2], 1000, keys, limit=1000)   # 新目标重新先转半圈
         for sequence in range(2, 9):
             self.assertTrue(controller.observe(session, unknown, sequence))
             movement.pulse.assert_called_with(123, keys[2], 280, keys)
@@ -7726,7 +7736,7 @@ def verify():
             movement.movement.pulse.assert_not_called()
             window._combat_dispatch = (session, 116, 16, 1500)
             assert window._hold_character_frame(monitor, capture, frame, 2000)
-            movement.movement.pulse.assert_called_once_with(123, 68, 280, (87, 65, 68))
+            movement.movement.pulse.assert_called_once_with(123, 68, 1000, (87, 65, 68), limit=1000)
             assert window._hold_character_frame(monitor, capture, frame, 2100) is None
             assert not window._stop_before_action(frame.values)
             freshness.sample = (1, 2, 4)

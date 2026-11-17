@@ -7,6 +7,9 @@ host 为窗口：处理器只经它读写行程状态（已委托到 UnattendedC
 from wowbuddy.automation.vendor_run import VendorRun, vendor_due
 
 _PATROL_RADIUS = 30
+_REJOIN_FAR_YARDS = 40       # 离录制轨迹超过该距离时提示“直线接回”
+_REJOIN_OFF_LEG_YARDS = 12   # 行程中离本段轨迹超过该距离视为被拉离
+_REJOIN_INTERVAL_MS = 3000   # 同一段重新规划的最短间隔
 
 
 class RevivalPhase:
@@ -35,6 +38,9 @@ class RevivalPhase:
                 host.logger.append('跑尸路线保存失败。' + str(error))
             else:
                 host.logger.append(f'已记录本次成功的跑尸路线，共 {trail.count(":")} 段。')
+                exit_route = host._corpse_trail.exit_route
+                if exit_route:
+                    host._remember_graveyard_exit(exit_route, scale=host._corpse_trail.exit_scale)
         nearby = str(frame.values.get('enemies_8yd', '')) if frame and frame.ok else ''
         host._poll_revival(session, death, result.capture.client_rect if result.capture else None,
                            position=position, in_combat=in_combat,
@@ -58,6 +64,8 @@ class RevivalPhase:
         revived = previous_life in ('dead', 'ghost') and revival.life == 'alive'
         if previous_life != revival.life:
             host._corpse_trip = host._corpse_access = None
+            host._ghost_origin = None
+            host._grid_corpse_trip = host._grid_corpse_given_up = None
             if revival.life in ('dead', 'ghost'):
                 host._vendor_run.interrupt(session)
             cached = host._local_access
@@ -125,6 +133,7 @@ class VendorPhase:
         if reading.free > 0 and not repairing:
             host._vendor_wait = None
             host._vendor_recovery_walk = None
+            host._bag_full_session = None
         arrived = bool(active and active.complete and active.goal.label == '补给商人'
                        and position and active.goal.contains(position))
         fields = frame.values
@@ -142,7 +151,14 @@ class VendorPhase:
             if ready and repairing:
                 host._wait_for_vendor(session, '装备耐久已变红，当前没有可用的修理商人绑定。')
             elif ready and reading.free == 0:
-                host._wait_for_vendor(session, '普通背包已满，当前没有可用的补给商人绑定，暂停练级。')
+                if host._bag_full_grinding_enabled():
+                    # 兜底（docs/design/20261117-loop-issues.md L1）：没有商人时不停，继续打怪、暂不拾取。
+                    if host._bag_full_session != session:
+                        host._bag_full_session = session
+                        host.logger.append('背包已满且没有可用的商人，继续打怪，暂不拾取。'
+                                           '绑定商人（/wbdvendor 与“设置商人路线…”）后会自动去出售。')
+                else:
+                    host._wait_for_vendor(session, '普通背包已满，当前没有可用的补给商人绑定，暂停练级。')
             return
         if online is None and not manual_fixed:
             if not (ready and (repairing or vendor_due(reading))):
@@ -294,6 +310,24 @@ class LevelingPhase:
                 else:
                     host.logger.append('自动练级查询失败。' + lookup['error'])
 
+    @staticmethod
+    def _displaced_from_leg(host, patrol, character):
+        """录制路线行程中是否被拉离本段轨迹（如打怪后），且接回起点已变化：是则需要重新规划本段。"""
+        from wowbuddy.automation.manual_routes import nearest_on_loop, path_distance
+        planned = host._patrol_leg
+        if planned is None or planned[0] != host._patrol_index or character.map_id != patrol.map_id:
+            return False
+        xy = character.x, character.y
+        if path_distance(patrol, xy, planned[1]) <= _REJOIN_OFF_LEG_YARDS:
+            return False
+        if nearest_on_loop(patrol, xy)[0] == planned[2]:
+            return False   # 仍在直线接回同一个起点，不重复规划
+        now = host.monotonic_ms()
+        if host._patrol_replan_ms is not None and now - host._patrol_replan_ms < _REJOIN_INTERVAL_MS:
+            return False
+        host._patrol_replan_ms = now
+        return True
+
     def fixed_camp(self, host, session, character):
         from dataclasses import replace
         from wowbuddy.automation.navigation import MapDestination
@@ -307,14 +341,37 @@ class LevelingPhase:
         selling = host._vendor_run.session == session and host._vendor_run.active and host._vendor_route is not None
         route = host._vendor_route if selling else host._fixed_camp_route
         patrol = host._patrol_route if not selling else None
+        recorded = patrol is not None and patrol.recorded
         if patrol is not None:
+            # 规划范围以当前停留点为准；录制路线的实际道路在下方“接回轨迹”后确定。
             route = replace(patrol, points=(patrol.points[host._patrol_index],))
         scope = session, character.faction, character.level, route, selling
         if host._fixed_camp_blocked == (scope, character.map_id):
             return
         active = host._leveling_trip
         if host._fixed_camp_scope == scope and active and (active[2].connecting or character.map_id == route.map_id):
-            return
+            if not (recorded and self._displaced_from_leg(host, patrol, character)):
+                return
+        if recorded:
+            from wowbuddy.automation.manual_routes import nearest_on_loop, patrol_rejoin
+            index, leg, distance = patrol_rejoin(patrol, (character.x, character.y), host._patrol_index)
+            count = len(patrol.points)
+            if count > 1 and index == (host._patrol_index - 1) % count:
+                # 刚完成的停留点就在身边：不退回，沿完整的本段轨迹前往当前停留点。
+                from wowbuddy.automation.manual_routes import patrol_leg
+                index, leg = host._patrol_index, patrol_leg(patrol, host._patrol_index)
+            if index != host._patrol_index:
+                host.logger.append(f'接回录制路线，从第 {index + 1} 个停留点继续。')
+                host._patrol_index = index
+            if distance is not None and distance > _REJOIN_FAR_YARDS:
+                host.logger.append(f'离录制路线约 {distance:.0f} 码，正直线接回。')
+            route = replace(patrol, points=leg)
+            scope = (session, character.faction, character.level, replace(patrol, points=(patrol.points[index],)),
+                     selling)
+            start = patrol.path.index(leg[0]) if leg[0] in patrol.path else 0
+            # 偏离判断用“本段起点前一个轨迹点 + 本段路点”，本段只剩一个点时也能量出横向偏离。
+            host._patrol_leg = (index, (patrol.path[start - 1],) + tuple(leg),
+                                nearest_on_loop(patrol, (character.x, character.y))[0])
         host._fixed_camp_scope = scope
         host._fixed_camp_blocked = None
         host._leveling_trip = host._leveling_destination = host._camp_scout = None

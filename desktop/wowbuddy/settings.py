@@ -185,6 +185,27 @@ class SettingsStore:
     def corpse_recording_enabled(self) -> bool:
         return self._read("automation/recordCorpseTrail", False, "boolean")
 
+    def bag_full_grinding_enabled(self) -> bool:
+        return self._read("automation/bagFullGrinding", False, "boolean")
+
+    def save_bag_full_grinding(self, enabled: bool) -> None:
+        self.qsettings.setValue("automation/bagFullGrinding", enabled)
+        self.sync()
+
+    def patrol_travel_scan_enabled(self) -> bool:
+        return self._read("automation/patrolTravelScan", False, "boolean")
+
+    def save_patrol_travel_scan(self, enabled: bool) -> None:
+        self.qsettings.setValue("automation/patrolTravelScan", enabled)
+        self.sync()
+
+    def walk_grid_enabled(self) -> bool:
+        return self._read("automation/walkGrid", False, "boolean")
+
+    def save_walk_grid(self, enabled: bool) -> None:
+        self.qsettings.setValue("automation/walkGrid", enabled)
+        self.sync()
+
     def save_corpse_recording(self, enabled: bool) -> None:
         self.qsettings.setValue("automation/recordCorpseTrail", enabled)
         self.sync()
@@ -192,6 +213,21 @@ class SettingsStore:
     def save_corpse_trail(self, trail: str) -> None:
         previous = [item for item in self.corpse_trails() if item != trail]
         self.qsettings.setValue("automation/corpseTrails", [trail, *previous[:23]])
+        self.sync()
+
+    def mcp_control_enabled(self) -> bool:
+        return self._read("dev/mcpControl", False, "boolean")
+
+    def save_mcp_control(self, enabled: bool) -> None:
+        self.qsettings.setValue("dev/mcpControl", enabled)
+        self.sync()
+
+    def recorded_patrols(self) -> list[str]:
+        return self._read("automation/recordedPatrols", [], "strings")
+
+    def save_recorded_patrol(self, route: str) -> None:
+        previous = [item for item in self.recorded_patrols() if item != route]
+        self.qsettings.setValue("automation/recordedPatrols", [route, *previous[:7]])
         self.sync()
 
     def save_patrol_route(self, route: str) -> None:

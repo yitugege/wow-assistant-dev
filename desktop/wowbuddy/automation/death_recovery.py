@@ -15,6 +15,10 @@ _UNATTENDED_REDEATH_WINDOW_MS = 45_000
 _LANDING_EXIT_RADIUS = 40
 _OUTWARD_PROBE_LIMIT = 35
 _LANDING_THREAT_RADIUS = 12
+# 复活点附近有怪时的等待上限（2026-11-17 01:29 起在营地怪旁无上限等待 4 分钟以上）：
+# 等 45 秒仍有怪 → 允许再换两次更远的备选点；累计 90 秒 → 直接复活，交给“复活后遭袭”的现有处理。
+_THREAT_WAIT_MS = 45_000
+_THREAT_LANDING_LIMIT = 4
 _CORPSE_PROBE_YARDS = 16
 _CORPSE_POPUP_WAIT_MS = 1500
 _REVIVAL_RETRY_MS = 12_000
@@ -23,6 +27,12 @@ _CORPSE_SEGMENT_POINTS = 256
 _CORPSE_START_STABLE_MS = 1200
 _CORPSE_START_MAX_GAP_MS = 1000
 _CORPSE_START_MAX_TRAVEL_YARDS = 25
+# 灵魂出不了墓地（docs/design/20261115-ghost-graveyard-exit.md）。
+_EXIT_BLOCK_YARDS = 25
+_EXIT_RESUME_YARDS = 40
+_EXIT_MIN_CORPSE_YARDS = 80
+_EXIT_ROUTE_YARDS = 40
+_EXIT_ROUTE_POINTS = 48
 
 
 class CorpseTrail:
@@ -42,6 +52,8 @@ class CorpseTrail:
         self._confirmed = False
         self.replay_blocked = False
         self.notice = None
+        self.exit_route = None
+        self.exit_scale = None
 
     def cancel_recording(self):
         self._life = None
@@ -53,6 +65,7 @@ class CorpseTrail:
         self._invalid = None
         self._confirmed = False
         self.notice = None
+        self.exit_route = self.exit_scale = None
 
     @staticmethod
     def _distance(position, point, origin):
@@ -117,6 +130,7 @@ class CorpseTrail:
                 self._start_candidate = None
 
     def _finish(self, position, *, armed):
+        self.exit_route = self.exit_scale = None
         end = position or self._last_position
         if not armed:
             reason = '未观察到释放灵魂前的死亡状态，缺少墓地起点'
@@ -141,6 +155,9 @@ class CorpseTrail:
         if reason:
             self.notice = f'跑尸路线未保存：{reason}。'
             return None
+        self.exit_route = self._exit_route()
+        if self.exit_route:
+            self.exit_scale = self._start_position.width, self._start_position.height
         encoded = []
         for map_id, points in self._segments:
             coords = '|'.join(f'{round(x * 100)},{round(y * 100)}' for x, y in points)
@@ -148,6 +165,18 @@ class CorpseTrail:
         corpse_x, corpse_y = round(self._goal.x * 100), round(self._goal.y * 100)
         header = f'WBDCORPSE1|{end.width},{end.height},{corpse_x},{corpse_y}'
         return ':'.join((header, *encoded))
+
+    def _exit_route(self):
+        """墓地出口：从出生点到第一次离出生点 40 码的路点为止，作为灵魂起点接入路线。"""
+        map_id, points = self._segments[0]
+        start = points[0]
+        for index, point in enumerate(points[1:], start=1):
+            if self._distance(self._start_position, point, start) >= _EXIT_ROUTE_YARDS:
+                if index + 1 > _EXIT_ROUTE_POINTS:
+                    return None
+                coords = '|'.join(f'{round(x * 100)},{round(y * 100)}' for x, y in points[:index + 1])
+                return f'WBDROUTE1|{map_id}|{coords}'
+        return None
 
     def _record_position(self, position):
         if self._invalid:
@@ -249,6 +278,12 @@ class CorpseAccess:
     def pause(self):
         self._arrival = None
 
+    def give_up(self):
+        """起点受阻时不再试尸体旁的点，等玩家接手。"""
+        self._destination = None
+        self._probes = iter(())
+        self._arrival = None
+
     def _next_probe(self, position, goal):
         if self._probes is None:
             east, north = goal.offset_from(position)
@@ -288,6 +323,42 @@ class CorpseAccess:
         return destination, None
 
 
+class GhostOrigin:
+    """本次灵魂状态的出生点；跑尸受阻时判断是否还没离开墓地。"""
+
+    def __init__(self):
+        self.session = None
+        self.origin = None
+        self.exit_blocked = False
+
+    def _near(self, position, yards):
+        return (position.map_id == self.origin.map_id
+                and math.hypot(*self.origin.offset_from(position)) <= yards)
+
+    def observe(self, session, position):
+        if session != self.session:
+            self.__init__()
+            self.session = session
+        if position is None or position.life != 'ghost':
+            return None
+        if self.origin is None:
+            self.origin = MapDestination(position.map_id, position.x, position.y, 'ghost', '灵魂出生点')
+            return None
+        if self.exit_blocked and not self._near(position, _EXIT_RESUME_YARDS):
+            self.exit_blocked = False
+            return '灵魂已离开墓地附近，继续前往尸体。'
+        return None
+
+    def blocked(self, position, goal):
+        if self.exit_blocked or self.origin is None or position is None or not self._near(position, _EXIT_BLOCK_YARDS):
+            return None
+        if goal.map_id == position.map_id and math.hypot(*goal.offset_from(position)) < _EXIT_MIN_CORPSE_YARDS:
+            return None
+        self.exit_blocked = True
+        return (f'灵魂未能离开墓地 ({self.origin.x:.2f}, {self.origin.y:.2f})：出口方向受阻，暂停跑尸。'
+                '请手动跑出墓地（建议先打开“录制跑尸路线”），或导入这个墓地的起点接入路线。')
+
+
 class AutomaticRevival:
     def __init__(self, mouse, *, stop_movement=None, prefer_clearance=False, in_foreground=None):
         self.mouse = mouse
@@ -313,6 +384,7 @@ class AutomaticRevival:
         self._tried_landings = []
         self._returning = False
         self._nearby_threat = None
+        self._threat_wait_since = None
 
     def _distance_from_unsafe(self, position):
         return min((math.hypot(*site.offset_from(position)) for site in self._unsafe_landings
@@ -361,7 +433,7 @@ class AutomaticRevival:
                 candidates.append((separation(threat) if threat else clearance, destination))
         return max(candidates, key=lambda candidate: candidate[0])[1] if candidates else None
 
-    def _position_for_revival(self, state, position, threat):
+    def _position_for_revival(self, state, position, threat, now_ms=None):
         if self.landing_destination is None and state.button is None:
             return None
         if position is None:
@@ -404,7 +476,22 @@ class AutomaticRevival:
             return None
         if self._distance_from_unsafe(position) >= _AVOID_RADIUS:
             if threatened_here:
+                if now_ms is None:
+                    return '当前复活位置附近刚出现敌人，等待敌人离开。'
+                if self._threat_wait_since is None:
+                    self._threat_wait_since = now_ms
+                waited = now_ms - self._threat_wait_since
+                if waited >= _THREAT_WAIT_MS and len(self._tried_landings) < _THREAT_LANDING_LIMIT:
+                    destination = self._choose_landing(state, position, avoid_origin=True, threat=threat)
+                    if destination is not None:
+                        self._threat_wait_since = None
+                        self._start_landing(position, destination)
+                        self._tried_landings.append(destination)
+                        return '敌人迟迟未离开，换到更远的备选复活位置。'
+                if waited >= 2 * _THREAT_WAIT_MS:
+                    return None              # 等待已达上限：直接复活
                 return '当前复活位置附近刚出现敌人，等待敌人离开。'
+            self._threat_wait_since = None
             return None
         if state.corpse is None or state.corpse_estimated:
             return '当前仍靠近曾遭袭的复活点，等待游戏确认尸体位置。'
@@ -529,7 +616,7 @@ class AutomaticRevival:
                 threat = self._nearby_threat[1]
                 if position is not None and threat.map_id != position.map_id:
                     threat = None
-            reposition = self._position_for_revival(state, position, threat)
+            reposition = self._position_for_revival(state, position, threat, now_ms=now_ms)
             if reposition:
                 self.armed = None
                 self._retry_sample = None

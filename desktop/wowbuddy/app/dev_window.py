@@ -15,7 +15,8 @@ from wowbuddy.dev_library import profile_action_gaps, read_local_library
 from wowbuddy.win32.capture import DESKTOP_HOLD_TEXT, WindowCapture
 from wowbuddy.engine.character_state import (CharacterFrameFreshness, STALE_FRAME, decode_character_session,
                                       decode_level_progress, decode_travel_identity)
-from wowbuddy.automation.manual_routes import manual_camp_road, parse_fixed_camp, parse_manual_connection, parse_manual_route
+from wowbuddy.automation.manual_routes import (manual_camp_road, parse_fixed_camp, parse_manual_connection,
+                                               parse_manual_route, parse_patrol_route)
 from wowbuddy.automation.vendor_run import VendorRun
 from wowbuddy.automation.unattended import FrameAction, FrameInput, UnattendedController, delegated
 from wowbuddy.automation.unattended_phases import _PATROL_RADIUS
@@ -65,9 +66,15 @@ class DevWindow(AssistantWindow):
     _combat_facing = None
     _corpse_access = None
     _corpse_trip = None
+    _ghost_origin = None
     _deferred_quest = None
     _last_profile_gap = None
     _learned_corpse_trip = None
+    _walk_grid = None
+    _travel_scan = None
+    _bag_full_session = None
+    _grid_corpse_trip = None
+    _grid_corpse_given_up = None
     _level_progress = None
     _leveling_camps = None
     _leveling_checkpoint_session = None
@@ -84,6 +91,18 @@ class DevWindow(AssistantWindow):
     _target_approach = None
     _travel_mouse = None
     _travel_restore_attempted = None
+    _patrol_recorder = None
+    _patrol_record_action = None
+    _steering_stats = None
+    _patrol_leg = None          # (停留点序号, 本段路点, 接回起点下标)，录制路线规划时记录
+    _patrol_replan_ms = None
+    _status_timer = None        # MCP：每秒写 status.json、处理信箱（docs/design/20261115-assistant-mcp.md）
+    _mcp_control_check = None
+    _frame_dumper = None
+    _last_mark = None
+    _status_character = None    # (时间戳, CharacterState)：最近一次脱战角色读数
+    _status_life = None
+    _status_failed = False
 
     def __init__(self, *args, launch_options: DevLaunchOptions, **kwargs):
         # 基类构造期间会调用 _configure_unfinished_controls，须先保存启动参数并建立托管状态。
@@ -128,17 +147,39 @@ class DevWindow(AssistantWindow):
         route_button.setObjectName('ManualCampRoutes')
         route_button.setToolTip('先停止监控，再粘贴游戏世界地图「复制路线」导出的文本。')
         route_menu = QMenu(route_button)
+        route_menu.setToolTipsVisible(True)
         route_menu.addAction('设置固定打怪点…', self._edit_fixed_camp)
         route_menu.addAction('清除固定打怪点', lambda: self._edit_fixed_camp(clear=True))
         route_menu.addAction('启用循环打怪路线…', self._edit_patrol_route)
+        self._patrol_record_action = route_menu.addAction('开始录制循环路线', self._toggle_patrol_recording)
         route_menu.addAction('关闭循环打怪路线', lambda: self._edit_patrol_route(clear=True))
+        patrol_scan = route_menu.addAction('边走边找怪（实验）')
+        patrol_scan.setCheckable(True)
+        patrol_scan.setToolTip('循环路线行走中每 2.5 秒按一次选怪键，选到怪就停下来打；空路点只扫三个方向，不再补扫。')
+        patrol_scan.setChecked(self.settings.patrol_travel_scan_enabled())
+        patrol_scan.toggled.connect(self._toggle_patrol_scan)
+        self._patrol_scan_action = patrol_scan
         record_corpse = route_menu.addAction('录制跑尸路线')
         record_corpse.setCheckable(True)
         record_corpse.setChecked(self.settings.corpse_recording_enabled())
         record_corpse.toggled.connect(self._toggle_corpse_recording)
         self._record_corpse_action = record_corpse
+        walk_grid = route_menu.addAction('地图格子寻路（实验）')
+        walk_grid.setCheckable(True)
+        walk_grid.setToolTip('按 .local/walkgrid 中的地图格子规划跑尸路线和撞墙后的绕行。没有对应地图的格子文件时不起作用。')
+        walk_grid.setChecked(self.settings.walk_grid_enabled())
+        walk_grid.toggled.connect(self._toggle_walk_grid)
+        self._walk_grid_action = walk_grid
+        if walk_grid.isChecked():
+            self._walk_grid = self._new_walk_grid()
         route_menu.addAction('设置商人路线…', lambda: self._edit_fixed_camp(vendor=True))
         route_menu.addAction('关闭自动出售', lambda: self._edit_fixed_camp(clear=True, vendor=True))
+        bag_full = route_menu.addAction('满包后继续打怪（不再拾取，实验）')
+        bag_full.setCheckable(True)
+        bag_full.setToolTip('背包满且没有可用的商人时不暂停练级，继续打怪、暂不拾取；绑定商人后照常去出售。')
+        bag_full.setChecked(self.settings.bag_full_grinding_enabled())
+        bag_full.toggled.connect(self._toggle_bag_full_grinding)
+        self._bag_full_action = bag_full
         route_menu.addAction('导入游戏路线…', self._import_manual_route)
         route_menu.addAction('删除路线（含当前循环）…', self._remove_manual_route)
         route_menu.addAction('导入起点接入路线…', lambda: self._import_manual_route(access=True))
@@ -158,6 +199,7 @@ class DevWindow(AssistantWindow):
         self._character_travel_identity = None
         self.loop.frame_hold_reason = self._hold_character_frame
         self.grind_check.toggled.connect(self._set_unattended)
+        self._install_mcp_status()
         self._unattended_revision = 0
         self._monitor_paused_by_user = False
         self._waiting_for_movement_stop = False
@@ -193,7 +235,7 @@ class DevWindow(AssistantWindow):
                 self.logger.append('保存的商人路线无法读取。' + str(error))
         if text := self.settings.patrol_route():
             try:
-                self._fixed_camp_route = self._patrol_route = parse_manual_route(text)
+                self._fixed_camp_route = self._patrol_route = parse_patrol_route(text)
             except ValueError as error:
                 self.logger.append('保存的循环打怪路线无法读取。' + str(error))
         self._show_fixed_camp()
@@ -218,6 +260,162 @@ class DevWindow(AssistantWindow):
         finally:
             button.setEnabled(True)
 
+    # ---- MCP 接口：状态快照与信箱（docs/design/20261115-assistant-mcp.md）----
+    def _install_mcp_status(self):
+        check = QCheckBox('允许 MCP 控制')
+        check.setObjectName('AllowMcpControl')
+        check.setToolTip('允许 Claude 经 MCP 停止监控、关闭无人托管、导出诊断。\n'
+                         '不允许开始监控或发键；保存当前帧、打标记不受此开关限制。')
+        check.setChecked(self.settings.mcp_control_enabled())
+        check.toggled.connect(self._set_mcp_control)
+        button = self.ui.export_diagnostics_button
+        layout = button.parentWidget().layout()
+        layout.insertWidget(layout.indexOf(button) + 1, check)
+        self._mcp_control_check = check
+        if self.launch_options.selftest or self.launch_options.dump_ui is not None:
+            return
+        self._status_timer = QTimer(self)
+        self._status_timer.setInterval(1000)
+        self._status_timer.timeout.connect(self._status_tick)
+        self._status_timer.start()
+
+    def _set_mcp_control(self, enabled):
+        self.settings.save_mcp_control(enabled)
+        self.logger.append('已允许 MCP 控制（停止监控、关闭无人托管、导出诊断）。' if enabled else '已关闭 MCP 控制。')
+
+    def _remember_status_character(self, character, death):
+        import time
+        if character is not None:
+            self._status_character = time.time(), character
+        self._status_life = death.life if death is not None else character.life
+
+    def _status_tick(self):
+        """每秒：先执行信箱请求，再写 status.json；失败只记一次日志。"""
+        import time
+        from wowbuddy import control_mailbox
+        data_dir = self.launch_options.data_dir
+        try:
+            allow = bool(self._mcp_control_check and self._mcp_control_check.isChecked())
+            for request in control_mailbox.take(data_dir, now=time.time(), allow_control=allow):
+                self._run_mcp_request(request)
+            self._write_status()
+        except Exception as error:
+            if not self._status_failed:
+                self._status_failed = True
+                self.logger.append(f'MCP 状态快照写入失败：{error}')
+
+    def _run_mcp_request(self, request):
+        import time
+        from wowbuddy import control_mailbox, frame_capture_dump
+        data_dir = self.launch_options.data_dir
+        label = control_mailbox.ACTION_LABELS[request.action]
+        extra = {}
+        try:
+            if request.action == 'stop_monitoring':
+                if self.session.is_active():
+                    self._release_navigation_key()
+                    self.toggle_monitor()
+                    ok, message = not self.session.is_active(), '已停止监控'
+                else:
+                    ok, message = True, '监控本来就未运行'
+            elif request.action == 'stop_unattended':
+                was = self.grind_check.isChecked()
+                self.grind_check.setChecked(False)
+                ok, message = True, '已关闭无人托管' if was else '无人托管本来就未开启'
+            elif request.action == 'export_diagnostics':
+                from wowbuddy import diagnostic_export
+                result = diagnostic_export.export_diagnostics(data_dir, diagnostic_export.find_clients(self.settings))
+                ok, message, extra = True, f'已导出诊断：{result.path}', dict(path=str(result.path))
+            elif request.action == 'capture_frame':
+                if self._frame_dumper is None:
+                    self._frame_dumper = frame_capture_dump.FrameDumper(data_dir)
+                result = getattr(self, '_last_result', None)
+                image = getattr(getattr(result, 'capture', None), 'image', None)
+                tick = getattr(result, 'tick', None)
+                frame = tick.decision.frame if tick is not None else None
+                note = str(request.args.get('note', ''))[:200]
+                from wowbuddy import status_snapshot
+                path = self._frame_dumper.dump(image, frame, dict(note=note, packets=status_snapshot.describe_packets(image, frame),
+                                                                  status=self._status_document(time.time())),
+                                               now=time.time())
+                ok, message, extra = True, f'已保存当前帧：{path}', dict(path=path)
+            elif request.action == 'mark':
+                text = ' '.join(str(request.args.get('text', '')).split())[:200]
+                line = self.logger.append(f'==== 标记：{text} ====')
+                self._last_mark = dict(text=text, at=time.time(), line=line)
+                ok, message = True, line
+        except frame_capture_dump.DumpRefused as error:
+            ok, message = False, str(error)
+        except Exception as error:
+            ok, message = False, f'{type(error).__name__}: {error}'
+        if request.action != 'mark':
+            self.logger.append(f'MCP 请求：{label}（{"已执行" if ok else "未执行：" + message}）')
+        control_mailbox.reply(data_dir, request.id, ok, message, **extra)
+
+    def _status_document(self, now):
+        from wowbuddy import status_snapshot
+        from wowbuddy.dev_version import VERSION
+        result = getattr(self, '_last_result', None)
+        tick = getattr(result, 'tick', None)
+        decision = status_snapshot.describe_decision(tick.decision, tick.selected) if tick is not None else None
+        image = getattr(getattr(result, 'capture', None), 'image', None)
+        packets = status_snapshot.describe_packets(image, tick.decision.frame) if tick is not None else None
+        remembered = self._status_character
+        character = status_snapshot.describe_character(remembered[1], at=remembered[0]) if remembered else None
+        stats = self._steering_stats
+        document = self.ui.log_view.document()
+        count = document.blockCount()
+        tail = [document.findBlockByNumber(index).text() for index in range(max(0, count - 20), count)]
+        return status_snapshot.build_status(
+            now=now, version=VERSION, running=True, monitoring=self.session.is_active(),
+            hwnd=self.session.state.hwnd, status_text=self.session.state.status,
+            unattended=self.grind_check.isChecked(), phase=self.unattended.last_phase.value,
+            patrol=status_snapshot.describe_patrol(self._patrol_route, self._patrol_index),
+            character=character, life=self._status_life, decision=decision, log_tail=tail,
+            steering=stats.progress(now_ms=self.monotonic_ms()) if stats is not None else None,
+            last_mark=self._last_mark, control_allowed=bool(self._mcp_control_check
+                                                            and self._mcp_control_check.isChecked()),
+            packets=packets, input_block=self._input_block_status(), ghost=self._ghost_status(),
+            walk_grid=self._walk_grid_status(), patrol_scan=self._patrol_scan_status())
+
+    def _ghost_status(self):
+        origin = self._ghost_origin
+        if origin is None or origin.origin is None:
+            return None
+        point = origin.origin
+        return dict(origin=[point.map_id, point.x, point.y], exit_blocked=origin.exit_blocked)
+
+    def _input_block_status(self):
+        """前台移动最近一次拒绝发键的原因（MCP 用于区分“不在前台”和真正受阻）。"""
+        import time
+        movement = getattr(self._map_navigator, 'movement', None)
+        reason = getattr(movement, 'blocked_reason', None)
+        at = getattr(movement, 'blocked_at', None)
+        if not isinstance(reason, str) or not isinstance(at, (int, float)):
+            return None
+        from time import monotonic
+        return dict(reason=reason, seconds_ago=round(monotonic() - at, 1), at=round(time.time() - (monotonic() - at), 1))
+
+    def _write_status(self):
+        import time
+        from wowbuddy import status_snapshot
+        status_snapshot.write_json_atomic(Path(self.launch_options.data_dir) / status_snapshot.STATUS_FILE,
+                                          self._status_document(time.time()))
+
+    def _stop_mcp_status(self):
+        import time
+        from wowbuddy import status_snapshot
+        from wowbuddy.dev_version import VERSION
+        if self._status_timer is None:
+            return
+        self._status_timer.stop()
+        self._status_timer = None
+        try:
+            status_snapshot.write_json_atomic(Path(self.launch_options.data_dir) / status_snapshot.STATUS_FILE,
+                                              status_snapshot.stopped_status(now=time.time(), version=VERSION))
+        except OSError:
+            pass
+
     def _show_fixed_camp(self):
         if self._patrol_route is not None:
             self._manual_camp_button.setText(f'循环打怪（{len(self._patrol_route.points)} 点）')
@@ -228,6 +426,125 @@ class DevWindow(AssistantWindow):
             return
         x, y = route.endpoint
         self._manual_camp_button.setText(f'固定打怪点 ({x:.2f}, {y:.2f})')
+
+    def _bag_full_grinding_enabled(self):
+        action = getattr(self, '_bag_full_action', None)
+        return bool(action is not None and action.isChecked())
+
+    def _skip_loot_for_full_bag(self):
+        return self._bag_full_session is not None and self._bag_full_grinding_enabled()
+
+    def _toggle_bag_full_grinding(self, enabled):
+        action = getattr(self, '_bag_full_action', None)
+        try:
+            self.settings.save_bag_full_grinding(enabled)
+        except OSError as error:
+            self.logger.append('满包设置保存失败。' + str(error))
+            enabled = not enabled
+        if action is not None and action.isChecked() != enabled:
+            action.blockSignals(True)
+            action.setChecked(enabled)
+            action.blockSignals(False)
+        if not enabled:
+            self._bag_full_session = None
+        self.logger.append('已开启满包后继续打怪：没有可用商人时不再暂停练级，暂不拾取。'
+                           if enabled else '已关闭满包后继续打怪，满包且没有商人时暂停练级。')
+
+    def _patrol_scan_enabled(self):
+        action = getattr(self, '_patrol_scan_action', None)
+        return bool(action is not None and action.isChecked())
+
+    def _camp_scout_allowed(self):
+        """边走边找怪打开时，循环路线空路点不再“短步靠近后再搜一次”。"""
+        return not self._patrol_scan_enabled()
+
+    def _travel_scan_for(self):
+        from wowbuddy.automation.patrol_scan import TravelScan
+        if self._travel_scan is None:
+            self._travel_scan = TravelScan(self.dispatcher)
+        return self._travel_scan
+
+    def _travel_engaged(self, session):
+        scan = self._travel_scan
+        return bool(scan is not None and self._patrol_scan_enabled() and scan.engaged_for(session))
+
+    def _toggle_patrol_scan(self, enabled):
+        """边走边找怪开关（docs/design/20261117-patrol-scan.md），默认关闭。"""
+        action = getattr(self, '_patrol_scan_action', None)
+        try:
+            self.settings.save_patrol_travel_scan(enabled)
+        except OSError as error:
+            self.logger.append('边走边找怪设置保存失败。' + str(error))
+            enabled = not enabled
+        if action is not None and action.isChecked() != enabled:
+            action.blockSignals(True)
+            action.setChecked(enabled)
+            action.blockSignals(False)
+        if self._travel_scan is not None:
+            self._travel_scan.cancel()
+        self.logger.append('已开启边走边找怪：循环路线行走中每 2.5 秒按一次选怪键，空路点只扫三个方向。'
+                           if enabled else '已关闭边走边找怪，路点恢复四个方向和补扫。')
+
+    def _patrol_scan_status(self):
+        if not self._patrol_scan_enabled():
+            return None
+        scan = self._travel_scan
+        return dict(enabled=True, **(scan.status() if scan is not None else
+                                     dict(presses=0, rejections=0, engaged=False)))
+
+    def _new_walk_grid(self):
+        from wowbuddy.automation.grid_route import GridRoutes
+        return GridRoutes(Path(self.launch_options.data_dir) / 'walkgrid')
+
+    def _toggle_walk_grid(self, enabled):
+        """地图格子寻路开关（docs/design/20261116-walk-grid-pathing.md），默认关闭。"""
+        action = getattr(self, '_walk_grid_action', None)
+        try:
+            self.settings.save_walk_grid(enabled)
+        except OSError as error:
+            self.logger.append('地图格子寻路设置保存失败。' + str(error))
+            enabled = not enabled
+        if action is not None and action.isChecked() != enabled:
+            action.blockSignals(True)
+            action.setChecked(enabled)
+            action.blockSignals(False)
+        if not enabled:
+            self._walk_grid = None
+            self._grid_corpse_trip = self._grid_corpse_given_up = None
+            self.logger.append('已关闭地图格子寻路，撞墙后改回固定绕行。')
+            return
+        self._walk_grid = self._new_walk_grid()
+        maps = self._walk_grid.available_maps()
+        if maps:
+            from wowbuddy.automation.walking_route import ZONE_MAP_IDS
+            names = {map_id: name for name, map_id in ZONE_MAP_IDS.items()}
+            listed = '、'.join(f'{names.get(map_id, "地图")}（{map_id}）' for map_id in maps)
+            self.logger.append(f'已开启地图格子寻路：已找到 {listed}。')
+        else:
+            self.logger.append(f'已开启地图格子寻路，但 {self._walk_grid.directory} 中没有格子文件。')
+
+    def _walk_grid_status(self):
+        grid = self._walk_grid
+        if grid is None:
+            return None
+        return dict(enabled=True, **grid.status())
+
+    def _grid_corpse_road(self, session, position, goal):
+        """同地图跑尸：按地图格子规划整条路线；首点为灵魂当前位置。失败或本次已放弃时返回空。"""
+        routes = self._walk_grid
+        if routes is None or position is None or self._grid_corpse_given_up == session:
+            return ()
+        if routes.grid(position.map_id) is None:
+            return ()
+        self._release_navigation_key()
+        points, reason = routes.plan(position, goal)
+        if not points:
+            self._grid_corpse_given_up = session
+            self.logger.append(f'地图格子未能规划跑尸路线（{reason}），改用常规跑尸。')
+            return ()
+        plan = routes.last_plan or {}
+        self.logger.append(f'已按地图格子规划跑尸路线，共 {len(points) - 1} 个路点，约 {plan.get("yards") or 0} 码。')
+        return tuple(points)
 
     def _toggle_corpse_recording(self, enabled):
         try:
@@ -279,6 +596,90 @@ class DevWindow(AssistantWindow):
         self._show_fixed_camp()
         self.logger.append(f'已保存{label}。' if route else f'已清除{label}。')
 
+    def _toggle_patrol_recording(self):
+        """“地图路线”菜单：开始录制循环路线；录制中再点一次则结束并保存为当前循环路线。"""
+        from wowbuddy.automation.patrol_recording import PatrolRecorder
+
+        recorder = self._patrol_recorder
+        if recorder is None:
+            if not self.session.is_active():
+                self.logger.append('请先开始监控并进入游戏，再录制循环路线。')
+                return
+            self._patrol_recorder = PatrolRecorder()
+            self._release_navigation_key()
+            if self._patrol_record_action is not None:
+                self._patrol_record_action.setText('结束录制并保存循环路线')
+            self.logger.append('已开始录制循环路线：自动移动已暂停，请手动沿想要的循环走一圈，回到起点附近后结束录制。')
+            return
+        self._patrol_recorder = None
+        if self._patrol_record_action is not None:
+            self._patrol_record_action.setText('开始录制循环路线')
+        if recorder.stopped:
+            self.logger.append('循环路线录制已停止，本次未保存。' + recorder.reason)
+            return
+        try:
+            text = recorder.encode()
+            route = parse_patrol_route(text)
+            self.settings.save_recorded_patrol(text)
+            self.settings.save_patrol_route(text)
+        except (ValueError, OSError) as error:
+            self.logger.append('循环路线未保存。' + str(error))
+            return
+        self._apply_patrol_route(route)
+        self.logger.append(f'已保存录制的循环路线：{len(route.path)} 个路点、{len(route.points)} 个停留点，'
+                           f'约 {recorder.length:.0f} 码；已设为当前循环打怪路线。')
+
+    def _observe_patrol_recording(self, position):
+        recorder = self._patrol_recorder
+        if recorder is None:
+            return
+        notice = recorder.observe(position)
+        if notice:
+            self.logger.append(notice)
+        if recorder.stopped:
+            self.ui.suggestions.setPlainText('循环路线录制已停止：' + recorder.reason + ' 请点“结束录制并保存循环路线”收尾。')
+        else:
+            self.ui.suggestions.setPlainText(f'正在录制循环路线：{len(recorder.points)} 点，约 {recorder.length:.0f} 码；'
+                                             '回到起点附近后点“结束录制并保存循环路线”。')
+
+    def _observe_steering(self, session, position):
+        """回放录制路线时按段统计转向（偏离轨迹、原地转向、修正、受阻），到达停留点写日志；只读，不影响移动。"""
+        from wowbuddy.automation.manual_routes import patrol_leg
+        from wowbuddy.automation.steering_stats import SteeringStats
+
+        route, navigator = self._patrol_route, self._map_navigator
+        if route is None or not route.recorded or navigator is None or position is None:
+            return
+        stats = self._steering_stats
+        if stats is None:
+            stats = self._steering_stats = SteeringStats()
+        if getattr(position, 'life', 'alive') != 'alive':
+            # 死亡后灵魂位置与本段轨迹无关：作废本段，复活后从下一次规划重新统计。
+            if (text := stats.abandon('角色死亡')) is not None:
+                self.logger.append(text)
+            return
+        active = self._leveling_trip
+        trip = active[2] if active and active[2].session == session else None
+        index = self._patrol_index
+        now = self.monotonic_ms()
+        if trip is not None and not trip.complete and trip.goal.label == self._patrol_label(index):
+            road = (route.points[index - 1],) + tuple(patrol_leg(route, index))
+            if stats.segment_key() != (index + 1, road):
+                if stats.active:   # 上一段未经“到达”就切换（如受阻后换点），先结算记录
+                    for line in (stats.finish(now_ms=now, counters=navigator.counters) or '').splitlines():
+                        self.logger.append(line)
+                stats.begin(index + 1, len(route.points), road, now_ms=now, counters=navigator.counters)
+            stats.observe(position, now_ms=now)
+        elif stats.active and trip is not None and trip.complete:
+            text = stats.finish(now_ms=now, counters=navigator.counters)
+            for line in (text or '').splitlines():
+                self.logger.append(line)
+
+    def _recording_plan(self, plan):
+        """录制循环路线时由用户手动行走：暂停自动练级与导航，复活处理照常。"""
+        from dataclasses import replace
+        return plan if self._patrol_recorder is None else replace(plan, leveling=False, navigate=False)
+
     def _edit_patrol_route(self, *, clear=False):
         if self.session.is_active():
             self.logger.append('请先停止监控，再修改循环打怪路线。')
@@ -286,11 +687,16 @@ class DevWindow(AssistantWindow):
         text, route = '', None
         if not clear:
             routes = list(self._manual_routes().items())
+            for recorded in self.settings.recorded_patrols():
+                try:
+                    routes.append((parse_patrol_route(recorded), recorded))
+                except ValueError:
+                    continue
             if not routes:
-                self.logger.append('请先导入一条游戏地图路线。')
+                self.logger.append('请先导入一条游戏地图路线，或录制一条循环路线。')
                 return
-            labels = [f'{index} · {item.zone or item.map_id} · {len(item.points)} 点 · '
-                      f'{item.endpoint[0]:.2f}, {item.endpoint[1]:.2f}'
+            labels = [f'{index} · {"录制 · " if item.recorded else ""}{item.zone or item.map_id} · '
+                      f'{len(item.points)} 点 · {item.endpoint[0]:.2f}, {item.endpoint[1]:.2f}'
                       for index, (item, _) in enumerate(routes, 1)]
             selected, accepted = QInputDialog.getItem(self, '启用循环打怪路线',
                 '选择已导入的路线。末点会接回首点，请确认这一段也能通行。',
@@ -571,7 +977,7 @@ class DevWindow(AssistantWindow):
             loot = self._corpse_loot.observe(session, mob, now_ms,
                 lambda key: self._send_loot_key(monitor[0], frame.values, key), self.logger.append,
                 approach=lambda bearing: self._queue_loot_approach(session, capture.image, frame, bearing, now_ms),
-                safe_to_loot=frame.values.get('player_in_combat') == 'OFF',
+                safe_to_loot=frame.values.get('player_in_combat') == 'OFF' and not self._skip_loot_for_full_bag(),
                 combat_notices=progress.combat_notices if progress else None)
             if loot:
                 return loot
@@ -650,8 +1056,10 @@ class DevWindow(AssistantWindow):
         unattended = self.grind_check.isChecked()
         monitor = self.session.state
         session = monitor.hwnd, monitor.elapsed_started_ms, self._unattended_revision
-        self.pipeline.unattended_travel = self.unattended.travel_active(
+        # 边走边找怪选到目标时，行程仍在但按交战处理：不暂停技能循环。
+        self.pipeline.unattended_travel = (self.unattended.travel_active(
             session, unattended=unattended, monitoring=self.session.is_active())
+            and not self._travel_engaged(session))
         self._loot_approach_request = None
         result = super().poll_once()
         desktop_held = result.status in DESKTOP_HOLD_TEXT
@@ -673,8 +1081,9 @@ class DevWindow(AssistantWindow):
         if self._loot_approach_session is not None:
             self._stop_loot_approach()
         options = self.launch_options
-        plan = self.unattended.frame_plan(unattended, auto_revive=options.auto_revive,
-                                          auto_leveling=options.auto_leveling, auto_navigate=options.auto_navigate)
+        plan = self._recording_plan(self.unattended.frame_plan(
+            unattended, auto_revive=options.auto_revive, auto_leveling=options.auto_leveling,
+            auto_navigate=options.auto_navigate))
         revive, leveling, navigate = plan.revive, plan.leveling, plan.navigate
         if not self.session.is_active():
             self._release_navigation_key()
@@ -690,8 +1099,12 @@ class DevWindow(AssistantWindow):
             prior = self._cast_feedback
             sequence = prior[1].sequence if prior and prior[0] == session else None
             self._combat_dispatch = (session, int(spell), sequence, self.monotonic_ms()) if spell.isdecimal() else None
+        if self._patrol_recorder is not None and image is not None and frame and frame.ok:
+            self._observe_patrol_recording(decode_navigation_state(image, frame))
         death = decode_death_state(image, frame) if image is not None and frame and revive else None
         character = route_character(image, frame) if image is not None and frame and leveling else None
+        if character is not None or death is not None:
+            self._remember_status_character(character, death)
         steps = self.unattended.run_frame(FrameInput(session=session, unattended=unattended,
                                                      frame_ok=bool(frame and frame.ok), image_ok=image is not None,
                                                      character=character, death=death), plan)
@@ -823,6 +1236,9 @@ class DevWindow(AssistantWindow):
         if facing is None:
             facing = self._combat_facing = CombatFacing(self._combat_movement())
         if not self._release_navigation_key() or not facing.observe(session, sample, feedback.sequence):
+            reason = getattr(facing.movement, 'blocked_reason', None)
+            if new_feedback and feedback.error_kind == '朝向' and isinstance(reason, str):
+                self.logger.append(f'朝向错误未能转向：{reason}（转向需要游戏窗口在最前面、且不按移动键）。')
             return None
         self._wait_for_navigation_stop()
         method = '按目标方位转向' if sample.heading is not None else '短转后重试'
@@ -1548,6 +1964,13 @@ class DevWindow(AssistantWindow):
                 corpse = MapDestination(*death.corpse, 'ghost', '尸体')
                 if death.button is not None or death.popup not in ('legacy', 'missing'):
                     position = None
+                if self._ghost_origin is None:
+                    from wowbuddy.automation.death_recovery import GhostOrigin
+                    self._ghost_origin = GhostOrigin()
+                resumed = self._ghost_origin.observe(session, position)
+                if resumed:
+                    self.logger.append(resumed)
+                    self._corpse_access = None
                 # 尸体附近交给现有复活探点，避免又被起点路线带走。
                 near_corpse = (position is not None and position.map_id == corpse.map_id
                                and hypot(*corpse.offset_from(position)) <= 20)
@@ -1581,6 +2004,7 @@ class DevWindow(AssistantWindow):
             if death and death.life == 'alive':
                 self._corpse_trip = None
                 self._corpse_access = None
+                self._grid_corpse_trip = self._grid_corpse_given_up = None
             recovering_from_death = unattended and self._post_revival_session == session
             if recovering_from_death and death and death.life == 'alive' and (recovery_ready or vendor_recovery_walk):
                 if self._rejoin_camp_after_revival(session, character, position):
@@ -1623,6 +2047,21 @@ class DevWindow(AssistantWindow):
                                                                            or (vendor_trip and red_equipment))
                                       and frame.values.get('target_valid') == 'ON'))
                              and (supply_walk or not any(candidate.tag == '恢复' for candidate in result.tick.decision.candidates)))
+            patrol_walk = (unattended and self._patrol_scan_enabled() and self._patrol_route is not None
+                           and trip is not None and trip is not vendor_trip and not supply_return and not returning
+                           and not finishing_connection and trip.goal.label.startswith('循环路点'))
+            if patrol_walk and self._travel_engaged(session):
+                # 途中交战：停住行程（不跳点），交给循环、射程外接近与清目标逻辑。
+                ready_to_walk = False
+            elif not patrol_walk and self._travel_scan is not None and self._travel_scan.engaged is not None:
+                self._travel_scan.engaged = None
+            elif (patrol_walk and not ready_to_walk and self._travel_scan is not None and self._travel_scan.watching
+                  and character is not None and trip_matches_character and travel_ready
+                  and not recovering_from_death and result.tick.selected is None
+                  and frame.values.get('player_in_combat') != 'ON' and frame.values.get('target_valid') == 'ON'
+                  and not any(candidate.tag == '恢复' for candidate in result.tick.decision.candidates)):
+                # 行走中选到的目标还在射程外：照常赶路，进入射程再停（经典版拿不到怪物方位，停下也无法接近）。
+                ready_to_walk = True
             plan = self._leveling_destination
             if unattended and (trip or (plan and character and plan[:2] == (session, character.route_key))):
                 access, destination = self._observe_local_access(session, 'alive', position if ready_to_walk else None)
@@ -1659,6 +2098,19 @@ class DevWindow(AssistantWindow):
                         self._retire_blocked_travel(session, character, trip)
                 else:
                     self._leveling_destination = session, character.route_key, trip.goal
+            if patrol_walk:
+                scan_status = self._travel_scan_for().observe(
+                    session, (session, self._patrol_index),
+                    walking=walking_leg and ready_to_walk and position is not None and not patrol_crowded,
+                    position=position, tick=result.tick, now_ms=now,
+                    send_interval_ms=self.ui.send_interval_spin.value())
+                if scan_status:
+                    if self._travel_engaged(session):
+                        self._release_navigation_key()
+                        self.logger.append(f'{scan_status}（原停留点：{trip.goal.label}）。')
+                        ready_to_walk = False
+                    else:
+                        self.logger.append(f'{scan_status}，继续前往{trip.goal.label}。')
             if unattended and ((walking_leg and ready_to_walk and position is not None)
                                or (self._leveling_upgrade_wait == session
                                    and frame and frame.values.get('player_in_combat') == 'OFF')
@@ -1721,6 +2173,7 @@ class DevWindow(AssistantWindow):
                                          routing=walking_leg, movement=navigator.movement if navigator else None)
         if navigator is None:
             return
+        navigator.grid = self._walk_grid
         approaching = approach_position is not None
         was_approaching = self._approaching_target
         if was_approaching and not approaching:
@@ -1728,6 +2181,7 @@ class DevWindow(AssistantWindow):
             self._target_approach.observe(session, None, None)
         if not approaching or not was_approaching:
             status = navigator.observe(session, session[0], None if approaching else position, destination, path=path)
+            self._observe_steering(session, position)
             if status:
                 self.logger.append(status)
                 if navigator.blocked:
@@ -1737,9 +2191,15 @@ class DevWindow(AssistantWindow):
                             self._corpse_trip = self._corpse_access = None
                             self.logger.append(retry)
                     elif corpse_access is not None:
-                        _, retry = corpse_access.observe(session, position, corpse, now, blocked=destination)
-                        if retry:
-                            self.logger.append(retry)
+                        origin = self._ghost_origin
+                        stuck = origin.blocked(position, corpse) if origin is not None else None
+                        if stuck:
+                            corpse_access.give_up()
+                            self.logger.append(stuck)
+                        else:
+                            _, retry = corpse_access.observe(session, position, corpse, now, blocked=destination)
+                            if retry:
+                                self.logger.append(retry)
                     elif path is not None and path is access:
                         access.blocked = True
                         self.logger.append('起点接入路线受阻。请检查标记的通道，或手动通过后重新开始监控。')
@@ -1754,7 +2214,12 @@ class DevWindow(AssistantWindow):
                             elif path.replan_count != replans:
                                 self._save_leveling_travel(session, character, path)
                     elif corpse_trip is not None and path is corpse_trip:
-                        if corpse_trip is self._learned_corpse_trip:
+                        if corpse_trip is self._grid_corpse_trip:
+                            # 导航器内部已按格子重算过；不再“保留原路点等待”，回到常规跑尸链。
+                            self._grid_corpse_given_up = session
+                            self._grid_corpse_trip = self._corpse_trip = None
+                            self.logger.append('格子跑尸路线受阻，本次放弃地图格子路线，改用常规跑尸。')
+                        elif corpse_trip is self._learned_corpse_trip:
                             self._discard_recorded_corpse_trip()
                         elif near_corpse and destination.allow_detour:
                             corpse_trip.finish_corpse_approach()
@@ -1838,6 +2303,9 @@ class DevWindow(AssistantWindow):
                 self._patrol_kill = None
                 self.logger.append(f'恢复和拾取处理结束，8 码内还有 {nearby} 只怪物，继续逐只选怪。')
             approach_waiting = approaching and approach.waiting_for_input_or_bearing
+            scan = self._travel_scan
+            pull.sectors = (3 if self._patrol_scan_enabled() and scan is not None
+                            and scan.scanned((session, self._patrol_index)) else 4)
             status = pull.observe(session, None if walking_leg else destination, pull_position, result.tick,
                                   self.monotonic_ms(), self.ui.send_interval_spin.value(), pursuing=pursuing,
                                   allow_retarget=not (exhausted or approach_waiting))
@@ -1845,7 +2313,8 @@ class DevWindow(AssistantWindow):
                 self.logger.append(status)
                 if pull.empty:
                     if patrol_ready:
-                        if not patrol_crowded and self._start_camp_scout(session, camp, pull_position):
+                        if (not patrol_crowded and self._camp_scout_allowed()
+                                and self._start_camp_scout(session, camp, pull_position)):
                             return
                         self._advance_patrol('当前路点未找到可攻击目标')
                     elif self._patrol_route is None and not self._start_camp_scout(session, camp, pull_position):
@@ -1908,6 +2377,7 @@ class DevWindow(AssistantWindow):
                 self.sender.backend, self.monitor.backend, on_forward=self._wait_for_navigation_stop))
         self._render_unattended_idle(result.tick, session[0], character, position, destination,
                                      routing=True, movement=navigator.movement)
+        navigator.grid = self._walk_grid
         status = navigator.observe(session, session[0], position, destination, path=trip)
         if status:
             self.logger.append(status)
@@ -2097,6 +2567,28 @@ class DevWindow(AssistantWindow):
         self.logger.append(f'已匹配墓地和尸体位置，复用已记录的跑尸路线，共 {len(segments)} 段。')
         return True
 
+    def _remember_graveyard_exit(self, text, *, scale):
+        """把跑尸录制截出的墓地出口存为灵魂起点接入路线；同一墓地（起点 4 码内）已有路线时不重复保存。"""
+        from math import hypot
+        from wowbuddy.automation.manual_routes import GHOST_ACCESS_ROUTES
+        try:
+            route = parse_manual_route(text)
+        except ValueError:
+            return
+        routes = self._manual_routes(access=True)
+        x, y = route.points[0]
+        width, height = scale
+        for existing in (*routes, *GHOST_ACCESS_ROUTES):
+            ex, ey = existing.points[0]
+            if existing.map_id == route.map_id and hypot((ex - x) * width, (ey - y) * height) / 100 <= 4:
+                return
+        try:
+            self.settings.save_manual_routes([*routes.values(), text], access=True)
+        except OSError as error:
+            self.logger.append('墓地出口路线保存失败。' + str(error))
+            return
+        self.logger.append(f'已从本次跑尸录制保存墓地出口路线 ({x:.2f}, {y:.2f})，共 {len(route.points)} 个路点。')
+
     def _discard_recorded_corpse_trip(self):
         self._corpse_trail.replay_blocked = True
         self._corpse_trip = self._learned_corpse_trip = None
@@ -2122,9 +2614,16 @@ class DevWindow(AssistantWindow):
                                       faction=faction)
             if legs is None:
                 return goal
-            road = () if legs else camp_access_road(goal, origin=position)
-            trip = self._corpse_trip = WalkingTrip(session, legs, goal, connections=connections,
-                                                  blocked_legs=blocked, camp_road=road, faction=faction)
+            grid_road = () if legs else self._grid_corpse_road(session, position, goal)
+            if grid_road:
+                # 与录制轨迹相同按“手动路点”从首点（灵魂当前位置）依次走，不按直线距离接入，也不走赤脊山湖边陆路的特殊处理。
+                trip = self._corpse_trip = WalkingTrip(session, (), goal, camp_road=grid_road, catalog_goal=goal)
+                self._grid_corpse_trip = trip
+            else:
+                road = () if legs else camp_access_road(goal, origin=position)
+                trip = self._corpse_trip = WalkingTrip(session, legs, goal, connections=connections,
+                                                      blocked_legs=blocked, camp_road=road, faction=faction)
+                self._grid_corpse_trip = None
             if legs:
                 self.logger.append('尸体位于其他地图，已规划陆路跑尸。')
         destination, status = trip.observe(position, now_ms=self.monotonic_ms())
@@ -2375,6 +2874,7 @@ class DevWindow(AssistantWindow):
         if timer is not None:timer.stop()
         executor=getattr(self,'_client_update_executor',None)
         if executor is not None:executor.shutdown(wait=False,cancel_futures=True)
+        self._stop_mcp_status()
         super().shutdown()
 
     def _restore_update_notice(self):
@@ -2466,7 +2966,7 @@ class DevWindow(AssistantWindow):
             from wowbuddy.update.addon_update import SettingsPendingAddons
             release=self._addon_refresh_future.result()
             state=apply_release(release,SettingsPendingAddons(self.settings),games=self._addon_game_snapshot,
-                                installed_name=installed_name,on_log=self.logger.append)
+                                installed_name=installed_name,on_log=self._record_addon_install)
             status=f"GitHub插件检查完成；待补装 {len(state.pending)} 个客户端。"
         except Exception as error:status='GitHub插件自动更新失败：'+str(error)
         self.ui.addon_status.setText(status)
@@ -2513,12 +3013,15 @@ class DevWindow(AssistantWindow):
         self.ui.addon_clean_button.setToolTip('检测游戏客户端；右键选择最近目录')
         self.ui.addon_clean_button.clicked.connect(self._detect_development_client)
         self.ui.addon_clean_button.customContextMenuRequested.connect(self._recent_development_clients)
-        self.ui.addon_detect_button.setText('GitHub下载更新')
-        self.ui.addon_detect_button.setToolTip('从自有GitHub仓库下载并安装配套插件')
+        self.ui.addon_detect_button.setText('安装 GitHub 发布版')
+        self.ui.addon_detect_button.setToolTip('从自有GitHub仓库下载最新发布版插件并安装到所选客户端；\n'
+                                               '发布版比客户端里已装的版本旧时，会先询问是否覆盖。')
         self.ui.addon_detect_button.clicked.connect(self._download_github_addon)
         self.ui.addon_browse_button.setEnabled(True)
         self.ui.addon_browse_button.clicked.connect(self._browse_development_client)
-        self.ui.addon_install_button.setText('安装/更新开发插件')
+        from wowbuddy.dev_version import VERSION
+        self.ui.addon_install_button.setText(f'安装本地构建（v{VERSION}）')
+        self.ui.addon_install_button.setToolTip('安装本机打包的插件：' + str(self.launch_options.package_dir/'WowBuddyDev-dev.zip'))
         self.ui.addon_install_button.clicked.connect(self._install_development_addon)
         self._addon_cleanup_button=QPushButton('清理旧插件')
         self._addon_cleanup_button.setObjectName('Dim')
@@ -2609,17 +3112,37 @@ class DevWindow(AssistantWindow):
         self._download_timer.stop()
         self._download_executor.shutdown(wait=False)
         try:
-            from wowbuddy.addons.dev_addon_install import install_package
+            from PySide6.QtWidgets import QMessageBox
+            from wowbuddy.addons import dev_addon_install
             release = self._download_future.result()
             if self.session.is_active():
                 raise ValueError('下载期间监控已启动；请停止监控后重新安装')
-            result = install_package(release['package'],self._download_client)
-            status = f"GitHub {release['tag']} 已安装：{result['target']}；请重新加载游戏插件列表。"
-            status += f"\n清理旧目录：{result['cleanup_deleted']} 个；{result['cleanup_notes']}"
+            version = (dev_addon_install.package_version(release['package'])
+                       or str(release.get('tag', '')).removeprefix('v'))
+            try:
+                client = dev_addon_install.client_directory(self._download_client)
+                current = dev_addon_install.installed_version(client/'Interface'/'AddOns')
+            except (OSError, ValueError):
+                current = ''  # 客户端目录无效时由安装函数给出原有的错误提示
+            confirmed = True
+            if version and current and dev_addon_install.is_newer(current, version):
+                answer = QMessageBox.question(
+                    self, '安装较旧的插件？',
+                    f'客户端 {self._download_client} 已装 v{current}，GitHub 发布版为 v{version}（更旧）。\n'
+                    '覆盖后会失去已装版本中的改动，仍要安装吗？')
+                confirmed = answer == QMessageBox.StandardButton.Yes
+            if not confirmed:
+                status = f'已取消：客户端已装 v{current}，未用较旧的 GitHub 发布版 v{version} 覆盖。'
+            else:
+                result = dev_addon_install.install_package(release['package'], self._download_client)
+                status = (f"已安装 GitHub 发布版 v{result.get('version') or version or '未知版本'}"
+                          f"（{release.get('tag', '')}）到客户端 {self._download_client}：{result['target']}；"
+                          "请重新加载游戏插件列表。")
+                status += f"\n清理旧目录：{result['cleanup_deleted']} 个；{result['cleanup_notes']}"
         except Exception as error:
             status = 'GitHub插件更新失败：' + str(error)
         self.ui.addon_status.setText(status)
-        self.logger.append(status)
+        self._record_addon_install(status)
         for button in (self.ui.addon_detect_button,self.ui.addon_install_button,self.ui.addon_browse_button,self.ui.addon_clean_button):
             button.setEnabled(True)
 
@@ -2628,6 +3151,16 @@ class DevWindow(AssistantWindow):
         if not selected:
             return
         self._select_development_client(selected)
+
+    def _record_addon_install(self, text):
+        """插件安装相关结果写入运行日志，并追加到 数据目录/addon-install.log（不论是否在监控，导出诊断会收录）。"""
+        from datetime import datetime
+        self.logger.append(text)
+        try:
+            with open(Path(self.launch_options.data_dir)/'addon-install.log', 'a', encoding='utf-8') as stream:
+                stream.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {text}\n")
+        except OSError:
+            pass
 
     def _install_development_addon(self):
         from wowbuddy.addons.dev_addon_install import install_package
@@ -2640,12 +3173,14 @@ class DevWindow(AssistantWindow):
             return
         try:
             result = install_package(self.launch_options.package_dir/'WowBuddyDev-dev.zip', self.ui.addon_path.text())
-            status = f"已安装{result['files']}个文件：{result['target']}"
+            version = result.get('version') or '未知版本'
+            status = (f"已安装本地构建 v{version}（{result['files']} 个文件）到客户端 {self.ui.addon_path.text()}："
+                      f"{result['target']}")
             if result['backup']:
                 status += f"；旧开发版备份：{result['backup']}"
             status += f"\n清理旧目录：{result['cleanup_deleted']} 个；{result['cleanup_notes']}"
             self.ui.addon_status.setText(status)
-            self.logger.append(status)
+            self._record_addon_install(status)
         except (OSError, ValueError, KeyError, BadZipFile) as error:
             self.ui.addon_status.setText('安装失败：' + str(error))
-            self.logger.append('开发插件安装失败：' + str(error))
+            self._record_addon_install('本地构建安装失败：' + str(error))

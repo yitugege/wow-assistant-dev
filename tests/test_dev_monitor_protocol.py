@@ -510,6 +510,16 @@ class MonitorProtocolTests(unittest.TestCase):
                 combat_tapped = poll(2)
                 self.assertEqual(combat_tapped.status, 'stopped')
                 self.assertIn('其他玩家占有', combat_tapped.decision.candidates[0].reason)
+                # 2026-11-17 02:05：战斗中目标被判“已被其他玩家占有”，63 秒一个技能没放，被 3 只怪打死。
+                # 战斗中这类拒绝只暂停 3 秒（让自动选目标换怪），之后还手。
+                override = window.pipeline.combat_rejection
+                started = override.since
+                override.clock = lambda: started + 3.5
+                fight_back = poll(2)
+                self.assertIsNone(fight_back.decision.target_rejection)
+                self.assertEqual(fight_back.selected.action, 'spell_116')
+                override.clock = __import__('time').monotonic
+                override.since = None
                 g.fixtureTargetTapped = False
                 keys_before_trivial = sent_keys()
                 combat_trivial = poll(2)

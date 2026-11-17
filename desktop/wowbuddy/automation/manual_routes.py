@@ -16,6 +16,11 @@ class ManualRoute:
     points: tuple[tuple[float, float], ...]
     zone: str = ''
     built_in: bool = False
+    # 录制的循环路线：path 为完整轨迹，points 为沿轨迹取出的停留点，stop_indices 为停留点在 path 中的下标。
+    path: tuple[tuple[float, float], ...] = ()
+    stop_indices: tuple[int, ...] = ()
+    recorded: bool = False
+    scale: tuple[float, float] = ()   # 录制时地图的码数（宽、高），用于按码计算距离
 
     @property
     def endpoint(self):
@@ -46,6 +51,127 @@ GHOST_ACCESS_ROUTES = (
 
 def parse_manual_route(text: str, *, max_points: int = 48) -> ManualRoute:
     return _parse_route(text, allow_point=False, max_points=max_points)
+
+
+PATROL_STOP_YARDS = 40
+RECORDED_MAX_POINTS = 256
+
+
+def _loop_stops(points, width, height, spacing=PATROL_STOP_YARDS):
+    """沿轨迹每约 spacing 码取一个停留点（下标），末点总是停留点；至少 2 个。"""
+    stops, walked = [], 0.0
+    for index in range(1, len(points)):
+        (x0, y0), (x1, y1) = points[index - 1], points[index]
+        walked += hypot((x1 - x0) * width / 100, (y1 - y0) * height / 100)
+        if walked >= spacing:
+            stops.append(index)
+            walked = 0.0
+    if not stops or stops[-1] != len(points) - 1:
+        if stops and walked < spacing / 2 and len(stops) > 1:
+            stops[-1] = len(points) - 1
+        else:
+            stops.append(len(points) - 1)
+    if len(stops) < 2:
+        stops.insert(0, len(points) // 2)
+    return tuple(stops)
+
+
+def parse_patrol_route(text: str) -> ManualRoute:
+    """循环打怪路线：录制的 WBDLOOP1 轨迹，或游戏地图导出的 WBDROUTE1/WBDROUTE2 坐标路线。"""
+    text = text.strip()
+    if not text.startswith('WBDLOOP1|'):
+        return parse_manual_route(text)
+    _, map_id, scale, *coordinates = text.split('|')
+    if not _MAP.fullmatch(map_id) or not 3 <= len(coordinates) <= RECORDED_MAX_POINTS:
+        raise ValueError(f'录制的循环路线需要地图编号和 3 至 {RECORDED_MAX_POINTS} 个路点。')
+    try:
+        width, height = (float(value) for value in scale.split(','))
+    except ValueError:
+        raise ValueError('录制的循环路线缺少有效的地图尺寸。') from None
+    if not (0 < width < 100000 and 0 < height < 100000):
+        raise ValueError('录制的循环路线缺少有效的地图尺寸。')
+    route = _parse_route(f'WBDROUTE1|{map_id}|' + '|'.join(coordinates), allow_point=False,
+                         max_points=RECORDED_MAX_POINTS)
+    stops = _loop_stops(route.points, width, height)
+    return ManualRoute(route.map_id, tuple(route.points[index] for index in stops), path=route.points,
+                       stop_indices=stops, recorded=True, scale=(width, height))
+
+
+def patrol_leg(route: ManualRoute, index: int):
+    """前往第 index 个循环点时经过的路点：坐标路线只有该点；录制路线为上一停留点之后到该停留点的轨迹。"""
+    if not route.recorded:
+        return (route.points[index],)
+    path, stops = route.path, route.stop_indices
+    current, previous = stops[index], stops[index - 1]
+    if index:
+        return path[previous + 1:current + 1]
+    return path[previous + 1:] + path[:current + 1]
+
+
+def nearest_on_loop(route: ManualRoute, xy, segments=None):
+    """在录制环线上找离 xy 最近的位置：返回 (接下来应前往的路点下标, 距离码数)。
+
+    视为已走过投影位置，指向所在小段的终点；距离相同时取先遇到的小段。segments 限定只看这些小段（起点下标）。
+    """
+    width, height = route.scale
+    path = route.path
+    px, py = xy[0] * width / 100, xy[1] * height / 100
+    best = None
+    for index in (range(len(path)) if segments is None else segments):
+        (ax, ay), (bx, by) = path[index], path[(index + 1) % len(path)]
+        ax, ay, bx, by = ax * width / 100, ay * height / 100, bx * width / 100, by * height / 100
+        dx, dy = bx - ax, by - ay
+        length = dx * dx + dy * dy
+        t = 0.0 if length == 0 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / length))
+        distance = hypot(px - (ax + t * dx), py - (ay + t * dy))
+        if best is None or distance < best[1] - 1e-9:
+            best = (index + 1) % len(path), distance
+    return best
+
+
+def path_distance(route: ManualRoute, xy, points):
+    """xy 到折线 points（地图百分比坐标）的最近距离，按录制路线的地图码数计算。"""
+    width, height = route.scale
+    px, py = xy[0] * width / 100, xy[1] * height / 100
+    scaled = [(x * width / 100, y * height / 100) for x, y in points]
+    if len(scaled) == 1:
+        return hypot(px - scaled[0][0], py - scaled[0][1])
+    best = None
+    for (ax, ay), (bx, by) in zip(scaled, scaled[1:]):
+        dx, dy = bx - ax, by - ay
+        length = dx * dx + dy * dy
+        t = 0.0 if length == 0 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / length))
+        distance = hypot(px - (ax + t * dx), py - (ay + t * dy))
+        best = distance if best is None else min(best, distance)
+    return best
+
+
+_CURRENT_LEG_YARDS = 25
+
+
+def patrol_rejoin(route: ManualRoute, xy, index: int):
+    """接回录制轨迹：返回 (停留点序号, 本段要走的路点, 离轨迹的码数)。
+
+    从离 xy 最近的轨迹位置开始，到其所在段的停留点为止；index 仅在坐标路线时原样返回。
+    """
+    if not route.recorded:
+        return index, (route.points[index],), None
+    start, distance = nearest_on_loop(route, xy)
+    stops, path = route.stop_indices, route.path
+    if 0 <= index < len(stops) and len(stops) > 1:
+        # 环线自交时，全环最近点可能落在更早的一段（2026-11-17 01:43 从第 8 点退回第 5 点）。
+        # 离当前段（上一停留点 → 当前停留点）不远时，沿当前段接回。
+        lo, hi = stops[index - 1], stops[index]
+        count = (hi - lo) % len(path) or len(path)
+        window = [(lo + step) % len(path) for step in range(count)]
+        if (start - 1) % len(path) not in window:
+            local = nearest_on_loop(route, xy, window)
+            if local is not None and local[1] <= _CURRENT_LEG_YARDS:
+                start, distance = local
+    stop = next((number for number, stop_index in enumerate(stops) if stop_index >= start), 0)
+    end = stops[stop]
+    leg = path[start:end + 1] if start <= end else path[start:] + path[:end + 1]
+    return stop, leg, distance
 
 
 def parse_fixed_camp(text: str) -> ManualRoute:

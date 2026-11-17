@@ -55,7 +55,7 @@ class TrayTests(unittest.TestCase):
                     self.assertIn('停止监控',window.ui.addon_status.text())
                     window.toggle_monitor()
                     window.ui.addon_install_button.click()
-                    self.assertIn('已安装2个文件',window.ui.addon_status.text())
+                    self.assertIn('已安装本地构建',window.ui.addon_status.text());self.assertIn('2 个文件',window.ui.addon_status.text())
                     self.assertEqual((client/'Interface/AddOns/WowBuddyDev/Core.lua').read_text('utf8'),'-- GUI test')
         self.run_window(False,exercise)
 
